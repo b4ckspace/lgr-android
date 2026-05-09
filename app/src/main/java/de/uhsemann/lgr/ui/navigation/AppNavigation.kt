@@ -69,7 +69,7 @@ fun AppNavigation(viewModel: AppViewModel) {
     ) { padding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Items.route,
+            startDestination = Screen.Barcodes.route,
             modifier = Modifier.padding(padding)
         ) {
             composable(Screen.Items.route) { ItemsScreen(viewModel) }

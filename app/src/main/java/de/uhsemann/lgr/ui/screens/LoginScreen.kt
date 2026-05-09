@@ -74,13 +74,21 @@ fun LoginScreen(viewModel: AppViewModel) {
         )
         Spacer(Modifier.height(8.dp))
 
-        if (authState.error != null) {
-            Text(
-                text = authState.error,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(vertical = 4.dp)
-            )
+        val errorMsg = when {
+            authState.error != null -> authState.error
+            authState.data?.authenticated == false -> "Login failed — check username and password"
+            else -> null
+        }
+        if (errorMsg != null) {
+            Spacer(Modifier.height(8.dp))
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+                Text(
+                    text = errorMsg,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth().padding(12.dp)
+                )
+            }
         }
 
         Spacer(Modifier.height(16.dp))
