@@ -24,7 +24,7 @@ fun LoginScreen(viewModel: AppViewModel) {
     val authState = viewModel.auth
 
     fun doLogin() {
-        if (serverUrl.isNotBlank()) viewModel.setServerUrl(serverUrl)
+        if (serverUrl.isNotBlank()) viewModel.applyServerUrl(serverUrl)
         if (username.isNotBlank() && password.isNotBlank()) viewModel.login(username, password)
     }
 

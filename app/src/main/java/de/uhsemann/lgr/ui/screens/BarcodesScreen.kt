@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import de.uhsemann.lgr.data.model.Barcode
 import de.uhsemann.lgr.data.model.BarcodeStatus
 import de.uhsemann.lgr.viewmodel.AppViewModel
-import de.uhsemann.lgr.viewmodel.UiState
 
 @Composable
 fun BarcodesScreen(viewModel: AppViewModel) {
@@ -43,7 +42,7 @@ fun BarcodesScreen(viewModel: AppViewModel) {
             viewModel = viewModel,
             onDismiss = {
                 showLoanDialog = false
-                viewModel.loanState = UiState()
+                viewModel.resetLoanState()
             }
         )
     }

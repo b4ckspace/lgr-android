@@ -1,6 +1,7 @@
 package de.uhsemann.lgr.data.api
 
 import de.uhsemann.lgr.data.model.*
+import de.uhsemann.lgr.data.model.Tag as LgrTag
 import retrofit2.http.*
 
 interface ApiService {
@@ -54,7 +55,7 @@ interface ApiService {
     suspend fun getTags(
         @Query("limit") limit: Int = 200,
         @Query("offset") offset: Int = 0
-    ): PagedResponse<Tag>
+    ): PagedResponse<LgrTag>
 
     @GET("api/loans/")
     suspend fun getLoans(

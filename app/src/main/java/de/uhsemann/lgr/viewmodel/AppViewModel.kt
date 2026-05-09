@@ -53,11 +53,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun setServerUrl(url: String) {
+    fun applyServerUrl(url: String) {
         serverUrl = url
         prefs.edit().putString("server_url", url).apply()
         ApiClient.reset()
         ApiClient.configure(url)
+    }
+
+    fun resetLoanState() {
+        loanState = UiState()
     }
 
     fun checkAuth() = viewModelScope.launch {
