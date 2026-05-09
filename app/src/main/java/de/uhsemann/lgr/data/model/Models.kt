@@ -10,7 +10,7 @@ data class PagedResponse<T>(
 )
 
 data class AuthStatus(
-    val authenticated: Boolean,
+    @SerializedName("logged_in") val authenticated: Boolean,
     val username: String?
 )
 
