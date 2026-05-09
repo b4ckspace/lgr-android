@@ -7,7 +7,10 @@ class LgrRepository {
     private val api get() = ApiClient.getService()
 
     suspend fun getAuthStatus() = api.getAuthStatus()
-    suspend fun login(username: String, password: String) = api.login(LoginRequest(username, password))
+    suspend fun login(username: String, password: String): AuthStatus {
+        api.getAuthStatus() // GET first so the server sets the csrftoken cookie
+        return api.login(LoginRequest(username, password))
+    }
     suspend fun logout() = api.logout()
 
     suspend fun getBarcodes(search: String? = null, limit: Int = 50, offset: Int = 0) =
