@@ -53,7 +53,8 @@ fun BarcodesScreen(viewModel: AppViewModel, onOpenDetail: (List<Barcode>, Int) -
             OutlinedTextField(
                 value = search,
                 onValueChange = { search = it; viewModel.updateBarcodesSearch(it) },
-                label = { Text("Search barcodes (supports !user: !item: syntax)") },
+                label = { Text("Search barcodes") },
+                placeholder = { Text("supports !user: !item: syntax") },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
                 trailingIcon = {
                     if (search.isNotBlank()) {
