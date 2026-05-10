@@ -28,6 +28,9 @@ interface ApiService {
     @GET("api/barcodes/{code}/")
     suspend fun getBarcode(@Path("code") code: String): Barcode
 
+    @GET
+    suspend fun getBarcodeByUrl(@Url url: String): Barcode
+
     @POST("api/barcodes/")
     suspend fun createBarcode(@Body request: CreateBarcodeRequest): Barcode
 

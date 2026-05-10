@@ -53,6 +53,24 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     private var searchJob: Job? = null
     private val ownerNameCache = mutableMapOf<String, String>()
+    private val barcodeByUrlCache = mutableMapOf<String, Barcode>()
+
+    suspend fun resolveLocation(barcode: Barcode): String {
+        val ancestors = mutableListOf<String>()
+        var parentUrl = barcode.parent
+        var depth = 0
+        while (parentUrl != null && depth < 20) {
+            val parent = barcodeByUrlCache[parentUrl]
+                ?: runCatching { repo.getBarcodeByUrl(parentUrl!!) }
+                    .getOrNull()
+                    ?.also { barcodeByUrlCache[parentUrl!!] = it }
+                ?: break
+            ancestors.add(0, parent.code)
+            parentUrl = parent.parent
+            depth++
+        }
+        return ancestors.joinToString(" › ")
+    }
 
     suspend fun resolveOwnerName(url: String): String =
         ownerNameCache.getOrPut(url) {

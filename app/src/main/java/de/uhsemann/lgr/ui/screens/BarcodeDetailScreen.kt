@@ -29,6 +29,10 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
         val ownerUrl = state.data?.owner
         value = if (ownerUrl != null) viewModel.resolveOwnerName(ownerUrl) else null
     }
+    val location by produceState<String?>(null, state.data) {
+        val b = state.data ?: return@produceState
+        value = viewModel.resolveLocation(b)
+    }
 
     Scaffold(
         topBar = {
@@ -88,6 +92,7 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                 )
                 state.data != null -> {
                     val barcode = state.data
+                    val loc = location
                     Column(modifier = Modifier.fillMaxSize()) {
                         Column(
                             modifier = Modifier
@@ -96,6 +101,15 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                                 .padding(24.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
+                            DetailRow(
+                                label = "Location",
+                                value = when {
+                                    barcode.parent == null -> "—"
+                                    loc == null -> "…"
+                                    loc.isEmpty() -> "—"
+                                    else -> loc
+                                }
+                            )
                             DetailRow(label = "Barcode", value = barcode.code)
                             DetailRow(label = "Item", value = barcode.itemName)
                             if (barcode.itemDescription.isNotBlank()) {

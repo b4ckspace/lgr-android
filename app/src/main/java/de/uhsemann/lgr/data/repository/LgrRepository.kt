@@ -18,6 +18,7 @@ class LgrRepository {
 
     suspend fun getBarcodesPage(url: String) = api.getBarcodesPage(url)
     suspend fun getBarcode(code: String) = api.getBarcode(code)
+    suspend fun getBarcodeByUrl(url: String) = api.getBarcodeByUrl(url)
     suspend fun createBarcode(request: CreateBarcodeRequest) = api.createBarcode(request)
 
     suspend fun getPersons(search: String? = null, limit: Int = 50, offset: Int = 0) =
