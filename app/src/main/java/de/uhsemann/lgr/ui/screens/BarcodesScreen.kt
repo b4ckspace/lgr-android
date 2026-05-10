@@ -3,7 +3,7 @@ package de.uhsemann.lgr.ui.screens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -19,12 +19,12 @@ import de.uhsemann.lgr.data.model.BarcodeStatus
 import de.uhsemann.lgr.viewmodel.AppViewModel
 
 @Composable
-fun BarcodesScreen(viewModel: AppViewModel, onOpenDetail: (String) -> Unit = {}) {
-    var search by remember { mutableStateOf("") }
+fun BarcodesScreen(viewModel: AppViewModel, onOpenDetail: (List<Barcode>, Int) -> Unit = { _, _ -> }) {
+    var search by remember { mutableStateOf(viewModel.barcodesSearch) }
     var showLoanDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
-    LaunchedEffect(Unit) { viewModel.loadBarcodes() }
+    LaunchedEffect(Unit) { viewModel.loadBarcodes(viewModel.barcodesSearch) }
 
     val shouldLoadMore by remember {
         derivedStateOf {
@@ -51,7 +51,7 @@ fun BarcodesScreen(viewModel: AppViewModel, onOpenDetail: (String) -> Unit = {})
         Column(modifier = Modifier.fillMaxSize()) {
             OutlinedTextField(
                 value = search,
-                onValueChange = { search = it; viewModel.loadBarcodes(it) },
+                onValueChange = { search = it; viewModel.updateBarcodesSearch(it) },
                 label = { Text("Search barcodes (supports !user: !item: syntax)") },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
                 modifier = Modifier
@@ -83,12 +83,12 @@ fun BarcodesScreen(viewModel: AppViewModel, onOpenDetail: (String) -> Unit = {})
                 state.isLoading && state.data == null -> LoadingBox()
                 state.error != null && state.data == null -> ErrorBox(state.error)
                 state.data != null -> LazyColumn(state = listState) {
-                    items(state.data, key = { it.code }) { barcode ->
+                    itemsIndexed(state.data, key = { _, barcode -> barcode.code }) { index, barcode ->
                         BarcodeCard(
                             barcode = barcode,
                             isSelected = barcode.code in viewModel.selectedBarcodes,
                             onToggle = { viewModel.toggleBarcodeSelection(barcode.code) },
-                            onTap = { onOpenDetail(barcode.code) }
+                            onTap = { onOpenDetail(state.data, index) }
                         )
                     }
                     if (viewModel.barcodesNextPage != null) {

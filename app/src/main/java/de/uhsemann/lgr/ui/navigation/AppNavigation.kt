@@ -86,13 +86,14 @@ fun AppNavigation(viewModel: AppViewModel) {
             composable(Screen.Home.route) {
                 HomeScreen(onScanBarcode = {
                     viewModel.clearScannedBarcode()
+                    viewModel.clearBarcodeListContext()
                     navController.navigate("scan")
                 })
             }
             composable(Screen.Items.route) { ItemsScreen(viewModel) }
             composable(Screen.Barcodes.route) {
-                BarcodesScreen(viewModel, onOpenDetail = { code ->
-                    viewModel.loadBarcode(code)
+                BarcodesScreen(viewModel, onOpenDetail = { list, index ->
+                    viewModel.openBarcodeFromList(list, index)
                     navController.navigate("barcode_detail")
                 })
             }

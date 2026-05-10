@@ -41,6 +41,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var selectedBarcodes by mutableStateOf<Set<String>>(emptySet())
     var loanState by mutableStateOf(UiState<LoanResponse>())
     var scannedBarcode by mutableStateOf(UiState<Barcode>())
+    var barcodesSearch by mutableStateOf("")
+        private set
+    var barcodeListContext by mutableStateOf<List<Barcode>?>(null)
+        private set
+    var barcodeListIndex by mutableStateOf(0)
+        private set
 
     val isAuthenticated get() = auth.data?.authenticated == true
     val username get() = auth.data?.username
@@ -215,6 +221,26 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun clearScannedBarcode() { scannedBarcode = UiState() }
+
+    fun updateBarcodesSearch(query: String) {
+        barcodesSearch = query
+        loadBarcodes(query)
+    }
+
+    fun openBarcodeFromList(list: List<Barcode>, index: Int) {
+        barcodeListContext = list
+        barcodeListIndex = index
+        loadBarcode(list[index].code)
+    }
+
+    fun navigateToBarcodeInList(index: Int) {
+        val list = barcodeListContext ?: return
+        if (index !in list.indices) return
+        barcodeListIndex = index
+        loadBarcode(list[index].code)
+    }
+
+    fun clearBarcodeListContext() { barcodeListContext = null }
 
     fun toggleBarcodeSelection(code: String) {
         selectedBarcodes = if (code in selectedBarcodes) selectedBarcodes - code else selectedBarcodes + code
