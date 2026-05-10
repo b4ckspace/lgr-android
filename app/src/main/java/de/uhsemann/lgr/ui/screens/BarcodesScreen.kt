@@ -19,7 +19,7 @@ import de.uhsemann.lgr.data.model.BarcodeStatus
 import de.uhsemann.lgr.viewmodel.AppViewModel
 
 @Composable
-fun BarcodesScreen(viewModel: AppViewModel) {
+fun BarcodesScreen(viewModel: AppViewModel, onOpenDetail: (String) -> Unit = {}) {
     var search by remember { mutableStateOf("") }
     var showLoanDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -87,7 +87,8 @@ fun BarcodesScreen(viewModel: AppViewModel) {
                         BarcodeCard(
                             barcode = barcode,
                             isSelected = barcode.code in viewModel.selectedBarcodes,
-                            onToggle = { viewModel.toggleBarcodeSelection(barcode.code) }
+                            onToggle = { viewModel.toggleBarcodeSelection(barcode.code) },
+                            onTap = { onOpenDetail(barcode.code) }
                         )
                     }
                     if (viewModel.barcodesNextPage != null) {
@@ -111,12 +112,12 @@ fun BarcodesScreen(viewModel: AppViewModel) {
 }
 
 @Composable
-fun BarcodeCard(barcode: Barcode, isSelected: Boolean, onToggle: () -> Unit) {
+fun BarcodeCard(barcode: Barcode, isSelected: Boolean, onToggle: () -> Unit, onTap: () -> Unit = {}) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp)
-            .clickable(onClick = onToggle),
+            .clickable(onClick = onTap),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
                 MaterialTheme.colorScheme.primaryContainer

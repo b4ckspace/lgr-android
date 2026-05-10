@@ -90,7 +90,12 @@ fun AppNavigation(viewModel: AppViewModel) {
                 })
             }
             composable(Screen.Items.route) { ItemsScreen(viewModel) }
-            composable(Screen.Barcodes.route) { BarcodesScreen(viewModel) }
+            composable(Screen.Barcodes.route) {
+                BarcodesScreen(viewModel, onOpenDetail = { code ->
+                    viewModel.loadBarcode(code)
+                    navController.navigate("barcode_detail")
+                })
+            }
             composable(Screen.Persons.route) { PersonsScreen(viewModel) }
             composable(Screen.Loans.route) { LoansScreen(viewModel) }
             composable(Screen.MyLoans.route) { MyLoansScreen(viewModel) }
