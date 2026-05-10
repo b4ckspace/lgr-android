@@ -55,8 +55,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val ownerNameCache = mutableMapOf<String, String>()
     private val barcodeByUrlCache = mutableMapOf<String, Barcode>()
 
-    suspend fun resolveLocation(barcode: Barcode): String {
-        val ancestors = mutableListOf<String>()
+    suspend fun resolveLocation(barcode: Barcode): List<Barcode> {
+        val ancestors = mutableListOf<Barcode>()
         var parentUrl = barcode.parent
         var depth = 0
         while (parentUrl != null && depth < 20) {
@@ -65,11 +65,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     .getOrNull()
                     ?.also { barcodeByUrlCache[parentUrl!!] = it }
                 ?: break
-            ancestors.add(0, parent.code)
+            ancestors.add(0, parent)
             parentUrl = parent.parent
             depth++
         }
-        return ancestors.joinToString(" › ")
+        return ancestors
     }
 
     suspend fun resolveOwnerName(url: String): String =

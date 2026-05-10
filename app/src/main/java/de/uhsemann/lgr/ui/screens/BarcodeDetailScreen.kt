@@ -13,7 +13,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import de.uhsemann.lgr.data.model.Barcode
 import de.uhsemann.lgr.viewmodel.AppViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,7 +33,7 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
         val ownerUrl = state.data?.owner
         value = if (ownerUrl != null) viewModel.resolveOwnerName(ownerUrl) else null
     }
-    val location by produceState<String?>(null, state.data) {
+    val location by produceState<List<Barcode>?>(null, state.data) {
         val b = state.data ?: return@produceState
         value = viewModel.resolveLocation(b)
     }
@@ -93,6 +97,7 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                 state.data != null -> {
                     val barcode = state.data
                     val loc = location
+                    val codeColor = MaterialTheme.colorScheme.onSurfaceVariant
                     Column(modifier = Modifier.fillMaxSize()) {
                         Column(
                             modifier = Modifier
@@ -101,15 +106,34 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                                 .padding(24.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            DetailRow(
-                                label = "Location",
-                                value = when {
-                                    barcode.parent == null -> "—"
-                                    loc == null -> "…"
-                                    loc.isEmpty() -> "—"
-                                    else -> loc
+                            // Location with mixed-style breadcrumb
+                            Column {
+                                Text(
+                                    text = "Location",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(Modifier.height(2.dp))
+                                when {
+                                    barcode.parent == null -> Text("—", style = MaterialTheme.typography.bodyLarge)
+                                    loc == null -> Text("…", style = MaterialTheme.typography.bodyLarge)
+                                    loc.isEmpty() -> Text("—", style = MaterialTheme.typography.bodyLarge)
+                                    else -> Text(
+                                        text = buildAnnotatedString {
+                                            loc.forEachIndexed { i, b ->
+                                                if (i > 0) append(" › ")
+                                                append(b.itemName)
+                                                append(" ")
+                                                withStyle(SpanStyle(color = codeColor)) {
+                                                    append("(${b.code})")
+                                                }
+                                            }
+                                        },
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
                                 }
-                            )
+                                HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+                            }
                             DetailRow(label = "Barcode", value = barcode.code)
                             DetailRow(label = "Item", value = barcode.itemName)
                             if (barcode.itemDescription.isNotBlank()) {
