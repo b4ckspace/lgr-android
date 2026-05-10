@@ -287,12 +287,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onContentBarcodeScanned(code: String) = viewModelScope.launch {
-        val children = childBarcodes.data ?: return@launch
-        if (children.any { it.code == code }) {
+        val currentBarcode = scannedBarcode.data ?: return@launch
+        if (code in scannedChildCodes || newScannedBarcodes.any { it.code == code }) return@launch
+        val b = runCatching { repo.getBarcode(code) }.getOrNull() ?: return@launch
+        if (b.parent == currentBarcode.url) {
             scannedChildCodes = scannedChildCodes + code
-        } else if (newScannedBarcodes.none { it.code == code }) {
-            runCatching { repo.getBarcode(code) }
-                .onSuccess { newScannedBarcodes = newScannedBarcodes + it }
+        } else {
+            newScannedBarcodes = newScannedBarcodes + b
         }
     }
 

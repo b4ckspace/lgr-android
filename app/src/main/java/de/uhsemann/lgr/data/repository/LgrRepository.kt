@@ -22,11 +22,11 @@ class LgrRepository {
 
     suspend fun getChildBarcodes(parentUrl: String): List<Barcode> {
         val results = mutableListOf<Barcode>()
-        var page = api.getBarcodes(parent = parentUrl, limit = 200)
-        results.addAll(page.results)
+        var page = api.getBarcodes(limit = 200)
+        results.addAll(page.results.filter { it.parent == parentUrl })
         while (page.next != null) {
             page = api.getBarcodesPage(page.next!!)
-            results.addAll(page.results)
+            results.addAll(page.results.filter { it.parent == parentUrl })
         }
         return results
     }

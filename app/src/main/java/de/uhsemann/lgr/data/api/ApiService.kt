@@ -19,8 +19,7 @@ interface ApiService {
     suspend fun getBarcodes(
         @Query("search") search: String? = null,
         @Query("limit") limit: Int = 50,
-        @Query("offset") offset: Int = 0,
-        @Query("parent") parent: String? = null
+        @Query("offset") offset: Int = 0
     ): PagedResponse<Barcode>
 
     @PATCH

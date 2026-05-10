@@ -1,6 +1,8 @@
 package de.uhsemann.lgr.ui.screens
 
 import android.Manifest
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.os.Handler
 import android.os.Looper
 import androidx.camera.core.CameraSelector
@@ -43,7 +45,9 @@ fun ContentScanScreen(viewModel: AppViewModel, onDone: () -> Unit) {
         if (!permissionState.status.isGranted) permissionState.launchPermissionRequest()
     }
 
-    val scannedCount = viewModel.scannedChildCodes.size + viewModel.newScannedBarcodes.size
+    val scannedCount by remember {
+        derivedStateOf { viewModel.scannedChildCodes.size + viewModel.newScannedBarcodes.size }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (permissionState.status.isGranted) {
@@ -75,6 +79,11 @@ fun ContentScanScreen(viewModel: AppViewModel, onDone: () -> Unit) {
                                             if (cooldown.compareAndSet(false, true)) {
                                                 scanFlash = true
                                                 viewModel.onContentBarcodeScanned(code)
+                                                try {
+                                                    val tg = ToneGenerator(AudioManager.STREAM_SYSTEM, 80)
+                                                    tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
+                                                    handler.postDelayed({ tg.release() }, 300)
+                                                } catch (_: Exception) {}
                                                 handler.postDelayed({
                                                     scanFlash = false
                                                     cooldown.set(false)
