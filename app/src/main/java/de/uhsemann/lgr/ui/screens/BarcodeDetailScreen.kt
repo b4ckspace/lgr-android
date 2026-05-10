@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -97,7 +98,7 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                 state.data != null -> {
                     val barcode = state.data
                     val loc = location
-                    val codeColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    val codeColor = Color(0xFF9E9E9E)
                     Column(modifier = Modifier.fillMaxSize()) {
                         Column(
                             modifier = Modifier
