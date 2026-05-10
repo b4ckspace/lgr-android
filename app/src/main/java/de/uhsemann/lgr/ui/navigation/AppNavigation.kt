@@ -24,7 +24,7 @@ private sealed class Screen(val route: String, val label: String, val icon: Imag
     object MyLoans : Screen("my_loans", "My Loans", Icons.Default.AccountCircle)
 }
 
-private val fullScreenRoutes = setOf("scan", "barcode_detail")
+private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,7 +112,14 @@ fun AppNavigation(viewModel: AppViewModel) {
             composable("barcode_detail") {
                 BarcodeDetailScreen(
                     viewModel = viewModel,
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onScanContent = { navController.navigate("content_scan") }
+                )
+            }
+            composable("content_scan") {
+                ContentScanScreen(
+                    viewModel = viewModel,
+                    onDone = { navController.popBackStack() }
                 )
             }
         }
