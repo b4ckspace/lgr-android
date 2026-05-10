@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,6 +40,13 @@ fun ItemsScreen(viewModel: AppViewModel) {
             onValueChange = { search = it; viewModel.loadItems(it) },
             label = { Text("Search items") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            trailingIcon = {
+                if (search.isNotBlank()) {
+                    IconButton(onClick = { search = ""; viewModel.loadItems("") }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                    }
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp),

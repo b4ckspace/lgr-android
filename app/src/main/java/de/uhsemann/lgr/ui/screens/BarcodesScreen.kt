@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
@@ -54,6 +55,13 @@ fun BarcodesScreen(viewModel: AppViewModel, onOpenDetail: (List<Barcode>, Int) -
                 onValueChange = { search = it; viewModel.updateBarcodesSearch(it) },
                 label = { Text("Search barcodes (supports !user: !item: syntax)") },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
+                trailingIcon = {
+                    if (search.isNotBlank()) {
+                        IconButton(onClick = { search = ""; viewModel.updateBarcodesSearch("") }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp),

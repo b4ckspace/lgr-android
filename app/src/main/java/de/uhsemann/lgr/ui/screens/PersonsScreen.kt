@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,6 +38,13 @@ fun PersonsScreen(viewModel: AppViewModel) {
             onValueChange = { search = it; viewModel.loadPersons(it) },
             label = { Text("Search persons") },
             leadingIcon = { Icon(Icons.Default.Search, null) },
+            trailingIcon = {
+                if (search.isNotBlank()) {
+                    IconButton(onClick = { search = ""; viewModel.loadPersons("") }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                    }
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp),
