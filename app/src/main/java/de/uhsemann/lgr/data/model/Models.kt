@@ -39,15 +39,18 @@ data class Item(
     val tags: List<String>
 )
 
+data class ChildInfo(val name: String, val code: String)
+
 data class Barcode(
-    val url: String,
     val code: String,
     val owner: String?,
     val description: String,
     val item: String,
     val parent: String?,
     @SerializedName("item_name") val itemName: String,
-    @SerializedName("item_description") val itemDescription: String
+    @SerializedName("item_description") val itemDescription: String,
+    @SerializedName("api_child_names") val apiChildNames: List<ChildInfo>? = null,
+    @SerializedName("api_parent_names") val apiParentNames: List<ChildInfo>? = null
 )
 
 data class Loan(

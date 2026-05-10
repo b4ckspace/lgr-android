@@ -20,6 +20,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import de.uhsemann.lgr.data.model.Barcode
+import de.uhsemann.lgr.data.model.ChildInfo
 import de.uhsemann.lgr.viewmodel.AppViewModel
 
 private val GREY = Color(0xFF9E9E9E)
@@ -37,10 +38,6 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanConte
     val ownerName by produceState<String?>(null, state.data?.owner) {
         val ownerUrl = state.data?.owner
         value = if (ownerUrl != null) viewModel.resolveOwnerName(ownerUrl) else null
-    }
-    val location by produceState<List<Barcode>?>(null, state.data) {
-        val b = state.data ?: return@produceState
-        value = viewModel.resolveLocation(b)
     }
 
     Scaffold(
@@ -98,7 +95,6 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanConte
                 )
                 state.data != null -> {
                     val barcode = state.data
-                    val loc = location
 
                     Column(modifier = Modifier.fillMaxSize()) {
                         LazyColumn(
@@ -106,12 +102,10 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanConte
                             contentPadding = PaddingValues(24.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            // Location breadcrumb
                             item {
                                 BreadcrumbRow(
                                     label = "Location",
-                                    ancestors = loc,
-                                    hasParent = barcode.parent != null
+                                    ancestors = barcode.apiParentNames ?: emptyList()
                                 )
                             }
 
@@ -176,21 +170,20 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanConte
 }
 
 @Composable
-private fun BreadcrumbRow(label: String, ancestors: List<Barcode>?, hasParent: Boolean) {
+private fun BreadcrumbRow(label: String, ancestors: List<ChildInfo>) {
     Column {
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(2.dp))
-        when {
-            !hasParent -> Text("—", style = MaterialTheme.typography.bodyLarge)
-            ancestors == null -> Text("…", style = MaterialTheme.typography.bodyLarge)
-            ancestors.isEmpty() -> Text("—", style = MaterialTheme.typography.bodyLarge)
-            else -> Text(
+        if (ancestors.isEmpty()) {
+            Text("—", style = MaterialTheme.typography.bodyLarge)
+        } else {
+            Text(
                 text = buildAnnotatedString {
-                    ancestors.forEachIndexed { i, b ->
+                    ancestors.forEachIndexed { i, info ->
                         if (i > 0) append(" › ")
-                        append(b.itemName)
+                        append(info.name.removeSuffix(" (${info.code})"))
                         append(" ")
-                        withStyle(SpanStyle(color = GREY)) { append("(${b.code})") }
+                        withStyle(SpanStyle(color = GREY)) { append("(${info.code})") }
                     }
                 },
                 style = MaterialTheme.typography.bodyLarge
@@ -202,53 +195,41 @@ private fun BreadcrumbRow(label: String, ancestors: List<Barcode>?, hasParent: B
 
 @Composable
 private fun ContentSection(viewModel: AppViewModel, barcode: Barcode, onScanContent: () -> Unit) {
-    val childState = viewModel.childBarcodes
     val scanActive = viewModel.contentScanActive
     val saveState = viewModel.saveContentState
+    val existingChildren = barcode.apiChildNames ?: emptyList()
+    val totalCount = existingChildren.size + viewModel.newScannedBarcodes.size
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        val childCount = childState.data?.size ?: 0
-        val totalCount = childCount + viewModel.newScannedBarcodes.size
         Text(
             "Contents ($totalCount)",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        when {
-            childState.isLoading -> LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            childState.error != null -> Text(
-                childState.error,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall
-            )
-            else -> {
-                val children = childState.data ?: emptyList()
-
-                // Existing children
-                children.forEach { child ->
-                    val color = when {
-                        !scanActive -> MaterialTheme.colorScheme.onSurface
-                        child.code in viewModel.scannedChildCodes -> MaterialTheme.colorScheme.onSurface
-                        else -> GREY
-                    }
-                    ChildRow(barcode = child, color = color)
-                }
-
-                // New barcodes from scan
-                viewModel.newScannedBarcodes.forEach { child ->
-                    ChildRow(barcode = child, color = GREEN)
-                }
-
-                if (children.isEmpty() && viewModel.newScannedBarcodes.isEmpty()) {
-                    Text("—", style = MaterialTheme.typography.bodyLarge)
-                }
+        existingChildren.forEach { child ->
+            val color = when {
+                !scanActive -> MaterialTheme.colorScheme.onSurface
+                child.code in viewModel.scannedChildCodes -> MaterialTheme.colorScheme.onSurface
+                else -> GREY
             }
+            ChildRow(
+                itemName = child.name.removeSuffix(" (${child.code})"),
+                code = child.code,
+                color = color
+            )
+        }
+
+        viewModel.newScannedBarcodes.forEach { child ->
+            ChildRow(itemName = child.itemName, code = child.code, color = GREEN)
+        }
+
+        if (existingChildren.isEmpty() && viewModel.newScannedBarcodes.isEmpty()) {
+            Text("—", style = MaterialTheme.typography.bodyLarge)
         }
 
         HorizontalDivider()
 
-        // Buttons row
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(
                 onClick = {
@@ -284,13 +265,13 @@ private fun ContentSection(viewModel: AppViewModel, barcode: Barcode, onScanCont
 }
 
 @Composable
-private fun ChildRow(barcode: Barcode, color: Color) {
+private fun ChildRow(itemName: String, code: String, color: Color) {
     Text(
         text = buildAnnotatedString {
-            withStyle(SpanStyle(color = color)) { append(barcode.itemName) }
+            withStyle(SpanStyle(color = color)) { append(itemName) }
             append(" ")
-            withStyle(SpanStyle(color = if (color == MaterialTheme.colorScheme.onSurface) GREY else color.copy(alpha = 0.7f))) {
-                append("(${barcode.code})")
+            withStyle(SpanStyle(color = if (color == GREEN) GREEN.copy(alpha = 0.7f) else GREY)) {
+                append("($code)")
             }
         },
         style = MaterialTheme.typography.bodyMedium,

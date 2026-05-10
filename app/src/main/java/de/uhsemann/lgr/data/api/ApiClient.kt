@@ -71,6 +71,8 @@ object ApiClient {
             .create(ApiService::class.java)
     }
 
+    fun getBarcodeUrl(code: String) = "${baseUrl}api/barcodes/$code/"
+
     fun reset() {
         cookieJar.clear()
         service = null

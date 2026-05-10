@@ -41,8 +41,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var selectedBarcodes by mutableStateOf<Set<String>>(emptySet())
     var loanState by mutableStateOf(UiState<LoanResponse>())
     var scannedBarcode by mutableStateOf(UiState<Barcode>())
-    var childBarcodes by mutableStateOf(UiState<List<Barcode>>())
-        private set
     var scannedChildCodes by mutableStateOf<Set<String>>(emptySet())
         private set
     var newScannedBarcodes by mutableStateOf<List<Barcode>>(emptyList())
@@ -63,24 +61,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     private var searchJob: Job? = null
     private val ownerNameCache = mutableMapOf<String, String>()
-    private val barcodeByUrlCache = mutableMapOf<String, Barcode>()
-
-    suspend fun resolveLocation(barcode: Barcode): List<Barcode> {
-        val ancestors = mutableListOf<Barcode>()
-        var parentUrl = barcode.parent
-        var depth = 0
-        while (parentUrl != null && depth < 20) {
-            val parent = barcodeByUrlCache[parentUrl]
-                ?: runCatching { repo.getBarcodeByUrl(parentUrl!!) }
-                    .getOrNull()
-                    ?.also { barcodeByUrlCache[parentUrl!!] = it }
-                ?: break
-            ancestors.add(0, parent)
-            parentUrl = parent.parent
-            depth++
-        }
-        return ancestors
-    }
 
     suspend fun resolveOwnerName(url: String): String =
         ownerNameCache.getOrPut(url) {
@@ -257,24 +237,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun loadBarcode(code: String) = viewModelScope.launch {
         scannedBarcode = UiState(isLoading = true)
-        childBarcodes = UiState()
         scannedChildCodes = emptySet()
         newScannedBarcodes = emptyList()
         contentScanActive = false
         saveContentState = UiState()
         runCatching { repo.getBarcode(code) }
-            .onSuccess {
-                scannedBarcode = UiState(data = it)
-                loadChildBarcodes(it.url)
-            }
+            .onSuccess { scannedBarcode = UiState(data = it) }
             .onFailure { scannedBarcode = UiState(error = it.localizedMessage) }
-    }
-
-    private fun loadChildBarcodes(parentUrl: String) = viewModelScope.launch {
-        childBarcodes = UiState(isLoading = true)
-        runCatching { repo.getChildBarcodes(parentUrl) }
-            .onSuccess { childBarcodes = UiState(data = it) }
-            .onFailure { childBarcodes = UiState(error = it.localizedMessage) }
     }
 
     fun clearScannedBarcode() { scannedBarcode = UiState() }
@@ -289,26 +258,28 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun onContentBarcodeScanned(code: String) = viewModelScope.launch {
         val currentBarcode = scannedBarcode.data ?: return@launch
         if (code in scannedChildCodes || newScannedBarcodes.any { it.code == code }) return@launch
-        val b = runCatching { repo.getBarcode(code) }.getOrNull() ?: return@launch
-        if (b.parent == currentBarcode.url) {
+        val isExistingChild = currentBarcode.apiChildNames?.any { it.code == code } == true
+        if (isExistingChild) {
             scannedChildCodes = scannedChildCodes + code
         } else {
+            val b = runCatching { repo.getBarcode(code) }.getOrNull() ?: return@launch
             newScannedBarcodes = newScannedBarcodes + b
         }
     }
 
     fun saveContentChanges(parentBarcode: Barcode) = viewModelScope.launch {
         saveContentState = UiState(isLoading = true)
-        val children = childBarcodes.data ?: return@launch
+        val children = parentBarcode.apiChildNames ?: emptyList()
+        val parentUrl = ApiClient.getBarcodeUrl(parentBarcode.code)
         val errors = mutableListOf<String>()
 
         for (b in newScannedBarcodes) {
-            runCatching { repo.patchBarcodeParent(b.url, parentBarcode.url) }
+            runCatching { repo.patchBarcodeParent(ApiClient.getBarcodeUrl(b.code), parentUrl) }
                 .onFailure { errors.add(it.localizedMessage ?: b.code) }
         }
-        for (b in children.filter { it.code !in scannedChildCodes }) {
-            runCatching { repo.patchBarcodeParent(b.url, null) }
-                .onFailure { errors.add(it.localizedMessage ?: b.code) }
+        for (child in children.filter { it.code !in scannedChildCodes }) {
+            runCatching { repo.patchBarcodeParent(ApiClient.getBarcodeUrl(child.code), null) }
+                .onFailure { errors.add(it.localizedMessage ?: child.code) }
         }
 
         if (errors.isEmpty()) {
@@ -316,7 +287,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             scannedChildCodes = emptySet()
             newScannedBarcodes = emptyList()
             contentScanActive = false
-            loadChildBarcodes(parentBarcode.url)
+            val refreshed = runCatching { repo.getBarcode(parentBarcode.code) }.getOrNull()
+            if (refreshed != null) scannedBarcode = UiState(data = refreshed)
         } else {
             saveContentState = UiState(error = errors.joinToString("\n"))
         }

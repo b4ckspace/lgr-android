@@ -20,17 +20,6 @@ class LgrRepository {
     suspend fun getBarcode(code: String) = api.getBarcode(code)
     suspend fun getBarcodeByUrl(url: String) = api.getBarcodeByUrl(url)
 
-    suspend fun getChildBarcodes(parentUrl: String): List<Barcode> {
-        val results = mutableListOf<Barcode>()
-        var page = api.getBarcodes(limit = 200)
-        results.addAll(page.results.filter { it.parent == parentUrl })
-        while (page.next != null) {
-            page = api.getBarcodesPage(page.next!!)
-            results.addAll(page.results.filter { it.parent == parentUrl })
-        }
-        return results
-    }
-
     suspend fun patchBarcodeParent(url: String, parentUrl: String?) {
         val body = com.google.gson.JsonObject()
         if (parentUrl != null) body.addProperty("parent", parentUrl)
