@@ -1,6 +1,8 @@
 package de.uhsemann.lgr.ui.screens
 
 import android.Manifest
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -39,6 +41,14 @@ fun BarcodeScanScreen(onBarcodeDetected: (String) -> Unit, onBack: () -> Unit) {
         if (!permissionState.status.isGranted) {
             permissionState.launchPermissionRequest()
         }
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) detected.value = false
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {

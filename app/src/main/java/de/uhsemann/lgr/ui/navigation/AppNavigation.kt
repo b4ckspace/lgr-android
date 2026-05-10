@@ -103,9 +103,7 @@ fun AppNavigation(viewModel: AppViewModel) {
                 BarcodeScanScreen(
                     onBarcodeDetected = { code ->
                         viewModel.loadBarcode(code)
-                        navController.navigate("barcode_detail") {
-                            popUpTo("scan") { inclusive = true }
-                        }
+                        navController.navigate("barcode_detail")
                     },
                     onBack = { navController.popBackStack() }
                 )
