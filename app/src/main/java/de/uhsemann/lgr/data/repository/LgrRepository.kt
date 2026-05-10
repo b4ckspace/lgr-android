@@ -24,6 +24,7 @@ class LgrRepository {
         api.getPersons(search.takeIf { !it.isNullOrBlank() }, limit, offset)
 
     suspend fun getPersonsPage(url: String) = api.getPersonsPage(url)
+    suspend fun getPersonByUrl(url: String) = api.getPersonByUrl(url)
 
     suspend fun getItems(search: String? = null, limit: Int = 50, offset: Int = 0) =
         api.getItems(search.takeIf { !it.isNullOrBlank() }, limit, offset)

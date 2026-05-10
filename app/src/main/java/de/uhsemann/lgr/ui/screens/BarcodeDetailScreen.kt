@@ -25,6 +25,11 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
     val swipeThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
     var dragTotal by remember(currentIndex) { mutableStateOf(0f) }
 
+    val ownerName by produceState<String?>(null, state.data?.owner) {
+        val ownerUrl = state.data?.owner
+        value = if (ownerUrl != null) viewModel.resolveOwnerName(ownerUrl) else null
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -39,18 +44,18 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
+                },
+                actions = {
+                    state.data?.let { barcode ->
+                        IconButton(onClick = {
+                            viewModel.toggleBarcodeSelection(barcode.code)
+                            onBack()
+                        }) {
+                            Icon(Icons.Default.ShoppingCart, contentDescription = "Select for Loan")
+                        }
+                    }
                 }
             )
-        },
-        floatingActionButton = {
-            state.data?.let { barcode ->
-                FloatingActionButton(onClick = {
-                    viewModel.toggleBarcodeSelection(barcode.code)
-                    onBack()
-                }) {
-                    Icon(Icons.Default.ShoppingCart, contentDescription = "Select for Loan")
-                }
-            }
         }
     ) { padding ->
         Box(
@@ -91,7 +96,7 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                                 .padding(24.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            DetailRow(label = "Code", value = barcode.code)
+                            DetailRow(label = "Barcode", value = barcode.code)
                             DetailRow(label = "Item", value = barcode.itemName)
                             if (barcode.itemDescription.isNotBlank()) {
                                 DetailRow(label = "Item description", value = barcode.itemDescription)
@@ -100,7 +105,7 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit) {
                                 DetailRow(label = "Description", value = barcode.description)
                             }
                             if (barcode.owner != null) {
-                                DetailRow(label = "Owner", value = barcode.owner)
+                                DetailRow(label = "Owner", value = ownerName ?: "…")
                             }
                             if (barcode.code in viewModel.selectedBarcodes) {
                                 Text(

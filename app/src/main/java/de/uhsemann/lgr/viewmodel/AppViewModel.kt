@@ -52,6 +52,20 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val username get() = auth.data?.username
 
     private var searchJob: Job? = null
+    private val ownerNameCache = mutableMapOf<String, String>()
+
+    suspend fun resolveOwnerName(url: String): String =
+        ownerNameCache.getOrPut(url) {
+            runCatching { repo.getPersonByUrl(url) }
+                .getOrNull()
+                ?.let { p ->
+                    listOf(p.firstname, p.lastname)
+                        .filter { it.isNotBlank() }
+                        .joinToString(" ")
+                        .ifBlank { p.nickname }
+                }
+                ?: url
+        }
 
     init {
         if (serverUrl.isNotEmpty()) {

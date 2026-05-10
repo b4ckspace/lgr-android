@@ -41,6 +41,9 @@ interface ApiService {
     @GET
     suspend fun getPersonsPage(@Url url: String): PagedResponse<Person>
 
+    @GET
+    suspend fun getPersonByUrl(@Url url: String): Person
+
     @GET("api/items/")
     suspend fun getItems(
         @Query("search") search: String? = null,
