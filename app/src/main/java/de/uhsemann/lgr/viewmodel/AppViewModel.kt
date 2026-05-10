@@ -40,6 +40,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     var selectedBarcodes by mutableStateOf<Set<String>>(emptySet())
     var loanState by mutableStateOf(UiState<LoanResponse>())
+    var scannedBarcode by mutableStateOf(UiState<Barcode>())
 
     val isAuthenticated get() = auth.data?.authenticated == true
     val username get() = auth.data?.username
@@ -205,6 +206,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 }
         }
     }
+
+    fun loadBarcode(code: String) = viewModelScope.launch {
+        scannedBarcode = UiState(isLoading = true)
+        runCatching { repo.getBarcode(code) }
+            .onSuccess { scannedBarcode = UiState(data = it) }
+            .onFailure { scannedBarcode = UiState(error = it.localizedMessage) }
+    }
+
+    fun clearScannedBarcode() { scannedBarcode = UiState() }
 
     fun toggleBarcodeSelection(code: String) {
         selectedBarcodes = if (code in selectedBarcodes) selectedBarcodes - code else selectedBarcodes + code

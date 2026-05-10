@@ -1,5 +1,6 @@
 package de.uhsemann.lgr.ui.navigation
 
+import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -15,12 +16,15 @@ import de.uhsemann.lgr.ui.screens.*
 import de.uhsemann.lgr.viewmodel.AppViewModel
 
 private sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
+    object Home : Screen("home", "Home", Icons.Default.Home)
     object Items : Screen("items", "Items", Icons.Default.Inventory)
     object Barcodes : Screen("barcodes", "Barcodes", Icons.Default.QrCode)
     object Persons : Screen("persons", "Persons", Icons.Default.People)
     object Loans : Screen("loans", "Loans", Icons.Default.List)
     object MyLoans : Screen("my_loans", "My Loans", Icons.Default.AccountCircle)
 }
+
+private val fullScreenRoutes = setOf("scan", "barcode_detail")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,7 +33,10 @@ fun AppNavigation(viewModel: AppViewModel) {
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
 
+    val showChrome = fullScreenRoutes.none { currentRoute?.startsWith(it) == true }
+
     val tabs = buildList {
+        add(Screen.Home)
         add(Screen.Items)
         add(Screen.Barcodes)
         add(Screen.Persons)
@@ -39,44 +46,71 @@ fun AppNavigation(viewModel: AppViewModel) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("LGR — ${viewModel.username ?: ""}") },
-                actions = {
-                    TextButton(onClick = { viewModel.logout() }) {
-                        Text("Logout")
+            if (showChrome) {
+                TopAppBar(
+                    title = { Text("LGR — ${viewModel.username ?: ""}") },
+                    actions = {
+                        TextButton(onClick = { viewModel.logout() }) {
+                            Text("Logout")
+                        }
                     }
-                }
-            )
+                )
+            }
         },
         bottomBar = {
-            NavigationBar {
-                tabs.forEach { screen ->
-                    NavigationBarItem(
-                        icon = { Icon(screen.icon, contentDescription = screen.label) },
-                        label = { Text(screen.label) },
-                        selected = currentRoute == screen.route,
-                        onClick = {
-                            navController.navigate(screen.route) {
-                                popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
+            if (showChrome) {
+                NavigationBar {
+                    tabs.forEach { screen ->
+                        NavigationBarItem(
+                            icon = { Icon(screen.icon, contentDescription = screen.label) },
+                            label = { Text(screen.label) },
+                            selected = currentRoute == screen.route,
+                            onClick = {
+                                navController.navigate(screen.route) {
+                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
     ) { padding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Barcodes.route,
+            startDestination = Screen.Home.route,
             modifier = Modifier.padding(padding)
         ) {
+            composable(Screen.Home.route) {
+                HomeScreen(onScanBarcode = {
+                    viewModel.clearScannedBarcode()
+                    navController.navigate("scan")
+                })
+            }
             composable(Screen.Items.route) { ItemsScreen(viewModel) }
             composable(Screen.Barcodes.route) { BarcodesScreen(viewModel) }
             composable(Screen.Persons.route) { PersonsScreen(viewModel) }
             composable(Screen.Loans.route) { LoansScreen(viewModel) }
             composable(Screen.MyLoans.route) { MyLoansScreen(viewModel) }
+            composable("scan") {
+                BarcodeScanScreen(
+                    onBarcodeDetected = { code ->
+                        viewModel.loadBarcode(code)
+                        navController.navigate("barcode_detail") {
+                            popUpTo("scan") { inclusive = true }
+                        }
+                    },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable("barcode_detail") {
+                BarcodeDetailScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }
