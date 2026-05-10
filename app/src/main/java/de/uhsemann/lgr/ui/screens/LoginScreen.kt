@@ -25,12 +25,16 @@ fun LoginScreen(viewModel: AppViewModel) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var loginAttempted by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val authState = viewModel.auth
 
     fun doLogin() {
         if (serverUrl.isNotBlank()) viewModel.applyServerUrl(serverUrl)
-        if (username.isNotBlank() && password.isNotBlank()) viewModel.login(username, password)
+        if (username.isNotBlank() && password.isNotBlank()) {
+            loginAttempted = true
+            viewModel.login(username, password)
+        }
     }
 
     Column(
@@ -89,7 +93,7 @@ fun LoginScreen(viewModel: AppViewModel) {
 
         val errorMsg = when {
             authState.error != null -> authState.error
-            authState.data?.authenticated == false -> "Login failed — check username and password"
+            loginAttempted && authState.data?.authenticated == false -> "Login failed — check username and password"
             else -> null
         }
         if (errorMsg != null) {
