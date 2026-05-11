@@ -283,12 +283,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         if (errors.isEmpty()) {
-            saveContentState = UiState(data = Unit)
+            val keptChildren = children.filter { it.code in scannedChildCodes }
+            val addedChildren = newScannedBarcodes.map { b ->
+                ChildInfo(name = "${b.itemName} (${b.code})", code = b.code)
+            }
             scannedChildCodes = emptySet()
             newScannedBarcodes = emptyList()
             contentScanActive = false
-            val refreshed = runCatching { repo.getBarcode(parentBarcode.code) }.getOrNull()
-            if (refreshed != null) scannedBarcode = UiState(data = refreshed)
+            saveContentState = UiState(data = Unit)
+            scannedBarcode = UiState(data = parentBarcode.copy(apiChildNames = keptChildren + addedChildren))
         } else {
             saveContentState = UiState(error = errors.joinToString("\n"))
         }
