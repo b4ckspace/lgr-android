@@ -2,6 +2,8 @@ package de.uhsemann.lgr.data.repository
 
 import de.uhsemann.lgr.data.api.ApiClient
 import de.uhsemann.lgr.data.model.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class LgrRepository {
     private val api get() = ApiClient.getService()
@@ -21,9 +23,8 @@ class LgrRepository {
     suspend fun getBarcodeByUrl(url: String) = api.getBarcodeByUrl(url)
 
     suspend fun patchBarcodeParent(url: String, parentUrl: String?) {
-        val body = com.google.gson.JsonObject()
-        if (parentUrl != null) body.addProperty("parent", parentUrl)
-        else body.add("parent", com.google.gson.JsonNull.INSTANCE)
+        val json = if (parentUrl != null) "{\"parent\":\"$parentUrl\"}" else "{\"parent\":null}"
+        val body = json.toRequestBody("application/json; charset=utf-8".toMediaType())
         api.patchBarcode(url, body)
     }
     suspend fun createBarcode(request: CreateBarcodeRequest) = api.createBarcode(request)

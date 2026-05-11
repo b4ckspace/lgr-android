@@ -23,7 +23,7 @@ interface ApiService {
     ): PagedResponse<Barcode>
 
     @PATCH
-    suspend fun patchBarcode(@Url url: String, @Body body: com.google.gson.JsonObject): Barcode
+    suspend fun patchBarcode(@Url url: String, @Body body: okhttp3.RequestBody): Barcode
 
     @GET
     suspend fun getBarcodesPage(@Url url: String): PagedResponse<Barcode>
