@@ -297,13 +297,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             runCatching { repo.patchBarcodeParent(ApiClient.getBarcodeUrl(b.code), parentUrl) }
                 .onFailure { errors.add(it.localizedMessage ?: b.code) }
         }
-        for (child in children.filter { it.code !in scannedChildCodes }) {
+        for (child in children.filter { it.code !in scannedChildCodes && childLoanInfos[it.code]?.loan != true }) {
             runCatching { repo.patchBarcodeParent(ApiClient.getBarcodeUrl(child.code), null) }
                 .onFailure { errors.add(it.localizedMessage ?: child.code) }
         }
 
         if (errors.isEmpty()) {
-            val keptChildren = children.filter { it.code in scannedChildCodes }
+            val keptChildren = children.filter { it.code in scannedChildCodes || childLoanInfos[it.code]?.loan == true }
             val addedChildren = newScannedBarcodes.map { b ->
                 ChildInfo(name = "${b.itemName} (${b.code})", code = b.code)
             }
