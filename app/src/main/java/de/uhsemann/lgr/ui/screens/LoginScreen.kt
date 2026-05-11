@@ -121,5 +121,13 @@ fun LoginScreen(viewModel: AppViewModel) {
                 Text("Login")
             }
         }
+        Spacer(Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = { viewModel.enterReadonlyMode(serverUrl) },
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            enabled = serverUrl.isNotBlank()
+        ) {
+            Text("Browse without login")
+        }
     }
 }

@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             LgrTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    if (viewModel.auth.data?.authenticated == true) {
+                    if (viewModel.auth.data?.authenticated == true || viewModel.readonlyMode) {
                         AppNavigation(viewModel)
                     } else {
                         // LoginScreen stays mounted during loading so remember{} state is preserved

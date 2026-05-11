@@ -72,12 +72,14 @@ fun BarcodeDetailScreen(
                     }
                 },
                 actions = {
-                    state.data?.let { barcode ->
-                        IconButton(onClick = {
-                            viewModel.toggleBarcodeSelection(barcode.code)
-                            onBack()
-                        }) {
-                            Icon(Icons.Default.ShoppingCart, contentDescription = "Select for Loan")
+                    if (!viewModel.readonlyMode) {
+                        state.data?.let { barcode ->
+                            IconButton(onClick = {
+                                viewModel.toggleBarcodeSelection(barcode.code)
+                                onBack()
+                            }) {
+                                Icon(Icons.Default.ShoppingCart, contentDescription = "Select for Loan")
+                            }
                         }
                     }
                 }
@@ -96,7 +98,7 @@ fun BarcodeDetailScreen(
                                     viewModel.navigateToBarcodeInList(currentIndex + 1)
                                 barcodeList != null && dragTotal > swipeThresholdPx && currentIndex > 0 ->
                                     viewModel.navigateToBarcodeInList(currentIndex - 1)
-                                barcodeList == null && dragTotal < -swipeThresholdPx ->
+                                barcodeList == null && dragTotal < -swipeThresholdPx && viewModel.barcodeForwardHistory.isNotEmpty() ->
                                     viewModel.navigateForward()
                             }
                             dragTotal = 0f
@@ -166,12 +168,14 @@ fun BarcodeDetailScreen(
                             }
                         }
 
-                        HorizontalDivider()
-                        ContentButtonsSection(
-                            viewModel = viewModel,
-                            barcode = barcode,
-                            onScanContent = onScanContent
-                        )
+                        if (!viewModel.readonlyMode) {
+                            HorizontalDivider()
+                            ContentButtonsSection(
+                                viewModel = viewModel,
+                                barcode = barcode,
+                                onScanContent = onScanContent
+                            )
+                        }
 
                         if (barcodeList != null) {
                             HorizontalDivider()
@@ -228,16 +232,18 @@ private fun LocationSection(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            IconButton(
-                onClick = onScanParent,
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    Icons.Default.QrCodeScanner,
-                    contentDescription = "Scan new parent",
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+            if (!viewModel.readonlyMode) {
+                IconButton(
+                    onClick = onScanParent,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.QrCodeScanner,
+                        contentDescription = "Scan new parent",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
         Spacer(Modifier.height(2.dp))
@@ -318,7 +324,7 @@ private fun BreadcrumbList(
                     Text("› ", style = MaterialTheme.typography.bodyLarge, color = GREY)
                 }
                 val linkColor = if (info.code in highlightCodes) GREEN
-                                else MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
                 Text(
                     text = buildAnnotatedString {
                         append(info.name.removeSuffix(" (${info.code})"))
@@ -358,16 +364,18 @@ private fun ContentListSection(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            IconButton(
-                onClick = onAddContent,
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    Icons.Default.QrCodeScanner,
-                    contentDescription = "Add contents",
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+            if (!viewModel.readonlyMode) {
+                IconButton(
+                    onClick = onAddContent,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.QrCodeScanner,
+                        contentDescription = "Add contents",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
 
@@ -422,7 +430,7 @@ private fun ContentButtonsSection(viewModel: AppViewModel, barcode: Barcode, onS
                 },
                 modifier = Modifier.weight(1f)
             ) {
-                Text("Scan content")
+                Text("Re-scan all content")
             }
 
             if (showSave) {

@@ -72,6 +72,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var saveParentState by mutableStateOf(UiState<Unit>())
         private set
 
+    var readonlyMode by mutableStateOf(false)
+        private set
+
     val isAuthenticated get() = auth.data?.authenticated == true
     val username get() = auth.data?.username
 
@@ -104,6 +107,20 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         prefs.edit().putString("server_url", url).apply()
         ApiClient.reset()
         ApiClient.configure(url)
+    }
+
+    fun enterReadonlyMode(url: String) {
+        if (url.isNotBlank()) {
+            serverUrl = url
+            prefs.edit().putString("server_url", url).apply()
+            ApiClient.reset()
+            ApiClient.configure(url)
+        }
+        readonlyMode = true
+    }
+
+    fun exitReadonlyMode() {
+        readonlyMode = false
     }
 
     fun resetLoanState() { loanState = UiState() }

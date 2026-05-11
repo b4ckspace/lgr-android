@@ -49,7 +49,11 @@ fun AppNavigation(viewModel: AppViewModel) {
                 TopAppBar(
                     title = { Text("LGR — ${viewModel.username ?: ""}") },
                     actions = {
-                        TextButton(onClick = { viewModel.logout() }) { Text("Logout") }
+                        if (viewModel.readonlyMode) {
+                            TextButton(onClick = { viewModel.exitReadonlyMode() }) { Text("Login") }
+                        } else {
+                            TextButton(onClick = { viewModel.logout() }) { Text("Logout") }
+                        }
                     }
                 )
             }
