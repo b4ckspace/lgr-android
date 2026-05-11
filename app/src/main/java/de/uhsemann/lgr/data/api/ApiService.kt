@@ -57,8 +57,18 @@ interface ApiService {
         @Query("offset") offset: Int = 0
     ): PagedResponse<Item>
 
+    @POST("api/items/")
+    suspend fun createItem(@Body request: CreateItemRequest): Item
+
     @GET
     suspend fun getItemsPage(@Url url: String): PagedResponse<Item>
+
+    @GET("api/barcodes/")
+    suspend fun getBarcodesByItem(
+        @Query("item") itemUrl: String,
+        @Query("limit") limit: Int = 1,
+        @Query("offset") offset: Int = 0
+    ): PagedResponse<Barcode>
 
     @GET("api/tags/")
     suspend fun getTags(

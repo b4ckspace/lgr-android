@@ -38,6 +38,15 @@ class LgrRepository {
     suspend fun getItems(search: String? = null, limit: Int = 50, offset: Int = 0) =
         api.getItems(search.takeIf { !it.isNullOrBlank() }, limit, offset)
 
+    suspend fun createItem(name: String, description: String = "") =
+        api.createItem(CreateItemRequest(name, description))
+
+    suspend fun getBarcodeCountForItem(itemUrl: String): Int {
+        // DRF expects the PK, not the full URL, for related field filtering
+        val pk = itemUrl.trimEnd('/').split('/').lastOrNull { it.isNotEmpty() } ?: return 0
+        return runCatching { api.getBarcodesByItem(pk, limit = 1).count }.getOrDefault(0)
+    }
+
     suspend fun getItemsPage(url: String) = api.getItemsPage(url)
 
     suspend fun getTags() = api.getTags()

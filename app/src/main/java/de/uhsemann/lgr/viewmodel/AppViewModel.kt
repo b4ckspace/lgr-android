@@ -11,6 +11,7 @@ import de.uhsemann.lgr.data.repository.LgrRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -74,6 +75,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     var readonlyMode by mutableStateOf(false)
         private set
+    var newBarcodeState by mutableStateOf(UiState<Barcode>())
+        private set
+    var scannedCodeForNewBarcode by mutableStateOf<String?>(null)
+        private set
 
     val isAuthenticated get() = auth.data?.authenticated == true
     val username get() = auth.data?.username
@@ -107,6 +112,67 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         prefs.edit().putString("server_url", url).apply()
         ApiClient.reset()
         ApiClient.configure(url)
+    }
+
+    fun clearNewBarcodeState() {
+        newBarcodeState = UiState()
+        scannedCodeForNewBarcode = null
+        clearPendingNewParent()
+    }
+
+    fun onNewBarcodeCodeScanned(code: String) {
+        scannedCodeForNewBarcode = code
+    }
+
+    suspend fun searchItemsWithCounts(query: String): List<Pair<Item, Int>> {
+        if (query.isBlank()) return emptyList()
+        val items = runCatching { repo.getItems(search = query, limit = 10) }
+            .getOrNull()?.results ?: return emptyList()
+        return coroutineScope {
+            items.map { item ->
+                async { item to repo.getBarcodeCountForItem(item.url) }
+            }.awaitAll()
+        }
+    }
+
+    fun createNewBarcode(
+        code: String,
+        itemName: String,
+        selectedItem: Item?,
+        description: String,
+        parentCode: String
+    ) = viewModelScope.launch {
+        newBarcodeState = UiState(isLoading = true)
+
+        val itemUrl = if (selectedItem != null) {
+            selectedItem.url
+        } else {
+            val existing = runCatching { repo.getItems(search = itemName, limit = 50) }
+                .getOrNull()?.results?.find { it.name.equals(itemName, ignoreCase = true) }
+            existing?.url ?: runCatching { repo.createItem(itemName) }
+                .getOrElse { newBarcodeState = UiState(error = it.localizedMessage); return@launch }
+                .url
+        }
+
+        val parentUrl = if (parentCode.isNotBlank()) ApiClient.getBarcodeUrl(parentCode) else null
+
+        runCatching {
+            repo.createBarcode(CreateBarcodeRequest(code = code, item = itemUrl, description = description, parent = parentUrl))
+        }.onSuccess { barcode ->
+            scannedBarcode = UiState(data = barcode)
+            barcodeHistory = emptyList()
+            barcodeForwardHistory = emptyList()
+            barcodeListContext = null
+            childLoanInfos = emptyMap()
+            contentScanActive = false
+            addContentScanActive = false
+            saveContentState = UiState()
+            pendingNewParent = null
+            saveParentState = UiState()
+            newBarcodeState = UiState(data = barcode)
+        }.onFailure {
+            newBarcodeState = UiState(error = it.localizedMessage)
+        }
     }
 
     fun enterReadonlyMode(url: String) {

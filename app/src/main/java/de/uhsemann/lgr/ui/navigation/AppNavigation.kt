@@ -23,7 +23,7 @@ private sealed class Screen(val route: String, val label: String, val icon: Imag
     object MyLoans : Screen("my_loans", "My Loans", Icons.Default.AccountCircle)
 }
 
-private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan")
+private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,11 +85,17 @@ fun AppNavigation(viewModel: AppViewModel) {
             modifier = Modifier.padding(padding)
         ) {
             composable(Screen.Home.route) {
-                HomeScreen(onScanBarcode = {
-                    viewModel.clearScannedBarcode()
-                    viewModel.clearBarcodeListContext()
-                    navController.navigate("scan")
-                })
+                HomeScreen(
+                    onScanBarcode = {
+                        viewModel.clearScannedBarcode()
+                        viewModel.clearBarcodeListContext()
+                        navController.navigate("scan")
+                    },
+                    onNewBarcode = {
+                        viewModel.clearNewBarcodeState()
+                        navController.navigate("new_barcode")
+                    }
+                )
             }
             composable(Screen.Items.route) { ItemsScreen(viewModel) }
             composable(Screen.Barcodes.route) {
@@ -138,6 +144,39 @@ fun AppNavigation(viewModel: AppViewModel) {
                     viewModel = viewModel,
                     onDone = { navController.popBackStack() },
                     addOnly = true
+                )
+            }
+            composable("new_barcode") {
+                NewBarcodeScreen(
+                    viewModel = viewModel,
+                    onBack = {
+                        viewModel.clearNewBarcodeState()
+                        navController.popBackStack()
+                    },
+                    onScanCode = { navController.navigate("new_barcode_scan_code") },
+                    onScanParent = { navController.navigate("new_barcode_scan_parent") },
+                    onCreated = {
+                        navController.navigate("barcode_detail") {
+                            popUpTo("new_barcode") { inclusive = true }
+                        }
+                    }
+                )
+            }
+            composable("new_barcode_scan_code") {
+                RawBarcodeScanScreen(
+                    label = "Scan barcode of new entry",
+                    onScanned = { code ->
+                        viewModel.onNewBarcodeCodeScanned(code)
+                        navController.popBackStack()
+                    },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable("new_barcode_scan_parent") {
+                ScanParentScreen(
+                    viewModel = viewModel,
+                    onParentScanned = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() }
                 )
             }
         }

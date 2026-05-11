@@ -97,3 +97,8 @@ data class CreateBarcodeRequest(
     val owner: String? = null,
     val parent: String? = null
 )
+
+data class CreateItemRequest(
+    val name: String,
+    val description: String = ""
+)
