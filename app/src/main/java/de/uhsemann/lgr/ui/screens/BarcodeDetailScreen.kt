@@ -1,5 +1,7 @@
 package de.uhsemann.lgr.ui.screens
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,6 +28,8 @@ import de.uhsemann.lgr.viewmodel.AppViewModel
 
 private val GREY = Color(0xFF9E9E9E)
 private val GREEN = Color(0xFF4CAF50)
+private val RED = Color(0xFFE53935)
+private val LOAN_BLUE = Color(0xFF1976D2)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +44,13 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanConte
         val ownerUrl = state.data?.owner
         value = if (ownerUrl != null) viewModel.resolveOwnerName(ownerUrl) else null
     }
+
+    BackHandler(enabled = viewModel.barcodeHistory.isNotEmpty()) {
+        val prevCode = viewModel.popBarcodeHistory() ?: return@BackHandler
+        viewModel.loadBarcode(prevCode)
+    }
+
+    val onBarcodeClick: (String) -> Unit = { code -> viewModel.navigateToBarcode(code) }
 
     Scaffold(
         topBar = {
@@ -106,7 +117,8 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanConte
                             item {
                                 BreadcrumbRow(
                                     label = "Location",
-                                    ancestors = barcode.apiParentNames ?: emptyList()
+                                    ancestors = barcode.apiParentNames ?: emptyList(),
+                                    onBarcodeClick = onBarcodeClick
                                 )
                             }
 
@@ -123,7 +135,7 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanConte
                                     val text = if (loan.loan)
                                         "On loan${loan.person?.let { " — $it" } ?: ""}"
                                     else "Available"
-                                    val color = if (loan.loan) Color(0xFFE65100) else Color(0xFF4CAF50)
+                                    val color = if (loan.loan) LOAN_BLUE else Color(0xFF4CAF50)
                                     DetailRow("Loan", text, valueColor = color)
                                 }
                             }
@@ -136,17 +148,22 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanConte
                                     )
                                 }
 
-                            // Contents section
                             item {
-                                ContentSection(
+                                ContentListSection(
                                     viewModel = viewModel,
                                     barcode = barcode,
-                                    onScanContent = onScanContent
+                                    onBarcodeClick = onBarcodeClick
                                 )
                             }
                         }
 
-                        // Prev / Next navigation bar
+                        HorizontalDivider()
+                        ContentButtonsSection(
+                            viewModel = viewModel,
+                            barcode = barcode,
+                            onScanContent = onScanContent
+                        )
+
                         if (barcodeList != null) {
                             HorizontalDivider()
                             Row(
@@ -180,33 +197,45 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanConte
 }
 
 @Composable
-private fun BreadcrumbRow(label: String, ancestors: List<ChildInfo>) {
+private fun BreadcrumbRow(label: String, ancestors: List<ChildInfo>, onBarcodeClick: (String) -> Unit) {
     Column {
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(2.dp))
         if (ancestors.isEmpty()) {
             Text("—", style = MaterialTheme.typography.bodyLarge)
         } else {
-            Text(
-                text = buildAnnotatedString {
-                    ancestors.forEachIndexed { i, info ->
-                        if (i > 0) append(" › ")
-                        append(info.name.removeSuffix(" (${info.code})"))
-                        append(" ")
-                        withStyle(SpanStyle(color = GREY)) { append("(${info.code})") }
+            val reversed = ancestors.reversed()
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                reversed.forEachIndexed { i, info ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (i > 0) {
+                            Text(
+                                "› ",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = GREY
+                            )
+                        }
+                        Text(
+                            text = buildAnnotatedString {
+                                append(info.name.removeSuffix(" (${info.code})"))
+                                append(" ")
+                                withStyle(SpanStyle(color = GREY)) { append("(${info.code})") }
+                            },
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.clickable { onBarcodeClick(info.code) }
+                        )
                     }
-                },
-                style = MaterialTheme.typography.bodyLarge
-            )
+                }
+            }
         }
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
     }
 }
 
 @Composable
-private fun ContentSection(viewModel: AppViewModel, barcode: Barcode, onScanContent: () -> Unit) {
+private fun ContentListSection(viewModel: AppViewModel, barcode: Barcode, onBarcodeClick: (String) -> Unit) {
     val scanActive = viewModel.contentScanActive
-    val saveState = viewModel.saveContentState
     val existingChildren = barcode.apiChildNames ?: emptyList()
     val totalCount = existingChildren.size + viewModel.newScannedBarcodes.size
 
@@ -221,13 +250,15 @@ private fun ContentSection(viewModel: AppViewModel, barcode: Barcode, onScanCont
             val color = when {
                 !scanActive -> MaterialTheme.colorScheme.onSurface
                 child.code in viewModel.scannedChildCodes -> MaterialTheme.colorScheme.onSurface
-                else -> GREY
+                viewModel.childLoanInfos[child.code]?.loan == true -> GREY
+                else -> RED
             }
             ChildRow(
                 itemName = child.name.removeSuffix(" (${child.code})"),
                 code = child.code,
                 color = color,
-                loanInfo = viewModel.childLoanInfos[child.code]
+                loanInfo = viewModel.childLoanInfos[child.code],
+                onClick = { onBarcodeClick(child.code) }
             )
         }
 
@@ -236,16 +267,26 @@ private fun ContentSection(viewModel: AppViewModel, barcode: Barcode, onScanCont
                 itemName = child.itemName,
                 code = child.code,
                 color = GREEN,
-                loanInfo = child.apiLoanInfo
+                loanInfo = child.apiLoanInfo,
+                onClick = { onBarcodeClick(child.code) }
             )
         }
 
         if (existingChildren.isEmpty() && viewModel.newScannedBarcodes.isEmpty()) {
             Text("—", style = MaterialTheme.typography.bodyLarge)
         }
+    }
+}
 
-        HorizontalDivider()
+@Composable
+private fun ContentButtonsSection(viewModel: AppViewModel, barcode: Barcode, onScanContent: () -> Unit) {
+    val scanActive = viewModel.contentScanActive
+    val saveState = viewModel.saveContentState
 
+    Column(
+        modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(
                 onClick = {
@@ -281,8 +322,18 @@ private fun ContentSection(viewModel: AppViewModel, barcode: Barcode, onScanCont
 }
 
 @Composable
-private fun ChildRow(itemName: String, code: String, color: Color, loanInfo: LoanInfo? = null) {
-    Column(modifier = Modifier.padding(vertical = 2.dp)) {
+private fun ChildRow(
+    itemName: String,
+    code: String,
+    color: Color,
+    loanInfo: LoanInfo? = null,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .padding(vertical = 2.dp)
+    ) {
         Text(
             text = buildAnnotatedString {
                 withStyle(SpanStyle(color = color)) { append(itemName) }
@@ -297,7 +348,7 @@ private fun ChildRow(itemName: String, code: String, color: Color, loanInfo: Loa
             Text(
                 text = "On loan${loanInfo.person?.let { " — $it" } ?: ""}",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFFE65100)
+                color = LOAN_BLUE
             )
         }
     }

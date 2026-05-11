@@ -102,10 +102,8 @@ fun AppNavigation(viewModel: AppViewModel) {
             composable(Screen.MyLoans.route) { MyLoansScreen(viewModel) }
             composable("scan") {
                 BarcodeScanScreen(
-                    onBarcodeDetected = { code ->
-                        viewModel.loadBarcode(code)
-                        navController.navigate("barcode_detail")
-                    },
+                    viewModel = viewModel,
+                    onBarcodeDetected = { navController.navigate("barcode_detail") },
                     onBack = { navController.popBackStack() }
                 )
             }

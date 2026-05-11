@@ -30,6 +30,8 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import de.uhsemann.lgr.viewmodel.AppViewModel
+import de.uhsemann.lgr.viewmodel.ScanResult
+import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -39,6 +41,7 @@ fun ContentScanScreen(viewModel: AppViewModel, onDone: () -> Unit) {
     val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
     val cooldown = remember { AtomicBoolean(false) }
     val handler = remember { Handler(Looper.getMainLooper()) }
+    val scope = rememberCoroutineScope()
     var scanFlash by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -78,12 +81,32 @@ fun ContentScanScreen(viewModel: AppViewModel, onDone: () -> Unit) {
                                         barcodes.firstOrNull()?.rawValue?.let { code ->
                                             if (cooldown.compareAndSet(false, true)) {
                                                 scanFlash = true
-                                                viewModel.onContentBarcodeScanned(code)
-                                                try {
-                                                    val tg = ToneGenerator(AudioManager.STREAM_SYSTEM, 80)
-                                                    tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
-                                                    handler.postDelayed({ tg.release() }, 300)
-                                                } catch (_: Exception) {}
+                                                scope.launch {
+                                                    val result = viewModel.onContentBarcodeScanned(code)
+                                                    try {
+                                                        val tg = ToneGenerator(AudioManager.STREAM_SYSTEM, 80)
+                                                        when (result) {
+                                                            ScanResult.FOUND_NEW, ScanResult.FOUND_EXISTING -> {
+                                                                tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
+                                                                handler.postDelayed({ tg.release() }, 300)
+                                                            }
+                                                            ScanResult.DUPLICATE -> {
+                                                                tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
+                                                                handler.postDelayed({
+                                                                    tg.startTone(ToneGenerator.TONE_DTMF_A, 80)
+                                                                    handler.postDelayed({
+                                                                        tg.startTone(ToneGenerator.TONE_DTMF_A, 80)
+                                                                        handler.postDelayed({ tg.release() }, 200)
+                                                                    }, 150)
+                                                                }, 200)
+                                                            }
+                                                            ScanResult.NOT_FOUND -> {
+                                                                tg.startTone(ToneGenerator.TONE_PROP_NACK, 300)
+                                                                handler.postDelayed({ tg.release() }, 500)
+                                                            }
+                                                        }
+                                                    } catch (_: Exception) {}
+                                                }
                                                 handler.postDelayed({
                                                     scanFlash = false
                                                     cooldown.set(false)

@@ -20,6 +20,8 @@ data class UiState<T>(
     val error: String? = null
 )
 
+enum class ScanResult { FOUND_NEW, FOUND_EXISTING, DUPLICATE, NOT_FOUND }
+
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val prefs = application.getSharedPreferences("lgr_prefs", Context.MODE_PRIVATE)
     private val repo = LgrRepository()
@@ -58,6 +60,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var barcodeListContext by mutableStateOf<List<Barcode>?>(null)
         private set
     var barcodeListIndex by mutableStateOf(0)
+        private set
+    var barcodeHistory by mutableStateOf<List<String>>(emptyList())
         private set
 
     val isAuthenticated get() = auth.data?.authenticated == true
@@ -266,7 +270,24 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun clearScannedBarcode() { scannedBarcode = UiState() }
+    fun clearScannedBarcode() {
+        scannedBarcode = UiState()
+        barcodeHistory = emptyList()
+    }
+
+    fun navigateToBarcode(code: String) {
+        val currentCode = scannedBarcode.data?.code ?: return
+        barcodeHistory = (barcodeHistory + currentCode).takeLast(20)
+        barcodeListContext = null
+        loadBarcode(code)
+    }
+
+    fun popBarcodeHistory(): String? {
+        if (barcodeHistory.isEmpty()) return null
+        val prev = barcodeHistory.last()
+        barcodeHistory = barcodeHistory.dropLast(1)
+        return prev
+    }
 
     fun startContentScan() {
         scannedChildCodes = emptySet()
@@ -275,16 +296,36 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         saveContentState = UiState()
     }
 
-    fun onContentBarcodeScanned(code: String) = viewModelScope.launch {
-        val currentBarcode = scannedBarcode.data ?: return@launch
-        if (code in scannedChildCodes || newScannedBarcodes.any { it.code == code }) return@launch
+    suspend fun onContentBarcodeScanned(code: String): ScanResult {
+        val currentBarcode = scannedBarcode.data ?: return ScanResult.NOT_FOUND
+        if (code in scannedChildCodes || newScannedBarcodes.any { it.code == code }) return ScanResult.DUPLICATE
         val isExistingChild = currentBarcode.apiChildNames?.any { it.code == code } == true
-        if (isExistingChild) {
+        return if (isExistingChild) {
             scannedChildCodes = scannedChildCodes + code
+            ScanResult.FOUND_EXISTING
         } else {
-            val b = runCatching { repo.getBarcode(code) }.getOrNull() ?: return@launch
+            val b = runCatching { repo.getBarcode(code) }.getOrNull() ?: return ScanResult.NOT_FOUND
             newScannedBarcodes = newScannedBarcodes + b
+            ScanResult.FOUND_NEW
         }
+    }
+
+    suspend fun tryLoadBarcode(code: String): Boolean {
+        barcodeHistory = emptyList()
+        childLoanJob?.cancel()
+        childLoanInfos = emptyMap()
+        scannedBarcode = UiState(isLoading = true)
+        scannedChildCodes = emptySet()
+        newScannedBarcodes = emptyList()
+        contentScanActive = false
+        saveContentState = UiState()
+        return runCatching { repo.getBarcode(code) }
+            .onSuccess { barcode ->
+                scannedBarcode = UiState(data = barcode)
+                loadChildLoanInfos(barcode.apiChildNames ?: emptyList())
+            }
+            .onFailure { scannedBarcode = UiState() }
+            .isSuccess
     }
 
     fun saveContentChanges(parentBarcode: Barcode) = viewModelScope.launch {
@@ -323,6 +364,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun openBarcodeFromList(list: List<Barcode>, index: Int) {
+        barcodeHistory = emptyList()
         barcodeListContext = list
         barcodeListIndex = index
         loadBarcode(list[index].code)
@@ -331,6 +373,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun navigateToBarcodeInList(index: Int) {
         val list = barcodeListContext ?: return
         if (index !in list.indices) return
+        barcodeHistory = emptyList()
         barcodeListIndex = index
         loadBarcode(list[index].code)
     }

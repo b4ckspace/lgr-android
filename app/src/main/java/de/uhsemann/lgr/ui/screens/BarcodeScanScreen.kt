@@ -1,6 +1,10 @@
 package de.uhsemann.lgr.ui.screens
 
 import android.Manifest
+import android.media.AudioManager
+import android.media.ToneGenerator
+import android.os.Handler
+import android.os.Looper
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.camera.core.CameraSelector
@@ -28,14 +32,17 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
+import de.uhsemann.lgr.viewmodel.AppViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun BarcodeScanScreen(onBarcodeDetected: (String) -> Unit, onBack: () -> Unit) {
-    val context = LocalContext.current
+fun BarcodeScanScreen(viewModel: AppViewModel, onBarcodeDetected: () -> Unit, onBack: () -> Unit) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
     val detected = remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val handler = remember { Handler(Looper.getMainLooper()) }
 
     LaunchedEffect(Unit) {
         if (!permissionState.status.isGranted) {
@@ -80,7 +87,24 @@ fun BarcodeScanScreen(onBarcodeDetected: (String) -> Unit, onBack: () -> Unit) {
                                         barcodes.firstOrNull()?.rawValue?.let { code ->
                                             if (!detected.value) {
                                                 detected.value = true
-                                                onBarcodeDetected(code)
+                                                scope.launch {
+                                                    val found = viewModel.tryLoadBarcode(code)
+                                                    if (found) {
+                                                        try {
+                                                            val tg = ToneGenerator(AudioManager.STREAM_SYSTEM, 80)
+                                                            tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
+                                                            handler.postDelayed({ tg.release() }, 300)
+                                                        } catch (_: Exception) {}
+                                                        onBarcodeDetected()
+                                                    } else {
+                                                        try {
+                                                            val tg = ToneGenerator(AudioManager.STREAM_SYSTEM, 80)
+                                                            tg.startTone(ToneGenerator.TONE_PROP_NACK, 300)
+                                                            handler.postDelayed({ tg.release() }, 500)
+                                                        } catch (_: Exception) {}
+                                                        detected.value = false
+                                                    }
+                                                }
                                             }
                                         }
                                     }
