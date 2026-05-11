@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun ContentScanScreen(viewModel: AppViewModel, onDone: () -> Unit) {
+fun ContentScanScreen(viewModel: AppViewModel, onDone: () -> Unit, addOnly: Boolean = false) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
     val cooldown = remember { AtomicBoolean(false) }
@@ -49,7 +49,10 @@ fun ContentScanScreen(viewModel: AppViewModel, onDone: () -> Unit) {
     }
 
     val scannedCount by remember {
-        derivedStateOf { viewModel.scannedChildCodes.size + viewModel.newScannedBarcodes.size }
+        derivedStateOf {
+            if (addOnly) viewModel.newScannedBarcodes.size
+            else viewModel.scannedChildCodes.size + viewModel.newScannedBarcodes.size
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -82,7 +85,8 @@ fun ContentScanScreen(viewModel: AppViewModel, onDone: () -> Unit) {
                                             if (cooldown.compareAndSet(false, true)) {
                                                 scanFlash = true
                                                 scope.launch {
-                                                    val result = viewModel.onContentBarcodeScanned(code)
+                                                    val result = if (addOnly) viewModel.onAddContentBarcodeScanned(code)
+                                                                 else viewModel.onContentBarcodeScanned(code)
                                                     try {
                                                         val tg = ToneGenerator(AudioManager.STREAM_SYSTEM, 80)
                                                         when (result) {

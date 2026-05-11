@@ -1,6 +1,5 @@
 package de.uhsemann.lgr.ui.navigation
 
-import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -24,7 +23,7 @@ private sealed class Screen(val route: String, val label: String, val icon: Imag
     object MyLoans : Screen("my_loans", "My Loans", Icons.Default.AccountCircle)
 }
 
-private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan")
+private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,9 +49,7 @@ fun AppNavigation(viewModel: AppViewModel) {
                 TopAppBar(
                     title = { Text("LGR — ${viewModel.username ?: ""}") },
                     actions = {
-                        TextButton(onClick = { viewModel.logout() }) {
-                            Text("Logout")
-                        }
+                        TextButton(onClick = { viewModel.logout() }) { Text("Logout") }
                     }
                 )
             }
@@ -111,13 +108,32 @@ fun AppNavigation(viewModel: AppViewModel) {
                 BarcodeDetailScreen(
                     viewModel = viewModel,
                     onBack = { navController.popBackStack() },
-                    onScanContent = { navController.navigate("content_scan") }
+                    onScanContent = { navController.navigate("content_scan") },
+                    onScanParent = { navController.navigate("scan_parent") },
+                    onAddContent = {
+                        viewModel.startAddContentScan()
+                        navController.navigate("add_content_scan")
+                    }
                 )
             }
             composable("content_scan") {
                 ContentScanScreen(
                     viewModel = viewModel,
                     onDone = { navController.popBackStack() }
+                )
+            }
+            composable("scan_parent") {
+                ScanParentScreen(
+                    viewModel = viewModel,
+                    onParentScanned = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable("add_content_scan") {
+                ContentScanScreen(
+                    viewModel = viewModel,
+                    onDone = { navController.popBackStack() },
+                    addOnly = true
                 )
             }
         }

@@ -51,6 +51,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var contentScanActive by mutableStateOf(false)
         private set
+    var addContentScanActive by mutableStateOf(false)
+        private set
     var saveContentState by mutableStateOf(UiState<Unit>())
         private set
     var childLoanInfos by mutableStateOf<Map<String, LoanInfo>>(emptyMap())
@@ -62,6 +64,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var barcodeListIndex by mutableStateOf(0)
         private set
     var barcodeHistory by mutableStateOf<List<String>>(emptyList())
+        private set
+    var barcodeForwardHistory by mutableStateOf<List<String>>(emptyList())
+        private set
+    var pendingNewParent by mutableStateOf<Barcode?>(null)
+        private set
+    var saveParentState by mutableStateOf(UiState<Unit>())
         private set
 
     val isAuthenticated get() = auth.data?.authenticated == true
@@ -98,9 +106,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         ApiClient.configure(url)
     }
 
-    fun resetLoanState() {
-        loanState = UiState()
-    }
+    fun resetLoanState() { loanState = UiState() }
 
     fun checkAuth() = viewModelScope.launch {
         auth = UiState(isLoading = true)
@@ -133,10 +139,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             if (!search.isNullOrBlank()) delay(300)
             items = UiState(isLoading = true)
             runCatching { repo.getItems(search) }
-                .onSuccess {
-                    items = UiState(data = it.results)
-                    itemsNextPage = it.next
-                }
+                .onSuccess { items = UiState(data = it.results); itemsNextPage = it.next }
                 .onFailure { items = UiState(error = it.localizedMessage) }
         }
     }
@@ -145,10 +148,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val next = itemsNextPage ?: return
         viewModelScope.launch {
             runCatching { repo.getItemsPage(next) }
-                .onSuccess {
-                    items = UiState(data = (items.data ?: emptyList()) + it.results)
-                    itemsNextPage = it.next
-                }
+                .onSuccess { items = UiState(data = (items.data ?: emptyList()) + it.results); itemsNextPage = it.next }
         }
     }
 
@@ -158,10 +158,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             if (!search.isNullOrBlank()) delay(300)
             barcodes = UiState(isLoading = true)
             runCatching { repo.getBarcodes(search) }
-                .onSuccess {
-                    barcodes = UiState(data = it.results)
-                    barcodesNextPage = it.next
-                }
+                .onSuccess { barcodes = UiState(data = it.results); barcodesNextPage = it.next }
                 .onFailure { barcodes = UiState(error = it.localizedMessage) }
         }
     }
@@ -170,10 +167,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val next = barcodesNextPage ?: return
         viewModelScope.launch {
             runCatching { repo.getBarcodesPage(next) }
-                .onSuccess {
-                    barcodes = UiState(data = (barcodes.data ?: emptyList()) + it.results)
-                    barcodesNextPage = it.next
-                }
+                .onSuccess { barcodes = UiState(data = (barcodes.data ?: emptyList()) + it.results); barcodesNextPage = it.next }
         }
     }
 
@@ -183,10 +177,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             if (!search.isNullOrBlank()) delay(300)
             persons = UiState(isLoading = true)
             runCatching { repo.getPersons(search) }
-                .onSuccess {
-                    persons = UiState(data = it.results)
-                    personsNextPage = it.next
-                }
+                .onSuccess { persons = UiState(data = it.results); personsNextPage = it.next }
                 .onFailure { persons = UiState(error = it.localizedMessage) }
         }
     }
@@ -195,20 +186,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val next = personsNextPage ?: return
         viewModelScope.launch {
             runCatching { repo.getPersonsPage(next) }
-                .onSuccess {
-                    persons = UiState(data = (persons.data ?: emptyList()) + it.results)
-                    personsNextPage = it.next
-                }
+                .onSuccess { persons = UiState(data = (persons.data ?: emptyList()) + it.results); personsNextPage = it.next }
         }
     }
 
     fun loadLoans() = viewModelScope.launch {
         loans = UiState(isLoading = true)
         runCatching { repo.getLoans() }
-            .onSuccess {
-                loans = UiState(data = it.results)
-                loansNextPage = it.next
-            }
+            .onSuccess { loans = UiState(data = it.results); loansNextPage = it.next }
             .onFailure { loans = UiState(error = it.localizedMessage) }
     }
 
@@ -216,20 +201,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val next = loansNextPage ?: return
         viewModelScope.launch {
             runCatching { repo.getLoansPage(next) }
-                .onSuccess {
-                    loans = UiState(data = (loans.data ?: emptyList()) + it.results)
-                    loansNextPage = it.next
-                }
+                .onSuccess { loans = UiState(data = (loans.data ?: emptyList()) + it.results); loansNextPage = it.next }
         }
     }
 
     fun loadMyLoans() = viewModelScope.launch {
         myLoans = UiState(isLoading = true)
         runCatching { repo.getMyLoans() }
-            .onSuccess {
-                myLoans = UiState(data = it.results)
-                myLoansNextPage = it.next
-            }
+            .onSuccess { myLoans = UiState(data = it.results); myLoansNextPage = it.next }
             .onFailure { myLoans = UiState(error = it.localizedMessage) }
     }
 
@@ -237,20 +216,20 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val next = myLoansNextPage ?: return
         viewModelScope.launch {
             runCatching { repo.getMyLoansPage(next) }
-                .onSuccess {
-                    myLoans = UiState(data = (myLoans.data ?: emptyList()) + it.results)
-                    myLoansNextPage = it.next
-                }
+                .onSuccess { myLoans = UiState(data = (myLoans.data ?: emptyList()) + it.results); myLoansNextPage = it.next }
         }
     }
 
     fun loadBarcode(code: String) = viewModelScope.launch {
+        pendingNewParent = null
+        saveParentState = UiState()
         childLoanJob?.cancel()
         childLoanInfos = emptyMap()
         scannedBarcode = UiState(isLoading = true)
         scannedChildCodes = emptySet()
         newScannedBarcodes = emptyList()
         contentScanActive = false
+        addContentScanActive = false
         saveContentState = UiState()
         runCatching { repo.getBarcode(code) }
             .onSuccess { barcode ->
@@ -273,26 +252,82 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun clearScannedBarcode() {
         scannedBarcode = UiState()
         barcodeHistory = emptyList()
+        barcodeForwardHistory = emptyList()
+        pendingNewParent = null
+        saveParentState = UiState()
+        addContentScanActive = false
     }
+
+    // --- Barcode link navigation with back/forward history ---
 
     fun navigateToBarcode(code: String) {
         val currentCode = scannedBarcode.data?.code ?: return
         barcodeHistory = (barcodeHistory + currentCode).takeLast(20)
+        barcodeForwardHistory = emptyList()
         barcodeListContext = null
         loadBarcode(code)
     }
 
     fun popBarcodeHistory(): String? {
         if (barcodeHistory.isEmpty()) return null
+        val currentCode = scannedBarcode.data?.code
         val prev = barcodeHistory.last()
         barcodeHistory = barcodeHistory.dropLast(1)
+        if (currentCode != null) barcodeForwardHistory = (barcodeForwardHistory + currentCode).takeLast(20)
         return prev
     }
+
+    fun navigateForward() {
+        if (barcodeForwardHistory.isEmpty()) return
+        val currentCode = scannedBarcode.data?.code
+        val next = barcodeForwardHistory.last()
+        barcodeForwardHistory = barcodeForwardHistory.dropLast(1)
+        if (currentCode != null) barcodeHistory = (barcodeHistory + currentCode).takeLast(20)
+        loadBarcode(next)
+    }
+
+    // --- New parent scanning ---
+
+    suspend fun setPendingNewParent(code: String): Boolean =
+        runCatching { repo.getBarcode(code) }
+            .onSuccess { pendingNewParent = it }
+            .isSuccess
+
+    fun clearPendingNewParent() {
+        pendingNewParent = null
+        saveParentState = UiState()
+    }
+
+    fun saveNewParent(barcode: Barcode) = viewModelScope.launch {
+        val parent = pendingNewParent ?: return@launch
+        saveParentState = UiState(isLoading = true)
+        val parentUrl = ApiClient.getBarcodeUrl(parent.code)
+        runCatching { repo.patchBarcodeParent(ApiClient.getBarcodeUrl(barcode.code), parentUrl) }
+            .onSuccess {
+                val newParentNames = listOf(
+                    ChildInfo(name = "${parent.itemName} (${parent.code})", code = parent.code)
+                ) + (parent.apiParentNames ?: emptyList())
+                scannedBarcode = UiState(data = barcode.copy(apiParentNames = newParentNames))
+                pendingNewParent = null
+                saveParentState = UiState(data = Unit)
+            }
+            .onFailure { saveParentState = UiState(error = it.localizedMessage) }
+    }
+
+    // --- Content scanning ---
 
     fun startContentScan() {
         scannedChildCodes = emptySet()
         newScannedBarcodes = emptyList()
         contentScanActive = true
+        addContentScanActive = false
+        saveContentState = UiState()
+    }
+
+    fun startAddContentScan() {
+        newScannedBarcodes = emptyList()
+        addContentScanActive = true
+        contentScanActive = false
         saveContentState = UiState()
     }
 
@@ -310,14 +345,27 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    suspend fun onAddContentBarcodeScanned(code: String): ScanResult {
+        val currentBarcode = scannedBarcode.data ?: return ScanResult.NOT_FOUND
+        if (newScannedBarcodes.any { it.code == code }) return ScanResult.DUPLICATE
+        if (currentBarcode.apiChildNames?.any { it.code == code } == true) return ScanResult.DUPLICATE
+        val b = runCatching { repo.getBarcode(code) }.getOrNull() ?: return ScanResult.NOT_FOUND
+        newScannedBarcodes = newScannedBarcodes + b
+        return ScanResult.FOUND_NEW
+    }
+
     suspend fun tryLoadBarcode(code: String): Boolean {
         barcodeHistory = emptyList()
+        barcodeForwardHistory = emptyList()
+        pendingNewParent = null
+        saveParentState = UiState()
         childLoanJob?.cancel()
         childLoanInfos = emptyMap()
         scannedBarcode = UiState(isLoading = true)
         scannedChildCodes = emptySet()
         newScannedBarcodes = emptyList()
         contentScanActive = false
+        addContentScanActive = false
         saveContentState = UiState()
         return runCatching { repo.getBarcode(code) }
             .onSuccess { barcode ->
@@ -345,14 +393,34 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
         if (errors.isEmpty()) {
             val keptChildren = children.filter { it.code in scannedChildCodes || childLoanInfos[it.code]?.loan == true }
-            val addedChildren = newScannedBarcodes.map { b ->
-                ChildInfo(name = "${b.itemName} (${b.code})", code = b.code)
-            }
+            val addedChildren = newScannedBarcodes.map { b -> ChildInfo(name = "${b.itemName} (${b.code})", code = b.code) }
             scannedChildCodes = emptySet()
             newScannedBarcodes = emptyList()
             contentScanActive = false
             saveContentState = UiState(data = Unit)
             scannedBarcode = UiState(data = parentBarcode.copy(apiChildNames = keptChildren + addedChildren))
+        } else {
+            saveContentState = UiState(error = errors.joinToString("\n"))
+        }
+    }
+
+    fun saveAddedContent(parentBarcode: Barcode) = viewModelScope.launch {
+        saveContentState = UiState(isLoading = true)
+        val parentUrl = ApiClient.getBarcodeUrl(parentBarcode.code)
+        val errors = mutableListOf<String>()
+
+        for (b in newScannedBarcodes) {
+            runCatching { repo.patchBarcodeParent(ApiClient.getBarcodeUrl(b.code), parentUrl) }
+                .onFailure { errors.add(it.localizedMessage ?: b.code) }
+        }
+
+        if (errors.isEmpty()) {
+            val addedChildren = newScannedBarcodes.map { b -> ChildInfo(name = "${b.itemName} (${b.code})", code = b.code) }
+            val existingChildren = parentBarcode.apiChildNames ?: emptyList()
+            newScannedBarcodes = emptyList()
+            addContentScanActive = false
+            saveContentState = UiState(data = Unit)
+            scannedBarcode = UiState(data = parentBarcode.copy(apiChildNames = existingChildren + addedChildren))
         } else {
             saveContentState = UiState(error = errors.joinToString("\n"))
         }
@@ -365,6 +433,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun openBarcodeFromList(list: List<Barcode>, index: Int) {
         barcodeHistory = emptyList()
+        barcodeForwardHistory = emptyList()
         barcodeListContext = list
         barcodeListIndex = index
         loadBarcode(list[index].code)
@@ -374,6 +443,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val list = barcodeListContext ?: return
         if (index !in list.indices) return
         barcodeHistory = emptyList()
+        barcodeForwardHistory = emptyList()
         barcodeListIndex = index
         loadBarcode(list[index].code)
     }

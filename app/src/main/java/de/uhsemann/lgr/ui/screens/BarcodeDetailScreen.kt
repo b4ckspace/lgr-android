@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,7 +34,13 @@ private val LOAN_BLUE = Color(0xFF1976D2)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanContent: () -> Unit) {
+fun BarcodeDetailScreen(
+    viewModel: AppViewModel,
+    onBack: () -> Unit,
+    onScanContent: () -> Unit,
+    onScanParent: () -> Unit,
+    onAddContent: () -> Unit
+) {
     val state = viewModel.scannedBarcode
     val barcodeList = viewModel.barcodeListContext
     val currentIndex = viewModel.barcodeListIndex
@@ -82,20 +89,20 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanConte
                 .fillMaxSize()
                 .padding(padding)
                 .pointerInput(currentIndex) {
-                    if (barcodeList != null) {
-                        detectHorizontalDragGestures(
-                            onDragEnd = {
-                                when {
-                                    dragTotal < -swipeThresholdPx && currentIndex < barcodeList.size - 1 ->
-                                        viewModel.navigateToBarcodeInList(currentIndex + 1)
-                                    dragTotal > swipeThresholdPx && currentIndex > 0 ->
-                                        viewModel.navigateToBarcodeInList(currentIndex - 1)
-                                }
-                                dragTotal = 0f
-                            },
-                            onDragCancel = { dragTotal = 0f }
-                        ) { _, dragAmount -> dragTotal += dragAmount }
-                    }
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            when {
+                                barcodeList != null && dragTotal < -swipeThresholdPx && currentIndex < barcodeList.size - 1 ->
+                                    viewModel.navigateToBarcodeInList(currentIndex + 1)
+                                barcodeList != null && dragTotal > swipeThresholdPx && currentIndex > 0 ->
+                                    viewModel.navigateToBarcodeInList(currentIndex - 1)
+                                barcodeList == null && dragTotal < -swipeThresholdPx ->
+                                    viewModel.navigateForward()
+                            }
+                            dragTotal = 0f
+                        },
+                        onDragCancel = { dragTotal = 0f }
+                    ) { _, dragAmount -> dragTotal += dragAmount }
                 }
         ) {
             when {
@@ -115,10 +122,11 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanConte
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             item {
-                                BreadcrumbRow(
-                                    label = "Location",
-                                    ancestors = barcode.apiParentNames ?: emptyList(),
-                                    onBarcodeClick = onBarcodeClick
+                                LocationSection(
+                                    barcode = barcode,
+                                    viewModel = viewModel,
+                                    onBarcodeClick = onBarcodeClick,
+                                    onScanParent = onScanParent
                                 )
                             }
 
@@ -135,7 +143,7 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanConte
                                     val text = if (loan.loan)
                                         "On loan${loan.person?.let { " — $it" } ?: ""}"
                                     else "Available"
-                                    val color = if (loan.loan) LOAN_BLUE else Color(0xFF4CAF50)
+                                    val color = if (loan.loan) LOAN_BLUE else GREEN
                                     DetailRow("Loan", text, valueColor = color)
                                 }
                             }
@@ -152,7 +160,8 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanConte
                                 ContentListSection(
                                     viewModel = viewModel,
                                     barcode = barcode,
-                                    onBarcodeClick = onBarcodeClick
+                                    onBarcodeClick = onBarcodeClick,
+                                    onAddContent = onAddContent
                                 )
                             }
                         }
@@ -179,8 +188,10 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanConte
                                 ) {
                                     Icon(Icons.Default.KeyboardArrowLeft, "Previous barcode")
                                 }
-                                Text("${currentIndex + 1} / ${barcodeList.size}",
-                                    style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    "${currentIndex + 1} / ${barcodeList.size}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
                                 IconButton(
                                     onClick = { viewModel.navigateToBarcodeInList(currentIndex + 1) },
                                     enabled = currentIndex < barcodeList.size - 1
@@ -197,54 +208,168 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanConte
 }
 
 @Composable
-private fun BreadcrumbRow(label: String, ancestors: List<ChildInfo>, onBarcodeClick: (String) -> Unit) {
+private fun LocationSection(
+    barcode: Barcode,
+    viewModel: AppViewModel,
+    onBarcodeClick: (String) -> Unit,
+    onScanParent: () -> Unit
+) {
+    val pendingParent = viewModel.pendingNewParent
+    val saveState = viewModel.saveParentState
+
     Column {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(2.dp))
-        if (ancestors.isEmpty()) {
-            Text("—", style = MaterialTheme.typography.bodyLarge)
-        } else {
-            val reversed = ancestors.reversed()
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                reversed.forEachIndexed { i, info ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (i > 0) {
-                            Text(
-                                "› ",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = GREY
-                            )
-                        }
-                        Text(
-                            text = buildAnnotatedString {
-                                append(info.name.removeSuffix(" (${info.code})"))
-                                append(" ")
-                                withStyle(SpanStyle(color = GREY)) { append("(${info.code})") }
-                            },
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.clickable { onBarcodeClick(info.code) }
-                        )
-                    }
-                }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Location",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            IconButton(
+                onClick = onScanParent,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    Icons.Default.QrCodeScanner,
+                    contentDescription = "Scan new parent",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
         }
+        Spacer(Modifier.height(2.dp))
+
+        if (pendingParent == null) {
+            // Normal location display
+            val ancestors = barcode.apiParentNames ?: emptyList()
+            if (ancestors.isEmpty()) {
+                Text("—", style = MaterialTheme.typography.bodyLarge)
+            } else {
+                BreadcrumbList(
+                    ancestors = ancestors.reversed(),
+                    highlightCodes = emptySet(),
+                    onBarcodeClick = onBarcodeClick
+                )
+            }
+        } else {
+            // Pending new parent display with colour coding
+            val oldCodes = (barcode.apiParentNames ?: emptyList()).map { it.code }.toSet()
+            val newChain = listOf(
+                ChildInfo(name = "${pendingParent.itemName} (${pendingParent.code})", code = pendingParent.code)
+            ) + (pendingParent.apiParentNames ?: emptyList())
+            val highlightCodes = newChain.filter { it.code !in oldCodes }.map { it.code }.toSet()
+
+            BreadcrumbList(
+                ancestors = newChain,
+                highlightCodes = highlightCodes,
+                onBarcodeClick = onBarcodeClick
+            )
+
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { viewModel.saveNewParent(barcode) },
+                    enabled = !saveState.isLoading,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    if (saveState.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Text("Save")
+                    }
+                }
+                OutlinedButton(
+                    onClick = { viewModel.clearPendingNewParent() },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Cancel")
+                }
+            }
+            if (saveState.error != null) {
+                Text(
+                    saveState.error,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
     }
 }
 
 @Composable
-private fun ContentListSection(viewModel: AppViewModel, barcode: Barcode, onBarcodeClick: (String) -> Unit) {
+private fun BreadcrumbList(
+    ancestors: List<ChildInfo>,
+    highlightCodes: Set<String>,
+    onBarcodeClick: (String) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        ancestors.forEachIndexed { i, info ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (i > 0) {
+                    Text("› ", style = MaterialTheme.typography.bodyLarge, color = GREY)
+                }
+                val linkColor = if (info.code in highlightCodes) GREEN
+                                else MaterialTheme.colorScheme.primary
+                Text(
+                    text = buildAnnotatedString {
+                        append(info.name.removeSuffix(" (${info.code})"))
+                        append(" ")
+                        withStyle(SpanStyle(color = if (info.code in highlightCodes) GREEN.copy(alpha = 0.7f) else GREY)) {
+                            append("(${info.code})")
+                        }
+                    },
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = linkColor,
+                    modifier = Modifier.clickable { onBarcodeClick(info.code) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ContentListSection(
+    viewModel: AppViewModel,
+    barcode: Barcode,
+    onBarcodeClick: (String) -> Unit,
+    onAddContent: () -> Unit
+) {
     val scanActive = viewModel.contentScanActive
     val existingChildren = barcode.apiChildNames ?: emptyList()
     val totalCount = existingChildren.size + viewModel.newScannedBarcodes.size
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            "Contents ($totalCount)",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Contents ($totalCount)",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            IconButton(
+                onClick = onAddContent,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    Icons.Default.QrCodeScanner,
+                    contentDescription = "Add contents",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
 
         existingChildren.forEach { child ->
             val color = when {
@@ -280,7 +405,9 @@ private fun ContentListSection(viewModel: AppViewModel, barcode: Barcode, onBarc
 
 @Composable
 private fun ContentButtonsSection(viewModel: AppViewModel, barcode: Barcode, onScanContent: () -> Unit) {
-    val scanActive = viewModel.contentScanActive
+    val contentScanActive = viewModel.contentScanActive
+    val addContentScanActive = viewModel.addContentScanActive
+    val showSave = contentScanActive || addContentScanActive
     val saveState = viewModel.saveContentState
 
     Column(
@@ -298,15 +425,21 @@ private fun ContentButtonsSection(viewModel: AppViewModel, barcode: Barcode, onS
                 Text("Scan content")
             }
 
-            if (scanActive) {
+            if (showSave) {
                 Button(
-                    onClick = { viewModel.saveContentChanges(barcode) },
+                    onClick = {
+                        if (contentScanActive) viewModel.saveContentChanges(barcode)
+                        else viewModel.saveAddedContent(barcode)
+                    },
                     modifier = Modifier.weight(1f),
                     enabled = !saveState.isLoading
                 ) {
                     if (saveState.isLoading) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
                     } else {
                         Text("Save")
                     }
@@ -315,8 +448,11 @@ private fun ContentButtonsSection(viewModel: AppViewModel, barcode: Barcode, onS
         }
 
         if (saveState.error != null) {
-            Text(saveState.error, color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall)
+            Text(
+                saveState.error,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }
