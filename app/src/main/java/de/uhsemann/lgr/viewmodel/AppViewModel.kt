@@ -9,6 +9,8 @@ import de.uhsemann.lgr.data.api.ApiClient
 import de.uhsemann.lgr.data.model.*
 import de.uhsemann.lgr.data.repository.LgrRepository
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -49,6 +51,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var saveContentState by mutableStateOf(UiState<Unit>())
         private set
+    var childLoanInfos by mutableStateOf<Map<String, LoanInfo>>(emptyMap())
+        private set
     var barcodesSearch by mutableStateOf("")
         private set
     var barcodeListContext by mutableStateOf<List<Barcode>?>(null)
@@ -60,6 +64,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val username get() = auth.data?.username
 
     private var searchJob: Job? = null
+    private var childLoanJob: Job? = null
     private val ownerNameCache = mutableMapOf<String, String>()
 
     suspend fun resolveOwnerName(url: String): String =
@@ -236,14 +241,29 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun loadBarcode(code: String) = viewModelScope.launch {
+        childLoanJob?.cancel()
+        childLoanInfos = emptyMap()
         scannedBarcode = UiState(isLoading = true)
         scannedChildCodes = emptySet()
         newScannedBarcodes = emptyList()
         contentScanActive = false
         saveContentState = UiState()
         runCatching { repo.getBarcode(code) }
-            .onSuccess { scannedBarcode = UiState(data = it) }
+            .onSuccess { barcode ->
+                scannedBarcode = UiState(data = barcode)
+                loadChildLoanInfos(barcode.apiChildNames ?: emptyList())
+            }
             .onFailure { scannedBarcode = UiState(error = it.localizedMessage) }
+    }
+
+    private fun loadChildLoanInfos(children: List<ChildInfo>) {
+        if (children.isEmpty()) return
+        childLoanJob = viewModelScope.launch {
+            val pairs = children.map { child ->
+                async { child.code to runCatching { repo.getBarcode(child.code) }.getOrNull()?.apiLoanInfo }
+            }.awaitAll()
+            childLoanInfos = pairs.mapNotNull { (code, info) -> info?.let { code to it } }.toMap()
+        }
     }
 
     fun clearScannedBarcode() { scannedBarcode = UiState() }

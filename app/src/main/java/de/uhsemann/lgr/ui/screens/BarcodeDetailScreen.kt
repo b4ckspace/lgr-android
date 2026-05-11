@@ -21,6 +21,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import de.uhsemann.lgr.data.model.Barcode
 import de.uhsemann.lgr.data.model.ChildInfo
+import de.uhsemann.lgr.data.model.LoanInfo
 import de.uhsemann.lgr.viewmodel.AppViewModel
 
 private val GREY = Color(0xFF9E9E9E)
@@ -225,12 +226,18 @@ private fun ContentSection(viewModel: AppViewModel, barcode: Barcode, onScanCont
             ChildRow(
                 itemName = child.name.removeSuffix(" (${child.code})"),
                 code = child.code,
-                color = color
+                color = color,
+                loanInfo = viewModel.childLoanInfos[child.code]
             )
         }
 
         viewModel.newScannedBarcodes.forEach { child ->
-            ChildRow(itemName = child.itemName, code = child.code, color = GREEN)
+            ChildRow(
+                itemName = child.itemName,
+                code = child.code,
+                color = GREEN,
+                loanInfo = child.apiLoanInfo
+            )
         }
 
         if (existingChildren.isEmpty() && viewModel.newScannedBarcodes.isEmpty()) {
@@ -274,18 +281,26 @@ private fun ContentSection(viewModel: AppViewModel, barcode: Barcode, onScanCont
 }
 
 @Composable
-private fun ChildRow(itemName: String, code: String, color: Color) {
-    Text(
-        text = buildAnnotatedString {
-            withStyle(SpanStyle(color = color)) { append(itemName) }
-            append(" ")
-            withStyle(SpanStyle(color = if (color == GREEN) GREEN.copy(alpha = 0.7f) else GREY)) {
-                append("($code)")
-            }
-        },
-        style = MaterialTheme.typography.bodyMedium,
-        modifier = Modifier.padding(vertical = 2.dp)
-    )
+private fun ChildRow(itemName: String, code: String, color: Color, loanInfo: LoanInfo? = null) {
+    Column(modifier = Modifier.padding(vertical = 2.dp)) {
+        Text(
+            text = buildAnnotatedString {
+                withStyle(SpanStyle(color = color)) { append(itemName) }
+                append(" ")
+                withStyle(SpanStyle(color = if (color == GREEN) GREEN.copy(alpha = 0.7f) else GREY)) {
+                    append("($code)")
+                }
+            },
+            style = MaterialTheme.typography.bodyMedium
+        )
+        if (loanInfo?.loan == true) {
+            Text(
+                text = "On loan${loanInfo.person?.let { " — $it" } ?: ""}",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFFE65100)
+            )
+        }
+    }
 }
 
 @Composable
