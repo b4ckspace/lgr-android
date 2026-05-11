@@ -117,6 +117,15 @@ fun BarcodeDetailScreen(viewModel: AppViewModel, onBack: () -> Unit, onScanConte
                                 item { DetailRow("Description", barcode.description) }
                             if (barcode.owner != null)
                                 item { DetailRow("Owner", ownerName ?: "…") }
+                            barcode.apiLoanInfo?.let { loan ->
+                                item {
+                                    val text = if (loan.loan)
+                                        "On loan${loan.person?.let { " — $it" } ?: ""}"
+                                    else "Available"
+                                    val color = if (loan.loan) Color(0xFFE65100) else Color(0xFF4CAF50)
+                                    DetailRow("Loan", text, valueColor = color)
+                                }
+                            }
                             if (barcode.code in viewModel.selectedBarcodes)
                                 item {
                                     Text(
@@ -280,11 +289,11 @@ private fun ChildRow(itemName: String, code: String, color: Color) {
 }
 
 @Composable
-private fun DetailRow(label: String, value: String) {
+private fun DetailRow(label: String, value: String, valueColor: Color = Color.Unspecified) {
     Column {
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(2.dp))
-        Text(text = value, style = MaterialTheme.typography.bodyLarge)
+        Text(text = value, style = MaterialTheme.typography.bodyLarge, color = valueColor)
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
     }
 }

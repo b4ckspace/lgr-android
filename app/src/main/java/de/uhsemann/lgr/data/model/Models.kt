@@ -41,6 +41,8 @@ data class Item(
 
 data class ChildInfo(val name: String, val code: String)
 
+data class LoanInfo(val loan: Boolean, val person: String? = null)
+
 data class Barcode(
     val code: String,
     val owner: String?,
@@ -50,7 +52,8 @@ data class Barcode(
     @SerializedName("item_name") val itemName: String,
     @SerializedName("item_description") val itemDescription: String,
     @SerializedName("api_child_names") val apiChildNames: List<ChildInfo>? = null,
-    @SerializedName("api_parent_names") val apiParentNames: List<ChildInfo>? = null
+    @SerializedName("api_parent_names") val apiParentNames: List<ChildInfo>? = null,
+    @SerializedName("api_loan_info") val apiLoanInfo: LoanInfo? = null
 )
 
 data class Loan(
