@@ -91,14 +91,14 @@ fun BarcodeScanScreen(viewModel: AppViewModel, onBarcodeDetected: () -> Unit, on
                                                     val found = viewModel.tryLoadBarcode(code)
                                                     if (found) {
                                                         try {
-                                                            val tg = ToneGenerator(AudioManager.STREAM_SYSTEM, 80)
+                                                            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
                                                             tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
                                                             handler.postDelayed({ tg.release() }, 300)
                                                         } catch (_: Exception) {}
                                                         onBarcodeDetected()
                                                     } else {
                                                         try {
-                                                            val tg = ToneGenerator(AudioManager.STREAM_SYSTEM, 80)
+                                                            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
                                                             tg.startTone(ToneGenerator.TONE_PROP_NACK, 300)
                                                             handler.postDelayed({ tg.release() }, 500)
                                                         } catch (_: Exception) {}

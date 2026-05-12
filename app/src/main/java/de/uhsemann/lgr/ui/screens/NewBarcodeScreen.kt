@@ -1,6 +1,10 @@
 package de.uhsemann.lgr.ui.screens
 
 import android.Manifest
+import android.media.AudioManager
+import android.media.ToneGenerator
+import android.os.Handler
+import android.os.Looper
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -32,6 +36,8 @@ import com.google.mlkit.vision.common.InputImage
 import de.uhsemann.lgr.data.model.Item
 import de.uhsemann.lgr.viewmodel.AppViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicBoolean
 
 private val GREY = Color(0xFF9E9E9E)
 
@@ -44,50 +50,31 @@ fun NewBarcodeScreen(
     onScanParent: () -> Unit,
     onCreated: () -> Unit
 ) {
-    var code by remember { mutableStateOf("") }
-    var nameQuery by remember { mutableStateOf("") }
-    var selectedItem by remember { mutableStateOf<Item?>(null) }
     var itemSuggestions by remember { mutableStateOf<List<Pair<Item, Int>>>(emptyList()) }
     var showSuggestions by remember { mutableStateOf(false) }
-    var description by remember { mutableStateOf("") }
-    var parentCode by remember { mutableStateOf("") }
 
     val newBarcodeState = viewModel.newBarcodeState
-
-    DisposableEffect(Unit) {
-        onDispose { viewModel.clearNewBarcodeState() }
-    }
-
-    LaunchedEffect(viewModel.scannedCodeForNewBarcode) {
-        viewModel.scannedCodeForNewBarcode?.let { code = it }
-    }
-
-    LaunchedEffect(viewModel.pendingNewParent) {
-        viewModel.pendingNewParent?.let { barcode ->
-            parentCode = barcode.code
-            viewModel.clearPendingNewParent()
-        }
-    }
 
     LaunchedEffect(newBarcodeState.data) {
         if (newBarcodeState.data != null) onCreated()
     }
 
-    LaunchedEffect(nameQuery) {
-        if (nameQuery.length < 2 || selectedItem?.name == nameQuery) {
-            if (selectedItem?.name != nameQuery) {
+    LaunchedEffect(viewModel.newBarcodeNameQuery) {
+        val query = viewModel.newBarcodeNameQuery
+        if (query.length < 2 || viewModel.newBarcodeSelectedItem?.name == query) {
+            if (viewModel.newBarcodeSelectedItem?.name != query) {
                 itemSuggestions = emptyList()
                 showSuggestions = false
             }
             return@LaunchedEffect
         }
         delay(300)
-        val results = viewModel.searchItemsWithCounts(nameQuery)
+        val results = viewModel.searchItemsWithCounts(query)
         itemSuggestions = results
         showSuggestions = results.isNotEmpty()
     }
 
-    val canSave = code.isNotBlank() && nameQuery.isNotBlank() && !newBarcodeState.isLoading
+    val canSave = viewModel.newBarcodeCode.isNotBlank() && viewModel.newBarcodeNameQuery.isNotBlank() && !newBarcodeState.isLoading
 
     Scaffold(
         topBar = {
@@ -100,15 +87,7 @@ fun NewBarcodeScreen(
                 },
                 actions = {
                     TextButton(
-                        onClick = {
-                            viewModel.createNewBarcode(
-                                code = code.trim(),
-                                itemName = nameQuery.trim(),
-                                selectedItem = selectedItem,
-                                description = description.trim(),
-                                parentCode = parentCode.trim()
-                            )
-                        },
+                        onClick = { viewModel.createNewBarcode() },
                         enabled = canSave
                     ) {
                         if (newBarcodeState.isLoading) {
@@ -137,8 +116,8 @@ fun NewBarcodeScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedTextField(
-                        value = code,
-                        onValueChange = { code = it },
+                        value = viewModel.newBarcodeCode,
+                        onValueChange = { viewModel.newBarcodeCode = it },
                         label = { Text("Barcode *") },
                         modifier = Modifier.weight(1f),
                         singleLine = true
@@ -156,19 +135,19 @@ fun NewBarcodeScreen(
             item {
                 Column {
                     OutlinedTextField(
-                        value = nameQuery,
+                        value = viewModel.newBarcodeNameQuery,
                         onValueChange = {
-                            nameQuery = it
-                            selectedItem = null
+                            viewModel.newBarcodeNameQuery = it
+                            viewModel.newBarcodeSelectedItem = null
                         },
                         label = { Text("Name *") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         trailingIcon = {
-                            if (nameQuery.isNotEmpty()) {
+                            if (viewModel.newBarcodeNameQuery.isNotEmpty()) {
                                 IconButton(onClick = {
-                                    nameQuery = ""
-                                    selectedItem = null
+                                    viewModel.newBarcodeNameQuery = ""
+                                    viewModel.newBarcodeSelectedItem = null
                                     itemSuggestions = emptyList()
                                     showSuggestions = false
                                 }) {
@@ -188,8 +167,8 @@ fun NewBarcodeScreen(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .clickable {
-                                                nameQuery = item.name
-                                                selectedItem = item
+                                                viewModel.newBarcodeNameQuery = item.name
+                                                viewModel.newBarcodeSelectedItem = item
                                                 showSuggestions = false
                                             }
                                             .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -217,8 +196,8 @@ fun NewBarcodeScreen(
 
             item {
                 OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
+                    value = viewModel.newBarcodeDescription,
+                    onValueChange = { viewModel.newBarcodeDescription = it },
                     label = { Text("Description") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
@@ -233,8 +212,8 @@ fun NewBarcodeScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedTextField(
-                        value = parentCode,
-                        onValueChange = { parentCode = it },
+                        value = viewModel.newBarcodeParentCode,
+                        onValueChange = { viewModel.newBarcodeParentCode = it },
                         label = { Text("Parent barcode") },
                         modifier = Modifier.weight(1f),
                         singleLine = true
@@ -265,6 +244,126 @@ fun NewBarcodeScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+fun ScanNewBarcodeScreen(
+    viewModel: AppViewModel,
+    onScanned: (String) -> Unit,
+    onBack: () -> Unit
+) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
+    val cooldown = remember { AtomicBoolean(false) }
+    val handler = remember { Handler(Looper.getMainLooper()) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        if (!permissionState.status.isGranted) permissionState.launchPermissionRequest()
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (permissionState.status.isGranted) {
+            AndroidView(
+                factory = { ctx ->
+                    val previewView = PreviewView(ctx)
+                    val executor = ContextCompat.getMainExecutor(ctx)
+                    val scanner = BarcodeScanning.getClient()
+                    val providerFuture = ProcessCameraProvider.getInstance(ctx)
+
+                    providerFuture.addListener({
+                        val provider = providerFuture.get()
+                        val preview = Preview.Builder().build().also {
+                            it.setSurfaceProvider(previewView.surfaceProvider)
+                        }
+                        val analyzer = ImageAnalysis.Builder()
+                            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                            .build()
+                        analyzer.setAnalyzer(executor) { imageProxy ->
+                            val mediaImage = imageProxy.image
+                            if (mediaImage != null) {
+                                val image = InputImage.fromMediaImage(
+                                    mediaImage, imageProxy.imageInfo.rotationDegrees
+                                )
+                                scanner.process(image)
+                                    .addOnSuccessListener { barcodes ->
+                                        barcodes.firstOrNull()?.rawValue?.let { code ->
+                                            if (cooldown.compareAndSet(false, true)) {
+                                                scope.launch {
+                                                    val isNew = viewModel.isBarcodeNew(code)
+                                                    if (isNew) {
+                                                        try {
+                                                            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+                                                            tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
+                                                            handler.postDelayed({ tg.release() }, 300)
+                                                        } catch (_: Exception) {}
+                                                        onScanned(code)
+                                                    } else {
+                                                        try {
+                                                            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+                                                            tg.startTone(ToneGenerator.TONE_PROP_NACK, 300)
+                                                            handler.postDelayed({ tg.release() }, 500)
+                                                        } catch (_: Exception) {}
+                                                        delay(1500)
+                                                        cooldown.set(false)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    .addOnCompleteListener { imageProxy.close() }
+                            } else {
+                                imageProxy.close()
+                            }
+                        }
+                        try {
+                            provider.unbindAll()
+                            provider.bindToLifecycle(
+                                lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, analyzer
+                            )
+                        } catch (_: Exception) {}
+                    }, executor)
+
+                    previewView
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(260.dp)
+                    .border(2.dp, Color.White, RoundedCornerShape(12.dp))
+            )
+
+            Text(
+                text = "Scan barcode of new entry",
+                color = Color.White,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.align(Alignment.Center).offset(y = 150.dp)
+            )
+        } else {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text("Camera permission is required.")
+                Spacer(Modifier.height(16.dp))
+                Button(onClick = { permissionState.launchPermissionRequest() }) {
+                    Text("Grant Permission")
+                }
+            }
+        }
+
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier.align(Alignment.TopStart).padding(8.dp).statusBarsPadding()
+        ) {
+            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
         }
     }
 }

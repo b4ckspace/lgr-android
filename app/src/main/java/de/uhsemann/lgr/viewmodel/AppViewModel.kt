@@ -77,8 +77,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var newBarcodeState by mutableStateOf(UiState<Barcode>())
         private set
-    var scannedCodeForNewBarcode by mutableStateOf<String?>(null)
-        private set
+    var newBarcodeCode by mutableStateOf("")
+    var newBarcodeNameQuery by mutableStateOf("")
+    var newBarcodeSelectedItem by mutableStateOf<Item?>(null)
+    var newBarcodeDescription by mutableStateOf("")
+    var newBarcodeParentCode by mutableStateOf("")
 
     val isAuthenticated get() = auth.data?.authenticated == true
     val username get() = auth.data?.username
@@ -116,12 +119,32 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun clearNewBarcodeState() {
         newBarcodeState = UiState()
-        scannedCodeForNewBarcode = null
+        newBarcodeCode = ""
+        newBarcodeNameQuery = ""
+        newBarcodeSelectedItem = null
+        newBarcodeDescription = ""
+        newBarcodeParentCode = ""
         clearPendingNewParent()
     }
 
     fun onNewBarcodeCodeScanned(code: String) {
-        scannedCodeForNewBarcode = code
+        newBarcodeCode = code
+    }
+
+    fun onNewBarcodeParentScanned() {
+        newBarcodeParentCode = pendingNewParent?.code ?: ""
+        clearPendingNewParent()
+    }
+
+    suspend fun isBarcodeNew(code: String): Boolean {
+        return try {
+            repo.getBarcode(code)
+            false
+        } catch (e: retrofit2.HttpException) {
+            e.code() == 404
+        } catch (_: Exception) {
+            false
+        }
     }
 
     suspend fun searchItemsWithCounts(query: String): List<Pair<Item, Int>> {
@@ -130,19 +153,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             .getOrNull()?.results ?: return emptyList()
         return coroutineScope {
             items.map { item ->
-                async { item to repo.getBarcodeCountForItem(item.url) }
+                async { item to repo.getBarcodeCountForItem(item.name) }
             }.awaitAll()
         }
     }
 
-    fun createNewBarcode(
-        code: String,
-        itemName: String,
-        selectedItem: Item?,
-        description: String,
-        parentCode: String
-    ) = viewModelScope.launch {
+    fun createNewBarcode() = viewModelScope.launch {
         newBarcodeState = UiState(isLoading = true)
+        val code = newBarcodeCode.trim()
+        val itemName = newBarcodeNameQuery.trim()
+        val selectedItem = newBarcodeSelectedItem
+        val description = newBarcodeDescription.trim()
+        val parentCode = newBarcodeParentCode.trim()
 
         val itemUrl = if (selectedItem != null) {
             selectedItem.url

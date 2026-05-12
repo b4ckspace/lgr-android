@@ -32,6 +32,7 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import de.uhsemann.lgr.viewmodel.AppViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -87,17 +88,18 @@ fun ScanParentScreen(viewModel: AppViewModel, onParentScanned: () -> Unit, onBac
                                                     val found = viewModel.setPendingNewParent(code)
                                                     if (found) {
                                                         try {
-                                                            val tg = ToneGenerator(AudioManager.STREAM_SYSTEM, 80)
+                                                            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
                                                             tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
                                                             handler.postDelayed({ tg.release() }, 300)
                                                         } catch (_: Exception) {}
                                                         onParentScanned()
                                                     } else {
                                                         try {
-                                                            val tg = ToneGenerator(AudioManager.STREAM_SYSTEM, 80)
+                                                            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
                                                             tg.startTone(ToneGenerator.TONE_PROP_NACK, 300)
                                                             handler.postDelayed({ tg.release() }, 500)
                                                         } catch (_: Exception) {}
+                                                        delay(1500)
                                                         detected.value = false
                                                     }
                                                 }

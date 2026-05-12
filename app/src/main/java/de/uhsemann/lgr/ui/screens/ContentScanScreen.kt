@@ -88,7 +88,7 @@ fun ContentScanScreen(viewModel: AppViewModel, onDone: () -> Unit, addOnly: Bool
                                                     val result = if (addOnly) viewModel.onAddContentBarcodeScanned(code)
                                                                  else viewModel.onContentBarcodeScanned(code)
                                                     try {
-                                                        val tg = ToneGenerator(AudioManager.STREAM_SYSTEM, 80)
+                                                        val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
                                                         when (result) {
                                                             ScanResult.FOUND_NEW, ScanResult.FOUND_EXISTING -> {
                                                                 tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)

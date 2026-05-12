@@ -47,7 +47,7 @@ fun AppNavigation(viewModel: AppViewModel) {
         topBar = {
             if (showChrome) {
                 TopAppBar(
-                    title = { Text("LGR — ${viewModel.username ?: ""}") },
+                    title = { Text(if (viewModel.username.isNullOrBlank()) "LGR" else "LGR — ${viewModel.username}") },
                     actions = {
                         if (viewModel.readonlyMode) {
                             TextButton(onClick = { viewModel.exitReadonlyMode() }) { Text("Login") }
@@ -94,7 +94,8 @@ fun AppNavigation(viewModel: AppViewModel) {
                     onNewBarcode = {
                         viewModel.clearNewBarcodeState()
                         navController.navigate("new_barcode")
-                    }
+                    },
+                    showNew = !viewModel.readonlyMode
                 )
             }
             composable(Screen.Items.route) { ItemsScreen(viewModel) }
@@ -163,8 +164,8 @@ fun AppNavigation(viewModel: AppViewModel) {
                 )
             }
             composable("new_barcode_scan_code") {
-                RawBarcodeScanScreen(
-                    label = "Scan barcode of new entry",
+                ScanNewBarcodeScreen(
+                    viewModel = viewModel,
                     onScanned = { code ->
                         viewModel.onNewBarcodeCodeScanned(code)
                         navController.popBackStack()
@@ -175,7 +176,10 @@ fun AppNavigation(viewModel: AppViewModel) {
             composable("new_barcode_scan_parent") {
                 ScanParentScreen(
                     viewModel = viewModel,
-                    onParentScanned = { navController.popBackStack() },
+                    onParentScanned = {
+                        viewModel.onNewBarcodeParentScanned()
+                        navController.popBackStack()
+                    },
                     onBack = { navController.popBackStack() }
                 )
             }
