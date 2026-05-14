@@ -265,7 +265,7 @@ private fun LocationSection(
             val oldCodes = (barcode.apiParentNames ?: emptyList()).map { it.code }.toSet()
             val newChain = listOf(
                 ChildInfo(name = "${pendingParent.itemName} (${pendingParent.code})", code = pendingParent.code)
-            ) + (pendingParent.apiParentNames ?: emptyList())
+            ) + (pendingParent.apiParentNames ?: emptyList()).reversed()
             val highlightCodes = newChain.filter { it.code !in oldCodes }.map { it.code }.toSet()
 
             BreadcrumbList(

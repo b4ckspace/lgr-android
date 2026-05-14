@@ -412,9 +412,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val parentUrl = ApiClient.getBarcodeUrl(parent.code)
         runCatching { repo.patchBarcodeParent(ApiClient.getBarcodeUrl(barcode.code), parentUrl) }
             .onSuccess {
-                val newParentNames = listOf(
+                val newParentNames = (parent.apiParentNames ?: emptyList()) + listOf(
                     ChildInfo(name = "${parent.itemName} (${parent.code})", code = parent.code)
-                ) + (parent.apiParentNames ?: emptyList())
+                )
                 scannedBarcode = UiState(data = barcode.copy(apiParentNames = newParentNames))
                 pendingNewParent = null
                 saveParentState = UiState(data = Unit)

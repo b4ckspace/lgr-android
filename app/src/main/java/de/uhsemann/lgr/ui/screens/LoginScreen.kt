@@ -52,6 +52,7 @@ fun LoginScreen(viewModel: AppViewModel) {
             value = serverUrl,
             onValueChange = { serverUrl = it },
             label = { Text("Server URL") },
+            colors = lgrTextFieldColors(),
             placeholder = { Text("http://192.168.1.1:8000") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
@@ -64,6 +65,7 @@ fun LoginScreen(viewModel: AppViewModel) {
             value = username,
             onValueChange = { username = it },
             label = { Text("Username") },
+            colors = lgrTextFieldColors(),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -75,6 +77,7 @@ fun LoginScreen(viewModel: AppViewModel) {
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
+            colors = lgrTextFieldColors(),
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {

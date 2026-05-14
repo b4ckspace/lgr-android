@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import de.uhsemann.lgr.data.model.Item
 import de.uhsemann.lgr.viewmodel.AppViewModel
@@ -50,7 +51,8 @@ fun ItemsScreen(viewModel: AppViewModel) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp),
-            singleLine = true
+            singleLine = true,
+            colors = lgrTextFieldColors()
         )
 
         val state = viewModel.items
@@ -100,6 +102,11 @@ fun ItemCard(item: Item) {
         }
     }
 }
+
+@Composable
+fun lgrTextFieldColors() = OutlinedTextFieldDefaults.colors(
+    unfocusedLabelColor = Color(0xFF9E9E9E)
+)
 
 @Composable
 fun LoadingBox() {

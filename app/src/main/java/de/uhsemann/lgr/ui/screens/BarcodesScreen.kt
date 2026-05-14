@@ -66,7 +66,8 @@ fun BarcodesScreen(viewModel: AppViewModel, onOpenDetail: (List<Barcode>, Int) -
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp),
-                singleLine = true
+                singleLine = true,
+                colors = lgrTextFieldColors()
             )
 
             if (viewModel.selectedBarcodes.isNotEmpty()) {
@@ -189,7 +190,8 @@ fun LoanDialog(viewModel: AppViewModel, onDismiss: () -> Unit) {
                     onValueChange = { returnDate = it },
                     label = { Text("Return date (YYYY-MM-DD)") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    colors = lgrTextFieldColors()
                 )
 
                 if (state.isLoading) {

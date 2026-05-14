@@ -48,7 +48,8 @@ fun PersonsScreen(viewModel: AppViewModel) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp),
-            singleLine = true
+            singleLine = true,
+            colors = lgrTextFieldColors()
         )
 
         val state = viewModel.persons

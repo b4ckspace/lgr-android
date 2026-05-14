@@ -33,6 +33,7 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import de.uhsemann.lgr.viewmodel.AppViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -102,6 +103,7 @@ fun BarcodeScanScreen(viewModel: AppViewModel, onBarcodeDetected: () -> Unit, on
                                                             tg.startTone(ToneGenerator.TONE_PROP_NACK, 300)
                                                             handler.postDelayed({ tg.release() }, 500)
                                                         } catch (_: Exception) {}
+                                                        delay(1500)
                                                         detected.value = false
                                                     }
                                                 }

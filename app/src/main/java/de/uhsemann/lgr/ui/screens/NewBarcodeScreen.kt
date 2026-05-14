@@ -120,7 +120,8 @@ fun NewBarcodeScreen(
                         onValueChange = { viewModel.newBarcodeParentCode = it },
                         label = { Text("Location") },
                         modifier = Modifier.weight(1f),
-                        singleLine = true
+                        singleLine = true,
+                        colors = lgrTextFieldColors()
                     )
                     IconButton(onClick = onScanParent) {
                         Icon(
@@ -143,7 +144,8 @@ fun NewBarcodeScreen(
                         onValueChange = { viewModel.newBarcodeCode = it },
                         label = { Text("Barcode *") },
                         modifier = Modifier.weight(1f),
-                        singleLine = true
+                        singleLine = true,
+                        colors = lgrTextFieldColors()
                     )
                     IconButton(onClick = onScanCode) {
                         Icon(
@@ -169,6 +171,7 @@ fun NewBarcodeScreen(
                         label = { Text("Item *") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
+                        colors = lgrTextFieldColors(),
                         trailingIcon = {
                             if (viewModel.newBarcodeNameQuery.isNotEmpty()) {
                                 IconButton(onClick = {
@@ -232,11 +235,7 @@ fun NewBarcodeScreen(
                     minLines = 2,
                     maxLines = 4,
                     readOnly = itemSelected,
-                    colors = if (itemSelected) OutlinedTextFieldDefaults.colors(
-                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                        disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ) else OutlinedTextFieldDefaults.colors()
+                    colors = lgrTextFieldColors()
                 )
             }
 
@@ -247,7 +246,8 @@ fun NewBarcodeScreen(
                     label = { Text("Description") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
-                    maxLines = 4
+                    maxLines = 4,
+                    colors = lgrTextFieldColors()
                 )
             }
 
