@@ -116,6 +116,29 @@ fun NewBarcodeScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedTextField(
+                        value = viewModel.newBarcodeParentCode,
+                        onValueChange = { viewModel.newBarcodeParentCode = it },
+                        label = { Text("Location") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    IconButton(onClick = onScanParent) {
+                        Icon(
+                            Icons.Default.QrCodeScanner,
+                            contentDescription = "Scan location",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
                         value = viewModel.newBarcodeCode,
                         onValueChange = { viewModel.newBarcodeCode = it },
                         label = { Text("Barcode *") },
@@ -137,10 +160,13 @@ fun NewBarcodeScreen(
                     OutlinedTextField(
                         value = viewModel.newBarcodeNameQuery,
                         onValueChange = {
+                            if (viewModel.newBarcodeSelectedItem != null) {
+                                viewModel.newBarcodeItemDescription = ""
+                            }
                             viewModel.newBarcodeNameQuery = it
                             viewModel.newBarcodeSelectedItem = null
                         },
-                        label = { Text("Name *") },
+                        label = { Text("Item *") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         trailingIcon = {
@@ -148,6 +174,7 @@ fun NewBarcodeScreen(
                                 IconButton(onClick = {
                                     viewModel.newBarcodeNameQuery = ""
                                     viewModel.newBarcodeSelectedItem = null
+                                    viewModel.newBarcodeItemDescription = ""
                                     itemSuggestions = emptyList()
                                     showSuggestions = false
                                 }) {
@@ -169,6 +196,7 @@ fun NewBarcodeScreen(
                                             .clickable {
                                                 viewModel.newBarcodeNameQuery = item.name
                                                 viewModel.newBarcodeSelectedItem = item
+                                                viewModel.newBarcodeItemDescription = item.description
                                                 showSuggestions = false
                                             }
                                             .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -195,6 +223,24 @@ fun NewBarcodeScreen(
             }
 
             item {
+                val itemSelected = viewModel.newBarcodeSelectedItem != null
+                OutlinedTextField(
+                    value = viewModel.newBarcodeItemDescription,
+                    onValueChange = { if (!itemSelected) viewModel.newBarcodeItemDescription = it },
+                    label = { Text("Item description") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 4,
+                    readOnly = itemSelected,
+                    colors = if (itemSelected) OutlinedTextFieldDefaults.colors(
+                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                        disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ) else OutlinedTextFieldDefaults.colors()
+                )
+            }
+
+            item {
                 OutlinedTextField(
                     value = viewModel.newBarcodeDescription,
                     onValueChange = { viewModel.newBarcodeDescription = it },
@@ -203,29 +249,6 @@ fun NewBarcodeScreen(
                     minLines = 2,
                     maxLines = 4
                 )
-            }
-
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = viewModel.newBarcodeParentCode,
-                        onValueChange = { viewModel.newBarcodeParentCode = it },
-                        label = { Text("Parent barcode") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    IconButton(onClick = onScanParent) {
-                        Icon(
-                            Icons.Default.QrCodeScanner,
-                            contentDescription = "Scan parent",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
             }
 
             if (newBarcodeState.error != null) {

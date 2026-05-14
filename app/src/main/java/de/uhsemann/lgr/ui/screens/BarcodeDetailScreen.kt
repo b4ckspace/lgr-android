@@ -134,10 +134,10 @@ fun BarcodeDetailScreen(
 
                             item { DetailRow("Barcode", barcode.code) }
                             item { DetailRow("Item", barcode.itemName) }
-                            if (barcode.itemDescription.isNotBlank())
-                                item { DetailRow("Item description", barcode.itemDescription) }
                             if (barcode.description.isNotBlank())
                                 item { DetailRow("Description", barcode.description) }
+                            if (barcode.itemDescription.isNotBlank())
+                                item { DetailRow("Item description", barcode.itemDescription) }
                             if (barcode.owner != null)
                                 item { DetailRow("Owner", ownerName ?: "…") }
                             barcode.apiLoanInfo?.let { loan ->

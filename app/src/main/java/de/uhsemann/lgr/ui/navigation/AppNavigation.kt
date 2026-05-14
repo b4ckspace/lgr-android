@@ -14,13 +14,13 @@ import androidx.navigation.compose.rememberNavController
 import de.uhsemann.lgr.ui.screens.*
 import de.uhsemann.lgr.viewmodel.AppViewModel
 
-private sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
-    object Home : Screen("home", "Home", Icons.Default.Home)
-    object Items : Screen("items", "Items", Icons.Default.Inventory)
-    object Barcodes : Screen("barcodes", "Barcodes", Icons.Default.QrCode)
-    object Persons : Screen("persons", "Persons", Icons.Default.People)
-    object Loans : Screen("loans", "Loans", Icons.Default.List)
-    object MyLoans : Screen("my_loans", "My Loans", Icons.Default.AccountCircle)
+private sealed class Screen(val route: String, val label: String, val icon: ImageVector, val enabled: Boolean = true) {
+    object Home : Screen("home", "Home\n ", Icons.Default.Home)
+    object Items : Screen("items", "Items\n ", Icons.Default.Inventory)
+    object Barcodes : Screen("barcodes", "Bar-\ncodes", Icons.Default.QrCode)
+    object Persons : Screen("persons", "Per-\nsons", Icons.Default.People, enabled = false)
+    object Loans : Screen("loans", "Loans\n ", Icons.Default.List, enabled = false)
+    object MyLoans : Screen("my_loans", "My\nLoans", Icons.Default.AccountCircle, enabled = false)
 }
 
 private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code")
@@ -66,6 +66,7 @@ fun AppNavigation(viewModel: AppViewModel) {
                             icon = { Icon(screen.icon, contentDescription = screen.label) },
                             label = { Text(screen.label) },
                             selected = currentRoute == screen.route,
+                            enabled = screen.enabled,
                             onClick = {
                                 navController.navigate(screen.route) {
                                     popUpTo(navController.graph.startDestinationId) { saveState = true }

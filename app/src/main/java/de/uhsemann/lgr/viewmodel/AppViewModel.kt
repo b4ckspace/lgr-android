@@ -80,6 +80,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var newBarcodeCode by mutableStateOf("")
     var newBarcodeNameQuery by mutableStateOf("")
     var newBarcodeSelectedItem by mutableStateOf<Item?>(null)
+    var newBarcodeItemDescription by mutableStateOf("")
     var newBarcodeDescription by mutableStateOf("")
     var newBarcodeParentCode by mutableStateOf("")
 
@@ -122,6 +123,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         newBarcodeCode = ""
         newBarcodeNameQuery = ""
         newBarcodeSelectedItem = null
+        newBarcodeItemDescription = ""
         newBarcodeDescription = ""
         newBarcodeParentCode = ""
         clearPendingNewParent()
@@ -163,6 +165,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val code = newBarcodeCode.trim()
         val itemName = newBarcodeNameQuery.trim()
         val selectedItem = newBarcodeSelectedItem
+        val itemDescription = newBarcodeItemDescription.trim()
         val description = newBarcodeDescription.trim()
         val parentCode = newBarcodeParentCode.trim()
 
@@ -171,7 +174,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         } else {
             val existing = runCatching { repo.getItems(search = itemName, limit = 50) }
                 .getOrNull()?.results?.find { it.name.equals(itemName, ignoreCase = true) }
-            existing?.url ?: runCatching { repo.createItem(itemName) }
+            existing?.url ?: runCatching { repo.createItem(itemName, itemDescription) }
                 .getOrElse { newBarcodeState = UiState(error = it.localizedMessage); return@launch }
                 .url
         }
