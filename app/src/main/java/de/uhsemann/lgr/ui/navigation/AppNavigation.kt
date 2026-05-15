@@ -142,7 +142,8 @@ fun AppNavigation(viewModel: AppViewModel) {
                 ScanParentScreen(
                     viewModel = viewModel,
                     onParentScanned = { navController.popBackStack() },
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    selfCode = viewModel.scannedBarcode.data?.code
                 )
             }
             composable("add_content_scan") {
@@ -185,7 +186,8 @@ fun AppNavigation(viewModel: AppViewModel) {
                         viewModel.onNewBarcodeParentScanned()
                         navController.popBackStack()
                     },
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    selfCode = viewModel.newBarcodeCode.takeIf { it.isNotBlank() }
                 )
             }
             composable("verify_scan") {

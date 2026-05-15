@@ -252,8 +252,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 if (verifyContents.any { it.code == code }) return ScanResult.DUPLICATE
                 val barcode = runCatching { repo.getBarcode(code) }.getOrNull()
                     ?: return ScanResult.NOT_FOUND
+                val isExistingChild = verifyLocation?.apiChildNames?.any { it.code == code } == true
                 verifyContents = verifyContents + barcode
-                ScanResult.FOUND_NEW
+                if (isExistingChild) ScanResult.FOUND_EXISTING else ScanResult.FOUND_NEW
             }
         }
     }

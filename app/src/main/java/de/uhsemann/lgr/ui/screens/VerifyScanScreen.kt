@@ -1,34 +1,16 @@
 package de.uhsemann.lgr.ui.screens
 
-import android.Manifest
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Handler
 import android.os.Looper
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
-import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.common.InputImage
 import de.uhsemann.lgr.viewmodel.AppViewModel
 import de.uhsemann.lgr.viewmodel.ScanResult
 import de.uhsemann.lgr.viewmodel.VerifyPhase
@@ -36,120 +18,77 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
 private val DONE_GREEN = Color(0xFF4CAF50)
+private val SCAN_GREEN = Color(0xFF4CAF50)
 
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun VerifyScanScreen(
     viewModel: AppViewModel,
     onDone: () -> Unit,
     onBack: () -> Unit
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
     val cooldown = remember { AtomicBoolean(false) }
     val handler = remember { Handler(Looper.getMainLooper()) }
     val scope = rememberCoroutineScope()
+    var scanFlash by remember { mutableStateOf(false) }
 
     val phase = viewModel.verifyPhase
     val contentCount = viewModel.verifyContents.size
 
-    LaunchedEffect(Unit) {
-        if (!permissionState.status.isGranted) permissionState.launchPermissionRequest()
-    }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (permissionState.status.isGranted) {
-            AndroidView(
-                factory = { ctx ->
-                    val previewView = PreviewView(ctx)
-                    val executor = ContextCompat.getMainExecutor(ctx)
-                    val scanner = BarcodeScanning.getClient()
-                    val providerFuture = ProcessCameraProvider.getInstance(ctx)
-
-                    providerFuture.addListener({
-                        val provider = providerFuture.get()
-                        val preview = Preview.Builder().build().also {
-                            it.setSurfaceProvider(previewView.surfaceProvider)
-                        }
-                        val analyzer = ImageAnalysis.Builder()
-                            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                            .build()
-                        analyzer.setAnalyzer(executor) { imageProxy ->
-                            val mediaImage = imageProxy.image
-                            if (mediaImage != null) {
-                                val image = InputImage.fromMediaImage(
-                                    mediaImage, imageProxy.imageInfo.rotationDegrees
-                                )
-                                scanner.process(image)
-                                    .addOnSuccessListener { barcodes ->
-                                        barcodes.firstOrNull()?.rawValue?.let { code ->
-                                            if (cooldown.compareAndSet(false, true)) {
-                                                scope.launch {
-                                                    val result = viewModel.onVerifyBarcodeScanned(code)
-                                                    try {
-                                                        val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-                                                        when (result) {
-                                                            ScanResult.FOUND_NEW, ScanResult.FOUND_EXISTING -> {
-                                                                tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
-                                                                handler.postDelayed({ tg.release() }, 300)
-                                                                handler.postDelayed({ cooldown.set(false) }, 1000)
-                                                            }
-                                                            ScanResult.DUPLICATE -> {
-                                                                tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
-                                                                handler.postDelayed({
-                                                                    tg.startTone(ToneGenerator.TONE_DTMF_A, 80)
-                                                                    handler.postDelayed({
-                                                                        tg.startTone(ToneGenerator.TONE_DTMF_A, 80)
-                                                                        handler.postDelayed({ tg.release() }, 200)
-                                                                    }, 150)
-                                                                }, 200)
-                                                                handler.postDelayed({ cooldown.set(false) }, 1500)
-                                                            }
-                                                            ScanResult.NOT_FOUND -> {
-                                                                tg.startTone(ToneGenerator.TONE_PROP_NACK, 300)
-                                                                handler.postDelayed({ tg.release() }, 500)
-                                                                handler.postDelayed({ cooldown.set(false) }, 1500)
-                                                            }
-                                                        }
-                                                    } catch (_: Exception) {
-                                                        handler.postDelayed({ cooldown.set(false) }, 1500)
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    .addOnCompleteListener { imageProxy.close() }
-                            } else {
-                                imageProxy.close()
-                            }
-                        }
+    BarcodeScannerScaffold(
+        onBack = onBack,
+        label = if (phase == VerifyPhase.LOCATION) "Scan location" else "Scan content",
+        borderColor = if (scanFlash) SCAN_GREEN else Color.White,
+        onBarcodeDetected = { code ->
+            if (cooldown.compareAndSet(false, true)) {
+                if (viewModel.verifyPhase == VerifyPhase.CONTENT && code == viewModel.verifyLocation?.code) {
+                    playRisingTone(handler)
+                    handler.postDelayed({ cooldown.set(false) }, 1000)
+                } else {
+                    scope.launch {
+                        val result = viewModel.onVerifyBarcodeScanned(code)
                         try {
-                            provider.unbindAll()
-                            provider.bindToLifecycle(
-                                lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, analyzer
-                            )
-                        } catch (_: Exception) {}
-                    }, executor)
-
-                    previewView
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .size(260.dp)
-                    .border(2.dp, Color.White, RoundedCornerShape(12.dp))
-            )
-
-            Text(
-                text = if (phase == VerifyPhase.LOCATION) "Scan location" else "Scan content",
-                color = Color.White,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.align(Alignment.Center).offset(y = 150.dp)
-            )
-
+                            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+                            when (result) {
+                                ScanResult.FOUND_NEW -> {
+                                    scanFlash = true
+                                    tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
+                                    handler.postDelayed({ tg.release() }, 300)
+                                    handler.postDelayed({ scanFlash = false; cooldown.set(false) }, 1000)
+                                }
+                                ScanResult.FOUND_EXISTING -> {
+                                    scanFlash = true
+                                    tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
+                                    handler.postDelayed({
+                                        tg.startTone(ToneGenerator.TONE_DTMF_A, 80)
+                                        handler.postDelayed({ tg.release() }, 200)
+                                    }, 200)
+                                    handler.postDelayed({ scanFlash = false; cooldown.set(false) }, 1000)
+                                }
+                                ScanResult.DUPLICATE -> {
+                                    tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
+                                    handler.postDelayed({
+                                        tg.startTone(ToneGenerator.TONE_DTMF_A, 80)
+                                        handler.postDelayed({
+                                            tg.startTone(ToneGenerator.TONE_DTMF_A, 80)
+                                            handler.postDelayed({ tg.release() }, 200)
+                                        }, 150)
+                                    }, 200)
+                                    handler.postDelayed({ cooldown.set(false) }, 1000)
+                                }
+                                ScanResult.NOT_FOUND -> {
+                                    tg.startTone(ToneGenerator.TONE_PROP_NACK, 300)
+                                    handler.postDelayed({ tg.release() }, 1000)
+                                    handler.postDelayed({ cooldown.set(false) }, 1000)
+                                }
+                            }
+                        } catch (_: Exception) {
+                            handler.postDelayed({ cooldown.set(false) }, 1000)
+                        }
+                    }
+                }
+            }
+        },
+        bottomBar = {
             if (phase == VerifyPhase.CONTENT) {
                 Surface(
                     modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
@@ -174,25 +113,6 @@ fun VerifyScanScreen(
                     }
                 }
             }
-        } else {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text("Camera permission is required.")
-                Spacer(Modifier.height(16.dp))
-                Button(onClick = { permissionState.launchPermissionRequest() }) {
-                    Text("Grant Permission")
-                }
-            }
         }
-
-        IconButton(
-            onClick = onBack,
-            modifier = Modifier.align(Alignment.TopStart).padding(8.dp).statusBarsPadding()
-        ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-        }
-    }
+    )
 }
