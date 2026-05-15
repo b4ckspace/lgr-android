@@ -253,7 +253,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             saveParentState = UiState()
             newBarcodeState = UiState(data = barcode)
         }.onFailure {
-            newBarcodeState = UiState(error = it.localizedMessage)
+            newBarcodeState = UiState(error = it.toUserMessage())
         }
     }
 
@@ -716,5 +716,24 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             .onFailure { loanState = UiState(error = it.localizedMessage) }
+    }
+}
+
+private fun Throwable.toUserMessage(): String {
+    if (this !is retrofit2.HttpException) return localizedMessage ?: toString()
+    return try {
+        val body = response()?.errorBody()?.string() ?: return "HTTP ${code()}"
+        val type = object : com.google.gson.reflect.TypeToken<Map<String, Any>>() {}.type
+        val map: Map<String, Any> = com.google.gson.Gson().fromJson(body, type)
+        map.values.flatMap { value ->
+            @Suppress("UNCHECKED_CAST")
+            when (value) {
+                is List<*> -> value.filterIsInstance<String>()
+                is String -> listOf(value)
+                else -> emptyList()
+            }
+        }.firstOrNull() ?: "HTTP ${code()}"
+    } catch (_: Exception) {
+        localizedMessage ?: "HTTP ${code()}"
     }
 }
