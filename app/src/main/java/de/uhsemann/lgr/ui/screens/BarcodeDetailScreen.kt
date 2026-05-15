@@ -360,7 +360,7 @@ private fun ContentListSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "Contents ($totalCount)",
+                "Content ($totalCount)",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
