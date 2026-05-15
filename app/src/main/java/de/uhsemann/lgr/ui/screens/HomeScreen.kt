@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -14,7 +15,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun HomeScreen(onScanBarcode: () -> Unit, onNewBarcode: () -> Unit, showNew: Boolean = true) {
+fun HomeScreen(
+    onScanBarcode: () -> Unit,
+    onNewBarcode: () -> Unit,
+    onVerify: () -> Unit,
+    showNew: Boolean = true
+) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -23,6 +29,9 @@ fun HomeScreen(onScanBarcode: () -> Unit, onNewBarcode: () -> Unit, showNew: Boo
     ) {
         item {
             HomeTile(icon = Icons.Default.QrCodeScanner, label = "Scan", onClick = onScanBarcode)
+        }
+        item {
+            HomeTile(icon = Icons.Default.FactCheck, label = "Verify", onClick = onVerify)
         }
         if (showNew) {
             item {

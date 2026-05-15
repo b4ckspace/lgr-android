@@ -23,6 +23,8 @@ data class UiState<T>(
 
 enum class ScanResult { FOUND_NEW, FOUND_EXISTING, DUPLICATE, NOT_FOUND }
 
+enum class VerifyPhase { LOCATION, CONTENT }
+
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val prefs = application.getSharedPreferences("lgr_prefs", Context.MODE_PRIVATE)
     private val repo = LgrRepository()
@@ -74,6 +76,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
 
     var readonlyMode by mutableStateOf(false)
+        private set
+    var verifyLocation by mutableStateOf<Barcode?>(null)
+        private set
+    var verifyContents by mutableStateOf<List<Barcode>>(emptyList())
+        private set
+    var verifyPhase by mutableStateOf(VerifyPhase.LOCATION)
+        private set
+    var verifyState by mutableStateOf(UiState<Unit>())
         private set
     var newBarcodeState by mutableStateOf(UiState<Barcode>())
         private set
@@ -212,6 +222,68 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun exitReadonlyMode() {
         readonlyMode = false
+    }
+
+    fun clearVerifyState() {
+        verifyLocation = null
+        verifyContents = emptyList()
+        verifyPhase = VerifyPhase.LOCATION
+        verifyState = UiState()
+    }
+
+    fun startVerifyContentRescan() {
+        verifyContents = emptyList()
+        verifyPhase = VerifyPhase.CONTENT
+        verifyState = UiState()
+    }
+
+    suspend fun onVerifyBarcodeScanned(code: String): ScanResult {
+        return when (verifyPhase) {
+            VerifyPhase.LOCATION -> {
+                val barcode = runCatching { repo.getBarcode(code) }.getOrNull()
+                    ?: return ScanResult.NOT_FOUND
+                verifyLocation = barcode
+                verifyPhase = VerifyPhase.CONTENT
+                ScanResult.FOUND_NEW
+            }
+            VerifyPhase.CONTENT -> {
+                if (verifyContents.any { it.code == code }) return ScanResult.DUPLICATE
+                val barcode = runCatching { repo.getBarcode(code) }.getOrNull()
+                    ?: return ScanResult.NOT_FOUND
+                verifyContents = verifyContents + barcode
+                ScanResult.FOUND_NEW
+            }
+        }
+    }
+
+    fun saveVerifyChanges() = viewModelScope.launch {
+        val location = verifyLocation ?: return@launch
+        verifyState = UiState(isLoading = true)
+        val dbChildren = location.apiChildNames ?: emptyList()
+        val scannedCodes = verifyContents.map { it.code }.toSet()
+        val dbCodes = dbChildren.map { it.code }.toSet()
+        val redCodes = dbCodes - scannedCodes
+        val greenBarcodes = verifyContents.filter { it.code !in dbCodes }
+        val errors = mutableListOf<String>()
+
+        for (code in redCodes) {
+            runCatching { repo.patchBarcodeParent(ApiClient.getBarcodeUrl(code), null) }
+                .onFailure { errors.add(it.localizedMessage ?: code) }
+        }
+        val parentUrl = ApiClient.getBarcodeUrl(location.code)
+        for (b in greenBarcodes) {
+            runCatching { repo.patchBarcodeParent(ApiClient.getBarcodeUrl(b.code), parentUrl) }
+                .onFailure { errors.add(it.localizedMessage ?: b.code) }
+        }
+
+        if (errors.isEmpty()) {
+            val keptChildren = dbChildren.filter { it.code in scannedCodes }
+            val addedChildren = greenBarcodes.map { b -> ChildInfo(name = "${b.itemName} (${b.code})", code = b.code) }
+            verifyLocation = location.copy(apiChildNames = keptChildren + addedChildren)
+            verifyState = UiState(data = Unit)
+        } else {
+            verifyState = UiState(error = errors.joinToString("\n"))
+        }
     }
 
     fun resetLoanState() { loanState = UiState() }

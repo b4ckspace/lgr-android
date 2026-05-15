@@ -226,6 +226,18 @@ fun NewBarcodeScreen(
             }
 
             item {
+                OutlinedTextField(
+                    value = viewModel.newBarcodeDescription,
+                    onValueChange = { viewModel.newBarcodeDescription = it },
+                    label = { Text("Description") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 4,
+                    colors = lgrTextFieldColors()
+                )
+            }
+
+            item {
                 val itemSelected = viewModel.newBarcodeSelectedItem != null
                 OutlinedTextField(
                     value = viewModel.newBarcodeItemDescription,
@@ -235,18 +247,6 @@ fun NewBarcodeScreen(
                     minLines = 2,
                     maxLines = 4,
                     readOnly = itemSelected,
-                    colors = lgrTextFieldColors()
-                )
-            }
-
-            item {
-                OutlinedTextField(
-                    value = viewModel.newBarcodeDescription,
-                    onValueChange = { viewModel.newBarcodeDescription = it },
-                    label = { Text("Description") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
-                    maxLines = 4,
                     colors = lgrTextFieldColors()
                 )
             }

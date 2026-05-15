@@ -5,8 +5,6 @@ import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Handler
 import android.os.Looper
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -32,28 +30,31 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import de.uhsemann.lgr.viewmodel.AppViewModel
-import kotlinx.coroutines.delay
+import de.uhsemann.lgr.viewmodel.ScanResult
+import de.uhsemann.lgr.viewmodel.VerifyPhase
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicBoolean
+
+private val DONE_GREEN = Color(0xFF4CAF50)
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun ScanParentScreen(viewModel: AppViewModel, onParentScanned: () -> Unit, onBack: () -> Unit) {
+fun VerifyScanScreen(
+    viewModel: AppViewModel,
+    onDone: () -> Unit,
+    onBack: () -> Unit
+) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
-    val detected = remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
+    val cooldown = remember { AtomicBoolean(false) }
     val handler = remember { Handler(Looper.getMainLooper()) }
+    val scope = rememberCoroutineScope()
+
+    val phase = viewModel.verifyPhase
+    val contentCount = viewModel.verifyContents.size
 
     LaunchedEffect(Unit) {
         if (!permissionState.status.isGranted) permissionState.launchPermissionRequest()
-    }
-
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) detected.value = false
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -75,32 +76,43 @@ fun ScanParentScreen(viewModel: AppViewModel, onParentScanned: () -> Unit, onBac
                             .build()
                         analyzer.setAnalyzer(executor) { imageProxy ->
                             val mediaImage = imageProxy.image
-                            if (mediaImage != null && !detected.value) {
+                            if (mediaImage != null) {
                                 val image = InputImage.fromMediaImage(
                                     mediaImage, imageProxy.imageInfo.rotationDegrees
                                 )
                                 scanner.process(image)
                                     .addOnSuccessListener { barcodes ->
                                         barcodes.firstOrNull()?.rawValue?.let { code ->
-                                            if (!detected.value) {
-                                                detected.value = true
+                                            if (cooldown.compareAndSet(false, true)) {
                                                 scope.launch {
-                                                    val found = viewModel.setPendingNewParent(code)
-                                                    if (found) {
-                                                        try {
-                                                            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-                                                            tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
-                                                            handler.postDelayed({ tg.release() }, 300)
-                                                        } catch (_: Exception) {}
-                                                        onParentScanned()
-                                                    } else {
-                                                        try {
-                                                            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-                                                            tg.startTone(ToneGenerator.TONE_PROP_NACK, 300)
-                                                            handler.postDelayed({ tg.release() }, 500)
-                                                        } catch (_: Exception) {}
-                                                        delay(1500)
-                                                        detected.value = false
+                                                    val result = viewModel.onVerifyBarcodeScanned(code)
+                                                    try {
+                                                        val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+                                                        when (result) {
+                                                            ScanResult.FOUND_NEW, ScanResult.FOUND_EXISTING -> {
+                                                                tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
+                                                                handler.postDelayed({ tg.release() }, 300)
+                                                                handler.postDelayed({ cooldown.set(false) }, 1000)
+                                                            }
+                                                            ScanResult.DUPLICATE -> {
+                                                                tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
+                                                                handler.postDelayed({
+                                                                    tg.startTone(ToneGenerator.TONE_DTMF_A, 80)
+                                                                    handler.postDelayed({
+                                                                        tg.startTone(ToneGenerator.TONE_DTMF_A, 80)
+                                                                        handler.postDelayed({ tg.release() }, 200)
+                                                                    }, 150)
+                                                                }, 200)
+                                                                handler.postDelayed({ cooldown.set(false) }, 1500)
+                                                            }
+                                                            ScanResult.NOT_FOUND -> {
+                                                                tg.startTone(ToneGenerator.TONE_PROP_NACK, 300)
+                                                                handler.postDelayed({ tg.release() }, 500)
+                                                                handler.postDelayed({ cooldown.set(false) }, 1500)
+                                                            }
+                                                        }
+                                                    } catch (_: Exception) {
+                                                        handler.postDelayed({ cooldown.set(false) }, 1500)
                                                     }
                                                 }
                                             }
@@ -132,20 +144,47 @@ fun ScanParentScreen(viewModel: AppViewModel, onParentScanned: () -> Unit, onBac
             )
 
             Text(
-                text = "Scan barcode of new location",
+                text = if (phase == VerifyPhase.LOCATION) "Scan location" else "Scan content",
                 color = Color.White,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.align(Alignment.Center).offset(y = 150.dp)
             )
+
+            if (phase == VerifyPhase.CONTENT) {
+                Surface(
+                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+                    color = Color.Black.copy(alpha = 0.65f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "$contentCount barcode(s) scanned",
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Button(
+                            onClick = onDone,
+                            colors = ButtonDefaults.buttonColors(containerColor = DONE_GREEN)
+                        ) {
+                            Text("Done")
+                        }
+                    }
+                }
+            }
         } else {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text("Camera permission is required to scan barcodes.")
+                Text("Camera permission is required.")
                 Spacer(Modifier.height(16.dp))
-                Button(onClick = { permissionState.launchPermissionRequest() }) { Text("Grant Permission") }
+                Button(onClick = { permissionState.launchPermissionRequest() }) {
+                    Text("Grant Permission")
+                }
             }
         }
 
