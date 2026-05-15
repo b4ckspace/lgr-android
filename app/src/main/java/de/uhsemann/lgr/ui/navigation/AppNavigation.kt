@@ -23,7 +23,7 @@ private sealed class Screen(val route: String, val label: String, val icon: Imag
     object MyLoans : Screen("my_loans", "My\nLoans", Icons.Default.AccountCircle, enabled = false)
 }
 
-private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail")
+private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,10 +105,14 @@ fun AppNavigation(viewModel: AppViewModel) {
             }
             composable(Screen.Items.route) { ItemsScreen(viewModel) }
             composable(Screen.Barcodes.route) {
-                BarcodesScreen(viewModel, onOpenDetail = { list, index ->
-                    viewModel.openBarcodeFromList(list, index)
-                    navController.navigate("barcode_detail")
-                })
+                BarcodesScreen(
+                    viewModel = viewModel,
+                    onOpenDetail = { list, index ->
+                        viewModel.openBarcodeFromList(list, index)
+                        navController.navigate("barcode_detail")
+                    },
+                    onScanSearch = { navController.navigate("barcodes_scan_search") }
+                )
             }
             composable(Screen.Persons.route) { PersonsScreen(viewModel) }
             composable(Screen.Loans.route) { LoansScreen(viewModel) }
@@ -188,6 +192,16 @@ fun AppNavigation(viewModel: AppViewModel) {
                     },
                     onBack = { navController.popBackStack() },
                     selfCode = viewModel.newBarcodeCode.takeIf { it.isNotBlank() }
+                )
+            }
+            composable("barcodes_scan_search") {
+                ScanBarcodeSearchScreen(
+                    viewModel = viewModel,
+                    onScanned = { code ->
+                        viewModel.updateBarcodesSearch(code)
+                        navController.popBackStack()
+                    },
+                    onBack = { navController.popBackStack() }
                 )
             }
             composable("verify_scan") {

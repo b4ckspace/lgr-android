@@ -1,5 +1,9 @@
 package de.uhsemann.lgr.ui.screens
 
+import android.media.AudioManager
+import android.media.ToneGenerator
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -7,6 +11,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
@@ -19,9 +24,16 @@ import androidx.compose.ui.unit.dp
 import de.uhsemann.lgr.data.model.Barcode
 import de.uhsemann.lgr.data.model.BarcodeStatus
 import de.uhsemann.lgr.viewmodel.AppViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicBoolean
 
 @Composable
-fun BarcodesScreen(viewModel: AppViewModel, onOpenDetail: (List<Barcode>, Int) -> Unit = { _, _ -> }) {
+fun BarcodesScreen(
+    viewModel: AppViewModel,
+    onOpenDetail: (List<Barcode>, Int) -> Unit = { _, _ -> },
+    onScanSearch: () -> Unit = {}
+) {
     var search by remember { mutableStateOf(viewModel.barcodesSearch) }
     var showLoanDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -58,9 +70,14 @@ fun BarcodesScreen(viewModel: AppViewModel, onOpenDetail: (List<Barcode>, Int) -
                 placeholder = { Text("supports !user: !item: syntax") },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
                 trailingIcon = {
-                    if (search.isNotBlank()) {
-                        IconButton(onClick = { search = ""; viewModel.updateBarcodesSearch("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                    Row {
+                        if (search.isNotBlank()) {
+                            IconButton(onClick = { search = ""; viewModel.updateBarcodesSearch("") }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                            }
+                        }
+                        IconButton(onClick = onScanSearch) {
+                            Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan barcode", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 },
@@ -279,4 +296,43 @@ private fun BarcodeStatusRow(status: BarcodeStatus, blocked: Boolean) {
             Text("(${status.person})", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+}
+
+@Composable
+fun ScanBarcodeSearchScreen(
+    viewModel: AppViewModel,
+    onScanned: (String) -> Unit,
+    onBack: () -> Unit
+) {
+    val detected = remember { AtomicBoolean(false) }
+    val handler = remember { Handler(Looper.getMainLooper()) }
+    val scope = rememberCoroutineScope()
+
+    BarcodeScannerScaffold(
+        onBack = onBack,
+        label = "Scan to search",
+        onBarcodeDetected = { code ->
+            if (detected.compareAndSet(false, true)) {
+                scope.launch {
+                    val isNew = viewModel.isBarcodeNew(code)
+                    if (!isNew) {
+                        try {
+                            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+                            tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
+                            handler.postDelayed({ tg.release() }, 300)
+                        } catch (_: Exception) {}
+                        onScanned(code)
+                    } else {
+                        try {
+                            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+                            tg.startTone(ToneGenerator.TONE_PROP_NACK, 300)
+                            handler.postDelayed({ tg.release() }, 1000)
+                        } catch (_: Exception) {}
+                        delay(1000)
+                        detected.set(false)
+                    }
+                }
+            }
+        }
+    )
 }
