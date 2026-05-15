@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,12 +19,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import de.uhsemann.lgr.data.model.Item
+import de.uhsemann.lgr.data.model.Person
 import de.uhsemann.lgr.viewmodel.AppViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
 private val GREY = Color(0xFF9E9E9E)
+
+private fun Person.displayName(): String =
+    listOf(firstname, lastname).filter { it.isNotBlank() }.joinToString(" ").ifBlank { nickname }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +41,8 @@ fun NewBarcodeScreen(
 ) {
     var itemSuggestions by remember { mutableStateOf<List<Pair<Item, Int>>>(emptyList()) }
     var showSuggestions by remember { mutableStateOf(false) }
+    var ownerSuggestions by remember { mutableStateOf<List<Person>>(emptyList()) }
+    var showOwnerSuggestions by remember { mutableStateOf(false) }
 
     val newBarcodeState = viewModel.newBarcodeState
 
@@ -56,6 +63,19 @@ fun NewBarcodeScreen(
         val results = viewModel.searchItemsWithCounts(query)
         itemSuggestions = results
         showSuggestions = results.isNotEmpty()
+    }
+
+    LaunchedEffect(viewModel.newBarcodeOwnerQuery) {
+        val query = viewModel.newBarcodeOwnerQuery
+        if (query.length < 2 || viewModel.newBarcodeSelectedPerson != null || viewModel.newBarcodeOwnerUrl != null) {
+            ownerSuggestions = emptyList()
+            showOwnerSuggestions = false
+            return@LaunchedEffect
+        }
+        delay(300)
+        val results = viewModel.searchPersons(query)
+        ownerSuggestions = results
+        showOwnerSuggestions = results.isNotEmpty()
     }
 
     val canSave = viewModel.newBarcodeCode.isNotBlank() && viewModel.newBarcodeNameQuery.isNotBlank() && !newBarcodeState.isLoading
@@ -233,6 +253,78 @@ fun NewBarcodeScreen(
                     readOnly = itemSelected,
                     colors = lgrTextFieldColors()
                 )
+            }
+
+            item {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = viewModel.newBarcodeOwnerQuery,
+                            onValueChange = {
+                                viewModel.newBarcodeOwnerQuery = it
+                                viewModel.newBarcodeSelectedPerson = null
+                                viewModel.newBarcodeOwnerUrl = null
+                            },
+                            label = { Text("Owner") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            colors = lgrTextFieldColors(),
+                            trailingIcon = {
+                                if (viewModel.newBarcodeOwnerQuery.isNotEmpty()) {
+                                    IconButton(onClick = {
+                                        viewModel.newBarcodeOwnerQuery = ""
+                                        viewModel.newBarcodeSelectedPerson = null
+                                        viewModel.newBarcodeOwnerUrl = null
+                                        ownerSuggestions = emptyList()
+                                        showOwnerSuggestions = false
+                                    }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                    }
+                                }
+                            }
+                        )
+                        IconButton(onClick = { viewModel.fillOwnerWithCurrentUser() }) {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = "Set to current user",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    if (showOwnerSuggestions) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        ) {
+                            Column {
+                                ownerSuggestions.forEach { person ->
+                                    val display = person.displayName()
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                viewModel.newBarcodeOwnerQuery = display
+                                                viewModel.newBarcodeSelectedPerson = person
+                                                viewModel.newBarcodeOwnerUrl = person.url
+                                                showOwnerSuggestions = false
+                                            }
+                                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                                    ) {
+                                        Text(
+                                            text = display,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
+                                    HorizontalDivider()
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             if (newBarcodeState.error != null) {

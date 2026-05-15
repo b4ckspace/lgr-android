@@ -95,6 +95,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var newBarcodeItemDescription by mutableStateOf("")
     var newBarcodeDescription by mutableStateOf("")
     var newBarcodeParentCode by mutableStateOf("")
+    var newBarcodeOwnerQuery by mutableStateOf("")
+    var newBarcodeOwnerUrl by mutableStateOf<String?>(null)
+    var newBarcodeSelectedPerson by mutableStateOf<Person?>(null)
 
     val isAuthenticated get() = auth.data?.authenticated == true
     val username get() = auth.data?.username
@@ -138,7 +141,36 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         newBarcodeItemDescription = ""
         newBarcodeDescription = ""
         newBarcodeParentCode = ""
+        newBarcodeSelectedPerson = null
         clearPendingNewParent()
+        val savedDisplay = prefs.getString("last_owner_display", null)
+        val savedUrl = prefs.getString("last_owner_url", null)
+        if (savedDisplay != null) {
+            newBarcodeOwnerQuery = savedDisplay
+            newBarcodeOwnerUrl = savedUrl
+        } else {
+            newBarcodeOwnerQuery = ""
+            newBarcodeOwnerUrl = null
+            fillOwnerWithCurrentUser()
+        }
+    }
+
+    fun fillOwnerWithCurrentUser() = viewModelScope.launch {
+        val uname = username ?: return@launch
+        val results = runCatching { repo.getPersons(search = uname, limit = 10) }
+            .getOrNull()?.results ?: return@launch
+        val person = results.find { it.nickname == uname } ?: results.firstOrNull() ?: return@launch
+        val display = listOf(person.firstname, person.lastname)
+            .filter { it.isNotBlank() }.joinToString(" ").ifBlank { person.nickname }
+        newBarcodeOwnerQuery = display
+        newBarcodeOwnerUrl = person.url
+        newBarcodeSelectedPerson = person
+    }
+
+    suspend fun searchPersons(query: String): List<Person> {
+        if (query.isBlank()) return emptyList()
+        return runCatching { repo.getPersons(search = query, limit = 10) }
+            .getOrNull()?.results ?: emptyList()
     }
 
     fun onNewBarcodeCodeScanned(code: String) {
@@ -180,6 +212,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val itemDescription = newBarcodeItemDescription.trim()
         val description = newBarcodeDescription.trim()
         val parentCode = newBarcodeParentCode.trim()
+        val ownerQuery = newBarcodeOwnerQuery
+        val ownerUrl = newBarcodeOwnerUrl
 
         val itemUrl = if (selectedItem != null) {
             selectedItem.url
@@ -194,8 +228,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val parentUrl = if (parentCode.isNotBlank()) ApiClient.getBarcodeUrl(parentCode) else null
 
         runCatching {
-            repo.createBarcode(CreateBarcodeRequest(code = code, item = itemUrl, description = description, parent = parentUrl))
+            repo.createBarcode(CreateBarcodeRequest(code = code, item = itemUrl, description = description, owner = ownerUrl, parent = parentUrl))
         }.onSuccess { barcode ->
+            prefs.edit().apply {
+                putString("last_owner_display", ownerQuery)
+                if (ownerUrl != null) putString("last_owner_url", ownerUrl) else remove("last_owner_url")
+                apply()
+            }
             scannedBarcode = UiState(data = barcode)
             barcodeHistory = emptyList()
             barcodeForwardHistory = emptyList()
