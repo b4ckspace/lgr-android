@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -54,6 +55,17 @@ fun ItemsScreen(viewModel: AppViewModel) {
             singleLine = true,
             colors = lgrTextFieldColors()
         )
+
+        Row(modifier = Modifier.padding(horizontal = 8.dp)) {
+            FilterChip(
+                selected = viewModel.itemsNoBarcodeFilter,
+                onClick = { viewModel.toggleItemsNoBarcodeFilter() },
+                label = { Text("No barcodes") },
+                leadingIcon = if (viewModel.itemsNoBarcodeFilter) {
+                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
+                } else null
+            )
+        }
 
         val state = viewModel.items
         when {
