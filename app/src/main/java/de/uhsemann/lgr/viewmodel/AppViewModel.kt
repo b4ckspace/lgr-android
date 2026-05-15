@@ -68,6 +68,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var barcodesNoParentFilter by mutableStateOf(false)
         private set
+    private var barcodesReturnFromDetail = false
     var itemsNoBarcodeFilter by mutableStateOf(false)
         private set
     var barcodeListContext by mutableStateOf<List<Barcode>?>(null)
@@ -386,6 +387,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun loadBarcodes(search: String? = null, noParent: Boolean = barcodesNoParentFilter) {
+        val returning = barcodesReturnFromDetail
+        barcodesReturnFromDetail = false
+        if (returning && barcodes.data != null) return
+
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             if (!search.isNullOrBlank()) delay(300)
@@ -670,6 +675,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun openBarcodeFromList(list: List<Barcode>, index: Int) {
+        barcodesReturnFromDetail = true
         barcodeHistory = emptyList()
         barcodeForwardHistory = emptyList()
         barcodeListContext = list
