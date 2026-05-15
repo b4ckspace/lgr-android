@@ -531,7 +531,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     suspend fun onAddContentBarcodeScanned(code: String): ScanResult {
         val currentBarcode = scannedBarcode.data ?: return ScanResult.NOT_FOUND
         if (newScannedBarcodes.any { it.code == code }) return ScanResult.DUPLICATE
-        if (currentBarcode.apiChildNames?.any { it.code == code } == true) return ScanResult.DUPLICATE
+        if (currentBarcode.apiChildNames?.any { it.code == code } == true) return ScanResult.FOUND_EXISTING
         val b = runCatching { repo.getBarcode(code) }.getOrNull() ?: return ScanResult.NOT_FOUND
         newScannedBarcodes = newScannedBarcodes + b
         return ScanResult.FOUND_NEW

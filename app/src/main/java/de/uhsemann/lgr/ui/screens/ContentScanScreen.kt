@@ -77,10 +77,8 @@ fun ContentScanScreen(viewModel: AppViewModel, onDone: () -> Unit, addOnly: Bool
                             }
                         } catch (_: Exception) {}
                     }
-                    handler.postDelayed({
-                        scanFlash = false
-                        cooldown.set(false)
-                    }, 1000)
+                    handler.postDelayed({ scanFlash = false }, 500)
+                    handler.postDelayed({ cooldown.set(false) }, 1000)
                 }
             }
         },

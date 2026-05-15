@@ -53,7 +53,8 @@ fun VerifyScanScreen(
                                     scanFlash = true
                                     tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
                                     handler.postDelayed({ tg.release() }, 300)
-                                    handler.postDelayed({ scanFlash = false; cooldown.set(false) }, 1000)
+                                    handler.postDelayed({ scanFlash = false }, 500)
+                                    handler.postDelayed({ cooldown.set(false) }, 1000)
                                 }
                                 ScanResult.FOUND_EXISTING -> {
                                     scanFlash = true
@@ -62,7 +63,8 @@ fun VerifyScanScreen(
                                         tg.startTone(ToneGenerator.TONE_DTMF_A, 80)
                                         handler.postDelayed({ tg.release() }, 200)
                                     }, 200)
-                                    handler.postDelayed({ scanFlash = false; cooldown.set(false) }, 1000)
+                                    handler.postDelayed({ scanFlash = false }, 500)
+                                    handler.postDelayed({ cooldown.set(false) }, 1000)
                                 }
                                 ScanResult.DUPLICATE -> {
                                     tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
