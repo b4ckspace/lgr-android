@@ -7,6 +7,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.core.view.WindowCompat
 import de.uhsemann.lgr.ui.navigation.AppNavigation
 import de.uhsemann.lgr.ui.screens.LoginScreen
 import de.uhsemann.lgr.ui.theme.LgrTheme
@@ -17,6 +18,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
             LgrTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {

@@ -6,7 +6,8 @@ import android.os.Handler
 import android.os.Looper
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
@@ -117,62 +118,61 @@ fun NewBarcodeScreen(
             )
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(24.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = viewModel.newBarcodeParentCode,
-                        onValueChange = { viewModel.newBarcodeParentCode = it },
-                        label = { Text("Location") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        colors = lgrTextFieldColors()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = viewModel.newBarcodeParentCode,
+                    onValueChange = { viewModel.newBarcodeParentCode = it },
+                    label = { Text("Location") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    colors = lgrTextFieldColors()
+                )
+                IconButton(onClick = onScanParent) {
+                    Icon(
+                        Icons.Default.QrCodeScanner,
+                        contentDescription = "Scan location",
+                        tint = MaterialTheme.colorScheme.primary
                     )
-                    IconButton(onClick = onScanParent) {
-                        Icon(
-                            Icons.Default.QrCodeScanner,
-                            contentDescription = "Scan location",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
                 }
             }
 
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = viewModel.newBarcodeCode,
-                        onValueChange = { viewModel.newBarcodeCode = it },
-                        label = { Text("Barcode *") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        colors = lgrTextFieldColors()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = viewModel.newBarcodeCode,
+                    onValueChange = { viewModel.newBarcodeCode = it },
+                    label = { Text("Barcode *") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    colors = lgrTextFieldColors()
+                )
+                IconButton(onClick = onScanCode) {
+                    Icon(
+                        Icons.Default.QrCodeScanner,
+                        contentDescription = "Scan barcode",
+                        tint = MaterialTheme.colorScheme.primary
                     )
-                    IconButton(onClick = onScanCode) {
-                        Icon(
-                            Icons.Default.QrCodeScanner,
-                            contentDescription = "Scan barcode",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
                 }
             }
 
-            item {
-                Column {
-                    OutlinedTextField(
+            Column {
+                OutlinedTextField(
                         value = viewModel.newBarcodeNameQuery,
                         onValueChange = {
                             if (viewModel.newBarcodeSelectedItem != null) {
@@ -236,37 +236,31 @@ fun NewBarcodeScreen(
                         }
                     }
                 }
-            }
 
-            item {
-                OutlinedTextField(
-                    value = viewModel.newBarcodeDescription,
-                    onValueChange = { viewModel.newBarcodeDescription = it },
-                    label = { Text("Description") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
-                    maxLines = 4,
-                    colors = lgrTextFieldColors()
-                )
-            }
+            OutlinedTextField(
+                value = viewModel.newBarcodeDescription,
+                onValueChange = { viewModel.newBarcodeDescription = it },
+                label = { Text("Description") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2,
+                maxLines = 4,
+                colors = lgrTextFieldColors()
+            )
 
-            item {
-                val itemSelected = viewModel.newBarcodeSelectedItem != null
-                OutlinedTextField(
-                    value = viewModel.newBarcodeItemDescription,
-                    onValueChange = { if (!itemSelected) viewModel.newBarcodeItemDescription = it },
-                    label = { Text("Item description") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
-                    maxLines = 4,
-                    readOnly = itemSelected,
-                    colors = lgrTextFieldColors()
-                )
-            }
+            val itemSelected = viewModel.newBarcodeSelectedItem != null
+            OutlinedTextField(
+                value = viewModel.newBarcodeItemDescription,
+                onValueChange = { if (!itemSelected) viewModel.newBarcodeItemDescription = it },
+                label = { Text("Item description") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2,
+                maxLines = 4,
+                readOnly = itemSelected,
+                colors = lgrTextFieldColors()
+            )
 
-            item {
-                Column {
-                    Row(
+            Column {
+                Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -334,22 +328,19 @@ fun NewBarcodeScreen(
                         }
                     }
                 }
-            }
 
             if (newBarcodeState.error != null) {
-                item {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        )
-                    ) {
-                        Text(
-                            text = newBarcodeState.error,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.fillMaxWidth().padding(12.dp)
-                        )
-                    }
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Text(
+                        text = newBarcodeState.error,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.fillMaxWidth().padding(12.dp)
+                    )
                 }
             }
         }
