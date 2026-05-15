@@ -71,7 +71,10 @@ fun BarcodesScreen(viewModel: AppViewModel, onOpenDetail: (List<Barcode>, Int) -
                 colors = lgrTextFieldColors()
             )
 
-            Row(modifier = Modifier.padding(horizontal = 8.dp)) {
+            Row(
+                modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 FilterChip(
                     selected = viewModel.barcodesNoParentFilter,
                     onClick = { viewModel.toggleBarcodesNoParentFilter() },
@@ -80,6 +83,15 @@ fun BarcodesScreen(viewModel: AppViewModel, onOpenDetail: (List<Barcode>, Int) -
                         { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
                     } else null
                 )
+                Spacer(modifier = Modifier.weight(1f))
+                viewModel.barcodesCount?.let { count ->
+                    Text(
+                        text = "$count result(s)",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                }
             }
 
             if (viewModel.selectedBarcodes.isNotEmpty()) {

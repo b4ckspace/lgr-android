@@ -56,7 +56,10 @@ fun ItemsScreen(viewModel: AppViewModel) {
             colors = lgrTextFieldColors()
         )
 
-        Row(modifier = Modifier.padding(horizontal = 8.dp)) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             FilterChip(
                 selected = viewModel.itemsNoBarcodeFilter,
                 onClick = { viewModel.toggleItemsNoBarcodeFilter() },
@@ -65,6 +68,15 @@ fun ItemsScreen(viewModel: AppViewModel) {
                     { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
                 } else null
             )
+            Spacer(modifier = Modifier.weight(1f))
+            viewModel.itemsCount?.let { count ->
+                Text(
+                    text = "$count result(s)",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+            }
         }
 
         val state = viewModel.items

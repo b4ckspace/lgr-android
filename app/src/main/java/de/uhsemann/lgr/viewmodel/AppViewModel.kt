@@ -35,8 +35,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var auth by mutableStateOf(UiState<AuthStatus>())
     var items by mutableStateOf(UiState<List<Item>>())
     var itemsNextPage by mutableStateOf<String?>(null)
+    var itemsCount by mutableStateOf<Int?>(null)
+        private set
     var barcodes by mutableStateOf(UiState<List<Barcode>>())
     var barcodesNextPage by mutableStateOf<String?>(null)
+    var barcodesCount by mutableStateOf<Int?>(null)
+        private set
     var persons by mutableStateOf(UiState<List<Person>>())
     var personsNextPage by mutableStateOf<String?>(null)
     var loans by mutableStateOf(UiState<List<Loan>>())
@@ -363,7 +367,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             if (!search.isNullOrBlank()) delay(300)
             items = UiState(isLoading = true)
             runCatching { repo.getItems(search, noBarcodes = noBarcodes) }
-                .onSuccess { items = UiState(data = it.results); itemsNextPage = it.next }
+                .onSuccess { items = UiState(data = it.results); itemsNextPage = it.next; itemsCount = it.count }
                 .onFailure { items = UiState(error = it.localizedMessage) }
         }
     }
@@ -387,7 +391,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             if (!search.isNullOrBlank()) delay(300)
             barcodes = UiState(isLoading = true)
             runCatching { repo.getBarcodes(search, noParent = noParent) }
-                .onSuccess { barcodes = UiState(data = it.results); barcodesNextPage = it.next }
+                .onSuccess { barcodes = UiState(data = it.results); barcodesNextPage = it.next; barcodesCount = it.count }
                 .onFailure { barcodes = UiState(error = it.localizedMessage) }
         }
     }
