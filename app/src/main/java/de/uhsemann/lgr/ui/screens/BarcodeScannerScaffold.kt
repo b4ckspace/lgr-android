@@ -35,7 +35,10 @@ fun playRisingTone(handler: Handler) {
         tg.startTone(ToneGenerator.TONE_DTMF_1, 80)
         handler.postDelayed({
             tg.startTone(ToneGenerator.TONE_DTMF_A, 80)
-            handler.postDelayed({ tg.release() }, 100)
+            handler.postDelayed({
+                tg.startTone(ToneGenerator.TONE_DTMF_D, 80)
+                handler.postDelayed({ tg.release() }, 100)
+            }, 100)
         }, 100)
     } catch (_: Exception) {}
 }
