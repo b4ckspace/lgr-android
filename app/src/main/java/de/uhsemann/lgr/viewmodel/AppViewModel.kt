@@ -62,6 +62,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var barcodesSearch by mutableStateOf("")
         private set
+    var barcodesNoParentFilter by mutableStateOf(false)
+        private set
     var barcodeListContext by mutableStateOf<List<Barcode>?>(null)
         private set
     var barcodeListIndex by mutableStateOf(0)
@@ -332,12 +334,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun loadBarcodes(search: String? = null) {
+    fun loadBarcodes(search: String? = null, noParent: Boolean = barcodesNoParentFilter) {
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             if (!search.isNullOrBlank()) delay(300)
             barcodes = UiState(isLoading = true)
-            runCatching { repo.getBarcodes(search) }
+            runCatching { repo.getBarcodes(search, noParent = noParent) }
                 .onSuccess { barcodes = UiState(data = it.results); barcodesNextPage = it.next }
                 .onFailure { barcodes = UiState(error = it.localizedMessage) }
         }
@@ -609,6 +611,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun updateBarcodesSearch(query: String) {
         barcodesSearch = query
         loadBarcodes(query)
+    }
+
+    fun toggleBarcodesNoParentFilter() {
+        barcodesNoParentFilter = !barcodesNoParentFilter
+        loadBarcodes(barcodesSearch)
     }
 
     fun openBarcodeFromList(list: List<Barcode>, index: Int) {

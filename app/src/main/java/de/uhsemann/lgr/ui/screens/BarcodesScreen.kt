@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,6 +70,17 @@ fun BarcodesScreen(viewModel: AppViewModel, onOpenDetail: (List<Barcode>, Int) -
                 singleLine = true,
                 colors = lgrTextFieldColors()
             )
+
+            Row(modifier = Modifier.padding(horizontal = 8.dp)) {
+                FilterChip(
+                    selected = viewModel.barcodesNoParentFilter,
+                    onClick = { viewModel.toggleBarcodesNoParentFilter() },
+                    label = { Text("No location") },
+                    leadingIcon = if (viewModel.barcodesNoParentFilter) {
+                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
+                    } else null
+                )
+            }
 
             if (viewModel.selectedBarcodes.isNotEmpty()) {
                 Surface(color = MaterialTheme.colorScheme.primaryContainer) {

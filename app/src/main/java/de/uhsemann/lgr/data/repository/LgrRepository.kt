@@ -15,8 +15,8 @@ class LgrRepository {
     }
     suspend fun logout() = api.logout()
 
-    suspend fun getBarcodes(search: String? = null, limit: Int = 50, offset: Int = 0) =
-        api.getBarcodes(search.takeIf { !it.isNullOrBlank() }, limit, offset)
+    suspend fun getBarcodes(search: String? = null, limit: Int = 50, offset: Int = 0, noParent: Boolean = false) =
+        api.getBarcodes(search.takeIf { !it.isNullOrBlank() }, limit, offset, noParent.takeIf { it })
 
     suspend fun getBarcodesPage(url: String) = api.getBarcodesPage(url)
     suspend fun getBarcode(code: String) = api.getBarcode(code)
