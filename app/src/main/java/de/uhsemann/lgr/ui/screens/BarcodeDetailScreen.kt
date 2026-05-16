@@ -69,10 +69,14 @@ fun BarcodeDetailScreen(
 
     val onBarcodeClick: (String) -> Unit = { code -> viewModel.navigateToBarcode(code) }
 
+    LaunchedEffect(deleteState.error) {
+        if (deleteState.error != null) showDeleteDialog = true
+    }
+
     if (showDeleteDialog) {
         val code = state.data?.code ?: ""
         AlertDialog(
-            onDismissRequest = { if (!deleteState.isLoading) showDeleteDialog = false },
+            onDismissRequest = { showDeleteDialog = false; viewModel.resetDeleteBarcodeState() },
             title = { Text("Delete Barcode") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -81,18 +85,19 @@ fun BarcodeDetailScreen(
                     deleteState.error?.let {
                         Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                     }
-                    if (deleteState.isLoading) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 }
             },
             confirmButton = {
                 Button(
-                    onClick = { viewModel.deleteBarcode(code) },
-                    enabled = !deleteState.isLoading,
+                    onClick = {
+                        showDeleteDialog = false
+                        viewModel.deleteBarcode(code)
+                    },
                     colors = ButtonDefaults.buttonColors(containerColor = RED)
                 ) { Text("Delete") }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }, enabled = !deleteState.isLoading) {
+                TextButton(onClick = { showDeleteDialog = false; viewModel.resetDeleteBarcodeState() }) {
                     Text("Cancel")
                 }
             }
@@ -150,7 +155,11 @@ fun BarcodeDetailScreen(
                     ) { _, dragAmount -> dragTotal += dragAmount }
                 }
         ) {
+            if (deleteState.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
             when {
+                deleteState.isLoading -> Unit
                 state.isLoading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 state.error != null -> Text(
                     text = state.error,
