@@ -103,7 +103,7 @@ fun BarcodesScreen(
                 Spacer(modifier = Modifier.weight(1f))
                 viewModel.barcodesCount?.let { count ->
                     Text(
-                        text = "$count result(s)",
+                        text = "$count ${if (count == 1) "result" else "results"}",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(end = 8.dp)
