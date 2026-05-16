@@ -35,7 +35,6 @@ private val GREEN = Color(0xFF4CAF50)
 private val RED = Color(0xFFE53935)
 private val LOAN_BLUE = Color(0xFF1976D2)
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BarcodeDetailScreen(
     viewModel: AppViewModel,
@@ -107,45 +106,38 @@ fun BarcodeDetailScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    if (barcodeList != null) Text("${currentIndex + 1} / ${barcodeList.size}")
-                    else Text("")
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    if (!viewModel.readonlyMode) {
-                        state.data?.let { barcode ->
-                            Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
-                                IconButton(onClick = onNewBarcode) {
-                                    Icon(Icons.Default.NoteAdd, contentDescription = "New Barcode")
-                                }
-                                IconButton(onClick = {
-                                    viewModel.toggleBarcodeSelection(barcode.code)
-                                    onBack()
-                                }) {
-                                    Icon(Icons.Default.ShoppingCart, contentDescription = "Select for Loan")
-                                }
-                                IconButton(onClick = { showDeleteDialog = true }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete")
-                                }
-                            }
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            }
+            Spacer(Modifier.weight(1f))
+            if (!viewModel.readonlyMode) {
+                state.data?.let { barcode ->
+                    Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
+                        IconButton(onClick = onNewBarcode) {
+                            Icon(Icons.Default.NoteAdd, contentDescription = "New Barcode")
+                        }
+                        IconButton(onClick = {
+                            viewModel.toggleBarcodeSelection(barcode.code)
+                            onBack()
+                        }) {
+                            Icon(Icons.Default.ShoppingCart, contentDescription = "Select for Loan")
+                        }
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete")
                         }
                     }
                 }
-            )
+            }
         }
-    ) { padding ->
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
                 .pointerInput(currentIndex) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
@@ -180,7 +172,7 @@ fun BarcodeDetailScreen(
                     Column(modifier = Modifier.fillMaxSize()) {
                         LazyColumn(
                             modifier = Modifier.fillMaxWidth().weight(1f),
-                            contentPadding = PaddingValues(24.dp),
+                            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             item {
