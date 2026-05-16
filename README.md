@@ -137,8 +137,10 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 - Shows all child barcodes with their item names. Tappable for navigation.
 - Loan status shown per child (blue label if on loan).
 - Two icon buttons in the *Content* header (authenticated):
-  - **Verify icon** — opens *Scan all content* scanner; scan every physical item in the container. Items in the database but not yet scanned are shown in red; newly scanned items in green. A **Save** button appears at the bottom once scanning starts.
-  - **Scan icon** — opens *Add content* scanner; adds newly scanned items to the existing content without removing anything. A **Save** button appears at the bottom once scanning starts.
+  - **Verify icon** — opens *Scan all content* scanner; scan every physical item in the container. Items in the database but not yet scanned are shown in red; newly scanned items in green.
+  - **Scan icon** — opens *Add content* scanner; adds newly scanned items to the existing content without removing anything.
+- Both scan modes share the same list of scanned barcodes. Switching between them mid-session preserves everything already scanned. Closing the scanner and reopening it also continues from where you left off.
+- Once scanning has started, **Save** and **Cancel** buttons appear at the bottom. Cancel discards all scan progress; Save writes the changes to the backend. The scan state resets when navigating to a different barcode.
 
 ---
 
