@@ -47,6 +47,7 @@ fun NewBarcodeScreen(
     var ownerSuggestions by remember { mutableStateOf<List<Person>>(emptyList()) }
     var showOwnerSuggestions by remember { mutableStateOf(false) }
     val itemFocusRequester = remember { FocusRequester() }
+    val ownerFocusRequester = remember { FocusRequester() }
 
     val newBarcodeState = viewModel.newBarcodeState
 
@@ -279,7 +280,7 @@ fun NewBarcodeScreen(
                                 viewModel.newBarcodeOwnerUrl = null
                             },
                             label = { Text("Owner") },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).focusRequester(ownerFocusRequester),
                             singleLine = true,
                             colors = lgrTextFieldColors(),
                             trailingIcon = {
@@ -290,6 +291,7 @@ fun NewBarcodeScreen(
                                         viewModel.newBarcodeOwnerUrl = null
                                         ownerSuggestions = emptyList()
                                         showOwnerSuggestions = false
+                                        ownerFocusRequester.requestFocus()
                                     }) {
                                         Icon(Icons.Default.Clear, contentDescription = "Clear")
                                     }
