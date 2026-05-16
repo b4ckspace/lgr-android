@@ -17,6 +17,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import de.uhsemann.lgr.data.model.Item
@@ -44,6 +46,7 @@ fun NewBarcodeScreen(
     var showSuggestions by remember { mutableStateOf(false) }
     var ownerSuggestions by remember { mutableStateOf<List<Person>>(emptyList()) }
     var showOwnerSuggestions by remember { mutableStateOf(false) }
+    val itemFocusRequester = remember { FocusRequester() }
 
     val newBarcodeState = viewModel.newBarcodeState
 
@@ -182,7 +185,7 @@ fun NewBarcodeScreen(
                             viewModel.newBarcodeSelectedItem = null
                         },
                         label = { Text("Item *") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().focusRequester(itemFocusRequester),
                         singleLine = true,
                         colors = lgrTextFieldColors(),
                         trailingIcon = {
@@ -195,6 +198,7 @@ fun NewBarcodeScreen(
                                     viewModel.newBarcodeSelectedItem = null
                                     itemSuggestions = emptyList()
                                     showSuggestions = false
+                                    itemFocusRequester.requestFocus()
                                 }) {
                                     Icon(Icons.Default.Clear, contentDescription = "Clear")
                                 }
