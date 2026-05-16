@@ -1,4 +1,4 @@
--keep class de.uhsemann.lgr.data.model.** { *; }
+-keep class de.backspace.lgr.data.model.** { *; }
 -keepattributes Signature
 -keepattributes *Annotation*
 -dontwarn okhttp3.**

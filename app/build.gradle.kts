@@ -8,11 +8,11 @@ plugins {
 }
 
 android {
-    namespace = "de.uhsemann.lgr"
+    namespace = "de.backspace.lgr"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "de.uhsemann.lgr"
+        applicationId = "de.backspace.lgr"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
