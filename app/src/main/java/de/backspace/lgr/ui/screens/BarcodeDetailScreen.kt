@@ -486,22 +486,29 @@ private fun ContentButtonsSection(viewModel: AppViewModel, barcode: Barcode) {
         modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Button(
-            onClick = {
-                if (contentScanActive) viewModel.saveContentChanges(barcode)
-                else viewModel.saveAddedContent(barcode)
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !saveState.isLoading
-        ) {
-            if (saveState.isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            } else {
-                Text("Save")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(
+                onClick = { viewModel.cancelContentScan() },
+                modifier = Modifier.weight(1f),
+                enabled = !saveState.isLoading
+            ) { Text("Cancel") }
+            Button(
+                onClick = {
+                    if (contentScanActive) viewModel.saveContentChanges(barcode)
+                    else viewModel.saveAddedContent(barcode)
+                },
+                modifier = Modifier.weight(1f),
+                enabled = !saveState.isLoading
+            ) {
+                if (saveState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Save")
+                }
             }
         }
 

@@ -574,17 +574,27 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     // --- Content scanning ---
 
     fun startContentScan() {
-        scannedChildCodes = emptySet()
-        newScannedBarcodes = emptyList()
+        if (!contentScanActive) {
+            scannedChildCodes = emptySet()
+            newScannedBarcodes = emptyList()
+            saveContentState = UiState()
+        }
         contentScanActive = true
         addContentScanActive = false
-        saveContentState = UiState()
     }
 
     fun startAddContentScan() {
         newScannedBarcodes = emptyList()
         addContentScanActive = true
         contentScanActive = false
+        saveContentState = UiState()
+    }
+
+    fun cancelContentScan() {
+        scannedChildCodes = emptySet()
+        newScannedBarcodes = emptyList()
+        contentScanActive = false
+        addContentScanActive = false
         saveContentState = UiState()
     }
 
