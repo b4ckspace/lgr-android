@@ -1,5 +1,6 @@
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -24,12 +25,17 @@ android {
         buildConfigField("String", "BUILD_DATE", "\"$buildDate\"")
     }
 
+    val keystoreProps = Properties().also { props ->
+        val f = rootProject.file("keystore.properties")
+        if (f.exists()) f.inputStream().use { props.load(it) }
+    }
+
     signingConfigs {
         create("release") {
-            storeFile = file("../lgr-release.jks")
-            storePassword = "lgr-release"
-            keyAlias = "lgr"
-            keyPassword = "lgr-release"
+            storeFile = keystoreProps["storeFile"]?.let { file(it) }
+            storePassword = keystoreProps["storePassword"] as String?
+            keyAlias = keystoreProps["keyAlias"] as String?
+            keyPassword = keystoreProps["keyPassword"] as String?
         }
     }
 
