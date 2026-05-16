@@ -28,6 +28,10 @@ class LgrRepository {
         api.patchBarcode(url, body)
     }
     suspend fun createBarcode(request: CreateBarcodeRequest) = api.createBarcode(request)
+    suspend fun deleteBarcode(code: String) {
+        val response = api.deleteBarcode(code)
+        if (!response.isSuccessful) throw retrofit2.HttpException(response)
+    }
 
     suspend fun getPersons(search: String? = null, limit: Int = 50, offset: Int = 0) =
         api.getPersons(search.takeIf { !it.isNullOrBlank() }, limit, offset)

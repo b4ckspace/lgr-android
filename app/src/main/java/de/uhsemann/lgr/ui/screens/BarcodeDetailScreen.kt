@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -46,6 +47,15 @@ fun BarcodeDetailScreen(
     val currentIndex = viewModel.barcodeListIndex
     val swipeThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
     var dragTotal by remember(currentIndex) { mutableStateOf(0f) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    val deleteState = viewModel.deleteBarcodeState
+    LaunchedEffect(deleteState.data) {
+        if (deleteState.data != null) {
+            viewModel.resetDeleteBarcodeState()
+            onBack()
+        }
+    }
 
     val ownerName by produceState<String?>(null, state.data?.owner) {
         val ownerUrl = state.data?.owner
@@ -58,6 +68,36 @@ fun BarcodeDetailScreen(
     }
 
     val onBarcodeClick: (String) -> Unit = { code -> viewModel.navigateToBarcode(code) }
+
+    if (showDeleteDialog) {
+        val code = state.data?.code ?: ""
+        AlertDialog(
+            onDismissRequest = { if (!deleteState.isLoading) showDeleteDialog = false },
+            title = { Text("Delete Barcode") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Are you sure you want to permanently delete barcode:")
+                    Text(code, style = MaterialTheme.typography.titleMedium)
+                    deleteState.error?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (deleteState.isLoading) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.deleteBarcode(code) },
+                    enabled = !deleteState.isLoading,
+                    colors = ButtonDefaults.buttonColors(containerColor = RED)
+                ) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }, enabled = !deleteState.isLoading) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -74,6 +114,9 @@ fun BarcodeDetailScreen(
                 actions = {
                     if (!viewModel.readonlyMode) {
                         state.data?.let { barcode ->
+                            IconButton(onClick = { showDeleteDialog = true }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Delete")
+                            }
                             IconButton(onClick = {
                                 viewModel.toggleBarcodeSelection(barcode.code)
                                 onBack()

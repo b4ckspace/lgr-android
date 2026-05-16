@@ -51,6 +51,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     var selectedBarcodes by mutableStateOf<Set<String>>(emptySet())
     var loanState by mutableStateOf(UiState<LoanResponse>())
+    var deleteBarcodeState by mutableStateOf(UiState<Unit>())
+        private set
     var scannedBarcode by mutableStateOf(UiState<Barcode>())
     var scannedChildCodes by mutableStateOf<Set<String>>(emptySet())
         private set
@@ -462,6 +464,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 .onSuccess { myLoans = UiState(data = (myLoans.data ?: emptyList()) + it.results); myLoansNextPage = it.next }
         }
     }
+
+    fun deleteBarcode(code: String) = viewModelScope.launch {
+        deleteBarcodeState = UiState(isLoading = true)
+        runCatching { repo.deleteBarcode(code) }
+            .onSuccess {
+                deleteBarcodeState = UiState(data = Unit)
+                barcodesReturnFromDetail = false
+            }
+            .onFailure { deleteBarcodeState = UiState(error = it.toUserMessage()) }
+    }
+
+    fun resetDeleteBarcodeState() { deleteBarcodeState = UiState() }
 
     fun loadBarcode(code: String) = viewModelScope.launch {
         pendingNewParent = null

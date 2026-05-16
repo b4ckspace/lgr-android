@@ -38,6 +38,9 @@ interface ApiService {
     @POST("api/barcodes/")
     suspend fun createBarcode(@Body request: CreateBarcodeRequest): Barcode
 
+    @DELETE("api/barcodes/{code}/")
+    suspend fun deleteBarcode(@Path("code") code: String): retrofit2.Response<Void>
+
     @GET("api/persons/")
     suspend fun getPersons(
         @Query("search") search: String? = null,
