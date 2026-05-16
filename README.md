@@ -105,7 +105,7 @@ Searchable, paginated list of all barcodes.
 - **Text search** — searches code, item name, description. Supports `!user:` and `!item:` syntax (backend-defined).
 - **Scan to search** — tap the camera icon in the search field; scans an existing barcode and fills it into the search field automatically. Beeps on found, burps on unknown.
 - **No location filter** — filter chip to show only barcodes without a parent location.
-- **Result count** shown in the filter bar.
+- **Result count** shown in the filter bar ("1 result" / "N results").
 - **Infinite scroll** — next pages load automatically as you scroll.
 - **Barcode selection** — check the checkbox on any barcode card to add it to a loan selection. A banner shows the current count; the cart FAB appears when items are selected.
 
@@ -126,9 +126,9 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 - Tapping a location breadcrumb or a content item navigates into that barcode, maintaining back-navigation history (Android back button / swipe right goes back through the chain).
 
 **Actions (authenticated):**
-- **Add (＋)** — create a new barcode (same as Home → New)
+- **New** — create a new barcode (same as Home → New)
 - **Cart** — add the current barcode to the loan selection and return to the list
-- **Delete (🗑)** — confirmation dialog, then permanently deletes the barcode and returns to the list
+- **Delete** — confirmation dialog, then permanently deletes the barcode and returns to the list
 
 **Location editing:**
 - Tap the scan icon next to *Location* to scan a new parent barcode. The new parent chain is shown with newly added ancestors highlighted in green. Save or Cancel.
@@ -136,8 +136,9 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 **Content list:**
 - Shows all child barcodes with their item names. Tappable for navigation.
 - Loan status shown per child (blue label if on loan).
-- **Re-scan all content** — opens a scanner; scan each physical item in the container. Items present in the database but not yet scanned are shown in red; newly scanned items in green. Save writes the new content set to the backend.
-- **Add content (scan icon)** — scanner that only adds to the existing content without removing anything.
+- Two icon buttons in the *Content* header (authenticated):
+  - **Verify icon** — opens *Scan all content* scanner; scan every physical item in the container. Items in the database but not yet scanned are shown in red; newly scanned items in green. A **Save** button appears at the bottom once scanning starts.
+  - **Scan icon** — opens *Add content* scanner; adds newly scanned items to the existing content without removing anything. A **Save** button appears at the bottom once scanning starts.
 
 ---
 

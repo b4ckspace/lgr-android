@@ -34,7 +34,7 @@ fun ContentScanScreen(viewModel: AppViewModel, onDone: () -> Unit, addOnly: Bool
 
     BarcodeScannerScaffold(
         onBack = onDone,
-        label = "Scan content",
+        label = if (addOnly) "Add content" else "Scan all content",
         borderColor = if (scanFlash) SCAN_GREEN else Color.White,
         onBarcodeDetected = { code ->
             if (cooldown.compareAndSet(false, true)) {

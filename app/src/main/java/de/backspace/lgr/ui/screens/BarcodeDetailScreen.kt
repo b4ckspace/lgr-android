@@ -6,7 +6,8 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FactCheck
+import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
@@ -110,8 +111,8 @@ fun BarcodeDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    if (barcodeList != null) Text("Barcode ${currentIndex + 1} / ${barcodeList.size}")
-                    else Text("Barcode")
+                    if (barcodeList != null) Text("${currentIndex + 1} / ${barcodeList.size}")
+                    else Text("")
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -121,17 +122,19 @@ fun BarcodeDetailScreen(
                 actions = {
                     if (!viewModel.readonlyMode) {
                         state.data?.let { barcode ->
-                            IconButton(onClick = onNewBarcode) {
-                                Icon(Icons.Default.Add, contentDescription = "New Barcode")
-                            }
-                            IconButton(onClick = {
-                                viewModel.toggleBarcodeSelection(barcode.code)
-                                onBack()
-                            }) {
-                                Icon(Icons.Default.ShoppingCart, contentDescription = "Select for Loan")
-                            }
-                            IconButton(onClick = { showDeleteDialog = true }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete")
+                            Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
+                                IconButton(onClick = onNewBarcode) {
+                                    Icon(Icons.Default.NoteAdd, contentDescription = "New Barcode")
+                                }
+                                IconButton(onClick = {
+                                    viewModel.toggleBarcodeSelection(barcode.code)
+                                    onBack()
+                                }) {
+                                    Icon(Icons.Default.ShoppingCart, contentDescription = "Select for Loan")
+                                }
+                                IconButton(onClick = { showDeleteDialog = true }) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Delete")
+                                }
                             }
                         }
                     }
@@ -220,18 +223,16 @@ fun BarcodeDetailScreen(
                                     viewModel = viewModel,
                                     barcode = barcode,
                                     onBarcodeClick = onBarcodeClick,
-                                    onAddContent = onAddContent
+                                    onAddContent = onAddContent,
+                                    onReScan = { viewModel.startContentScan(); onScanContent() }
                                 )
                             }
                         }
 
-                        if (!viewModel.readonlyMode) {
+                        val showSave = viewModel.contentScanActive || viewModel.addContentScanActive
+                        if (!viewModel.readonlyMode && showSave) {
                             HorizontalDivider()
-                            ContentButtonsSection(
-                                viewModel = viewModel,
-                                barcode = barcode,
-                                onScanContent = onScanContent
-                            )
+                            ContentButtonsSection(viewModel = viewModel, barcode = barcode)
                         }
 
                         if (barcodeList != null) {
@@ -404,7 +405,8 @@ private fun ContentListSection(
     viewModel: AppViewModel,
     barcode: Barcode,
     onBarcodeClick: (String) -> Unit,
-    onAddContent: () -> Unit
+    onAddContent: () -> Unit,
+    onReScan: () -> Unit
 ) {
     val scanActive = viewModel.contentScanActive
     val existingChildren = barcode.apiChildNames ?: emptyList()
@@ -422,16 +424,23 @@ private fun ContentListSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (!viewModel.readonlyMode) {
-                IconButton(
-                    onClick = onAddContent,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Default.QrCodeScanner,
-                        contentDescription = "Add contents",
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                Row {
+                    IconButton(onClick = onReScan, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            Icons.Default.FactCheck,
+                            contentDescription = "Re-scan content",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    IconButton(onClick = onAddContent, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            Icons.Default.QrCodeScanner,
+                            contentDescription = "Add contents",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
@@ -469,46 +478,30 @@ private fun ContentListSection(
 }
 
 @Composable
-private fun ContentButtonsSection(viewModel: AppViewModel, barcode: Barcode, onScanContent: () -> Unit) {
+private fun ContentButtonsSection(viewModel: AppViewModel, barcode: Barcode) {
     val contentScanActive = viewModel.contentScanActive
-    val addContentScanActive = viewModel.addContentScanActive
-    val showSave = contentScanActive || addContentScanActive
     val saveState = viewModel.saveContentState
 
     Column(
         modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(
-                onClick = {
-                    viewModel.startContentScan()
-                    onScanContent()
-                },
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Re-scan all content")
-            }
-
-            if (showSave) {
-                Button(
-                    onClick = {
-                        if (contentScanActive) viewModel.saveContentChanges(barcode)
-                        else viewModel.saveAddedContent(barcode)
-                    },
-                    modifier = Modifier.weight(1f),
-                    enabled = !saveState.isLoading
-                ) {
-                    if (saveState.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        Text("Save")
-                    }
-                }
+        Button(
+            onClick = {
+                if (contentScanActive) viewModel.saveContentChanges(barcode)
+                else viewModel.saveAddedContent(barcode)
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !saveState.isLoading
+        ) {
+            if (saveState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text("Save")
             }
         }
 
