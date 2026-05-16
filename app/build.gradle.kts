@@ -1,3 +1,6 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -12,10 +15,21 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0"
+        versionName = "0.9.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
+        }
+        val buildDate = SimpleDateFormat("yyyy-MM-dd").format(Date())
+        buildConfigField("String", "BUILD_DATE", "\"$buildDate\"")
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("../lgr-release.jks")
+            storePassword = "lgr-release"
+            keyAlias = "lgr"
+            keyPassword = "lgr-release"
         }
     }
 
@@ -23,6 +37,7 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -37,6 +52,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {

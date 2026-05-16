@@ -11,13 +11,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import de.uhsemann.lgr.BuildConfig
 import de.uhsemann.lgr.viewmodel.AppViewModel
+
+private val MID_GREY = Color(0xFF9E9E9E)
 
 @Composable
 fun LoginScreen(viewModel: AppViewModel) {
@@ -37,6 +44,7 @@ fun LoginScreen(viewModel: AppViewModel) {
         }
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -133,4 +141,20 @@ fun LoginScreen(viewModel: AppViewModel) {
             Text("Browse without login")
         }
     }
+
+    if (!BuildConfig.DEBUG) {
+        Text(
+            text = buildAnnotatedString {
+                append("Version: ${BuildConfig.VERSION_NAME}")
+                withStyle(SpanStyle(color = MID_GREY)) {
+                    append(" (${BuildConfig.BUILD_DATE})")
+                }
+            },
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(12.dp)
+        )
+    }
+    } // Box
 }
