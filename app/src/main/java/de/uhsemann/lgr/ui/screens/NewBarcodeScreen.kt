@@ -188,9 +188,11 @@ fun NewBarcodeScreen(
                         trailingIcon = {
                             if (viewModel.newBarcodeNameQuery.isNotEmpty()) {
                                 IconButton(onClick = {
+                                    if (viewModel.newBarcodeSelectedItem != null) {
+                                        viewModel.newBarcodeItemDescription = ""
+                                    }
                                     viewModel.newBarcodeNameQuery = ""
                                     viewModel.newBarcodeSelectedItem = null
-                                    viewModel.newBarcodeItemDescription = ""
                                     itemSuggestions = emptyList()
                                     showSuggestions = false
                                 }) {
