@@ -83,7 +83,7 @@ fun NewBarcodeScreen(
             return@LaunchedEffect
         }
         delay(300)
-        val results = viewModel.searchItemsWithCounts(query)
+        val results = viewModel.searchItemsWithCounts(query).sortedBy { (item, _) -> item.name.lowercase() }
         val exactMatch = results.find { (item, _) -> item.name.equals(query, ignoreCase = true) }
         if (exactMatch != null && results.size == 1) {
             viewModel.newBarcodeNameQuery = exactMatch.first.name
@@ -105,7 +105,7 @@ fun NewBarcodeScreen(
             return@LaunchedEffect
         }
         delay(300)
-        val results = viewModel.searchPersons(query)
+        val results = viewModel.searchPersons(query).sortedBy { it.displayName().lowercase() }
         ownerSuggestions = results
         showOwnerSuggestions = results.isNotEmpty()
     }
