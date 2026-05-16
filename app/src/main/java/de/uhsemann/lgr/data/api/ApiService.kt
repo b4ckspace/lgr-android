@@ -56,7 +56,7 @@ interface ApiService {
         @Query("search") search: String? = null,
         @Query("limit") limit: Int = 50,
         @Query("offset") offset: Int = 0,
-        @Query("barcode__isnull") noBarcodes: Boolean? = null
+        @Query("barcodes__isnull") noBarcodes: Boolean? = null
     ): PagedResponse<Item>
 
     @POST("api/items/")
