@@ -20,6 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import de.uhsemann.lgr.data.model.Item
 import de.uhsemann.lgr.data.model.Person
@@ -48,11 +50,27 @@ fun NewBarcodeScreen(
     var showOwnerSuggestions by remember { mutableStateOf(false) }
     val itemFocusRequester = remember { FocusRequester() }
     val ownerFocusRequester = remember { FocusRequester() }
+    var itemNameTfv by remember { mutableStateOf(TextFieldValue(viewModel.newBarcodeNameQuery)) }
+    var ownerQueryTfv by remember { mutableStateOf(TextFieldValue(viewModel.newBarcodeOwnerQuery)) }
 
     val newBarcodeState = viewModel.newBarcodeState
 
     LaunchedEffect(newBarcodeState.data) {
         if (newBarcodeState.data != null) onCreated()
+    }
+
+    LaunchedEffect(viewModel.newBarcodeNameQuery) {
+        if (itemNameTfv.text != viewModel.newBarcodeNameQuery) {
+            val t = viewModel.newBarcodeNameQuery
+            itemNameTfv = TextFieldValue(t, TextRange(t.length))
+        }
+    }
+
+    LaunchedEffect(viewModel.newBarcodeOwnerQuery) {
+        if (ownerQueryTfv.text != viewModel.newBarcodeOwnerQuery) {
+            val t = viewModel.newBarcodeOwnerQuery
+            ownerQueryTfv = TextFieldValue(t, TextRange(t.length))
+        }
     }
 
     LaunchedEffect(viewModel.newBarcodeNameQuery) {
@@ -177,12 +195,13 @@ fun NewBarcodeScreen(
 
             Column {
                 OutlinedTextField(
-                        value = viewModel.newBarcodeNameQuery,
-                        onValueChange = {
+                        value = itemNameTfv,
+                        onValueChange = { tfv ->
+                            itemNameTfv = tfv
                             if (viewModel.newBarcodeSelectedItem != null) {
                                 viewModel.newBarcodeItemDescription = ""
                             }
-                            viewModel.newBarcodeNameQuery = it
+                            viewModel.newBarcodeNameQuery = tfv.text
                             viewModel.newBarcodeSelectedItem = null
                         },
                         label = { Text("Item *") },
@@ -190,11 +209,12 @@ fun NewBarcodeScreen(
                         singleLine = true,
                         colors = lgrTextFieldColors(),
                         trailingIcon = {
-                            if (viewModel.newBarcodeNameQuery.isNotEmpty()) {
+                            if (itemNameTfv.text.isNotEmpty()) {
                                 IconButton(onClick = {
                                     if (viewModel.newBarcodeSelectedItem != null) {
                                         viewModel.newBarcodeItemDescription = ""
                                     }
+                                    itemNameTfv = TextFieldValue("")
                                     viewModel.newBarcodeNameQuery = ""
                                     viewModel.newBarcodeSelectedItem = null
                                     itemSuggestions = emptyList()
@@ -217,6 +237,7 @@ fun NewBarcodeScreen(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .clickable {
+                                                itemNameTfv = TextFieldValue(item.name, TextRange(item.name.length))
                                                 viewModel.newBarcodeNameQuery = item.name
                                                 viewModel.newBarcodeSelectedItem = item
                                                 viewModel.newBarcodeItemDescription = item.description
@@ -273,9 +294,10 @@ fun NewBarcodeScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         OutlinedTextField(
-                            value = viewModel.newBarcodeOwnerQuery,
-                            onValueChange = {
-                                viewModel.newBarcodeOwnerQuery = it
+                            value = ownerQueryTfv,
+                            onValueChange = { tfv ->
+                                ownerQueryTfv = tfv
+                                viewModel.newBarcodeOwnerQuery = tfv.text
                                 viewModel.newBarcodeSelectedPerson = null
                                 viewModel.newBarcodeOwnerUrl = null
                             },
@@ -284,8 +306,9 @@ fun NewBarcodeScreen(
                             singleLine = true,
                             colors = lgrTextFieldColors(),
                             trailingIcon = {
-                                if (viewModel.newBarcodeOwnerQuery.isNotEmpty()) {
+                                if (ownerQueryTfv.text.isNotEmpty()) {
                                     IconButton(onClick = {
+                                        ownerQueryTfv = TextFieldValue("")
                                         viewModel.newBarcodeOwnerQuery = ""
                                         viewModel.newBarcodeSelectedPerson = null
                                         viewModel.newBarcodeOwnerUrl = null
@@ -318,6 +341,7 @@ fun NewBarcodeScreen(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .clickable {
+                                                ownerQueryTfv = TextFieldValue(display, TextRange(display.length))
                                                 viewModel.newBarcodeOwnerQuery = display
                                                 viewModel.newBarcodeSelectedPerson = person
                                                 viewModel.newBarcodeOwnerUrl = person.url
