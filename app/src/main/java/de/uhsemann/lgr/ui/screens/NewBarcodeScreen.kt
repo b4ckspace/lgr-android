@@ -85,7 +85,7 @@ fun NewBarcodeScreen(
         delay(300)
         val results = viewModel.searchItemsWithCounts(query)
         val exactMatch = results.find { (item, _) -> item.name.equals(query, ignoreCase = true) }
-        if (exactMatch != null) {
+        if (exactMatch != null && results.size == 1) {
             viewModel.newBarcodeNameQuery = exactMatch.first.name
             viewModel.newBarcodeSelectedItem = exactMatch.first
             viewModel.newBarcodeItemDescription = exactMatch.first.description
