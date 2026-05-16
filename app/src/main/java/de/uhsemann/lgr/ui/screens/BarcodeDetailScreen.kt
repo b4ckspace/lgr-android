@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
@@ -40,7 +41,8 @@ fun BarcodeDetailScreen(
     onBack: () -> Unit,
     onScanContent: () -> Unit,
     onScanParent: () -> Unit,
-    onAddContent: () -> Unit
+    onAddContent: () -> Unit,
+    onNewBarcode: () -> Unit = {}
 ) {
     val state = viewModel.scannedBarcode
     val barcodeList = viewModel.barcodeListContext
@@ -119,14 +121,17 @@ fun BarcodeDetailScreen(
                 actions = {
                     if (!viewModel.readonlyMode) {
                         state.data?.let { barcode ->
-                            IconButton(onClick = { showDeleteDialog = true }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete")
+                            IconButton(onClick = onNewBarcode) {
+                                Icon(Icons.Default.Add, contentDescription = "New Barcode")
                             }
                             IconButton(onClick = {
                                 viewModel.toggleBarcodeSelection(barcode.code)
                                 onBack()
                             }) {
                                 Icon(Icons.Default.ShoppingCart, contentDescription = "Select for Loan")
+                            }
+                            IconButton(onClick = { showDeleteDialog = true }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Delete")
                             }
                         }
                     }

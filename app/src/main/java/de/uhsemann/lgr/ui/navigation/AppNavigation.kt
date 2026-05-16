@@ -133,6 +133,10 @@ fun AppNavigation(viewModel: AppViewModel) {
                     onAddContent = {
                         viewModel.startAddContentScan()
                         navController.navigate("add_content_scan")
+                    },
+                    onNewBarcode = {
+                        viewModel.clearNewBarcodeState()
+                        navController.navigate("new_barcode")
                     }
                 )
             }

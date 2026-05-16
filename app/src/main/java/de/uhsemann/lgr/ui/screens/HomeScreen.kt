@@ -28,7 +28,7 @@ fun HomeScreen(
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            HomeTile(icon = Icons.Default.QrCodeScanner, label = "Scan", onClick = onScanBarcode)
+            HomeTile(icon = Icons.Default.QrCodeScanner, label = "Details", onClick = onScanBarcode)
         }
         item {
             HomeTile(icon = Icons.Default.FactCheck, label = "Verify", onClick = onVerify)
