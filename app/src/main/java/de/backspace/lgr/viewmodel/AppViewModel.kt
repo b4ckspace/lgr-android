@@ -457,7 +457,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         auth = UiState(isLoading = true)
         runCatching { repo.login(username, password) }
             .onSuccess { auth = UiState(data = it) }
-            .onFailure { auth = UiState(error = it.localizedMessage) }
+            .onFailure { e ->
+                val msg = if (e is retrofit2.HttpException && e.code() == 400)
+                    "Invalid username or password."
+                else
+                    e.localizedMessage
+                auth = UiState(error = msg)
+            }
     }
 
     fun logout() = viewModelScope.launch {
