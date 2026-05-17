@@ -23,7 +23,7 @@ private sealed class Screen(val route: String, val label: String, val icon: Imag
     object MyLoans : Screen("my_loans", "My\nLoans", Icons.Default.AccountCircle, enabled = false)
 }
 
-private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search", "item_detail", "edit_barcode", "edit_item")
+private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search", "item_detail", "edit_barcode", "edit_item", "edit_barcode_scan_parent")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -202,7 +202,19 @@ fun AppNavigation(viewModel: AppViewModel) {
                     onSaved = {
                         viewModel.clearBarcodeEditState()
                         navController.popBackStack()
-                    }
+                    },
+                    onScanParent = { navController.navigate("edit_barcode_scan_parent") }
+                )
+            }
+            composable("edit_barcode_scan_parent") {
+                ScanParentScreen(
+                    viewModel = viewModel,
+                    onParentScanned = {
+                        viewModel.onEditBarcodeParentScanned()
+                        navController.popBackStack()
+                    },
+                    onBack = { navController.popBackStack() },
+                    selfCode = viewModel.scannedBarcode.data?.code
                 )
             }
             composable("content_scan") {

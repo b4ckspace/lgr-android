@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import de.backspace.lgr.data.model.Barcode
 import de.backspace.lgr.data.model.Item
 import de.backspace.lgr.data.model.Person
 import de.backspace.lgr.viewmodel.AppViewModel
@@ -33,13 +35,18 @@ private fun Person.displayName(): String =
 fun EditBarcodeScreen(
     viewModel: AppViewModel,
     onBack: () -> Unit,
-    onSaved: () -> Unit
+    onSaved: () -> Unit,
+    onScanParent: () -> Unit = {}
 ) {
     val barcode = viewModel.scannedBarcode.data
     var itemSuggestions by remember { mutableStateOf<List<Pair<Item, Int>>>(emptyList()) }
     var showSuggestions by remember { mutableStateOf(false) }
     var ownerSuggestions by remember { mutableStateOf<List<Person>>(emptyList()) }
     var showOwnerSuggestions by remember { mutableStateOf(false) }
+    var locationSelected by remember { mutableStateOf(viewModel.editBarcodeLocationQuery.isNotBlank()) }
+    var lastTypedLocation by remember { mutableStateOf(viewModel.editBarcodeLocationQuery) }
+    var locationSuggestions by remember { mutableStateOf<List<Barcode>>(emptyList()) }
+    var showLocationSuggestions by remember { mutableStateOf(false) }
     val itemFocusRequester = remember { FocusRequester() }
     val ownerFocusRequester = remember { FocusRequester() }
     var itemNameTfv by remember { mutableStateOf(TextFieldValue(viewModel.editBarcodeNameQuery)) }
@@ -102,6 +109,26 @@ fun EditBarcodeScreen(
         showOwnerSuggestions = results.isNotEmpty()
     }
 
+    LaunchedEffect(viewModel.editBarcodeLocationQuery) {
+        if (viewModel.editBarcodeLocationQuery != lastTypedLocation) {
+            locationSelected = viewModel.editBarcodeLocationQuery.isNotBlank()
+            lastTypedLocation = viewModel.editBarcodeLocationQuery
+        }
+    }
+
+    LaunchedEffect(viewModel.editBarcodeLocationQuery, locationSelected) {
+        val query = viewModel.editBarcodeLocationQuery
+        if (query.length < 2 || locationSelected) {
+            locationSuggestions = emptyList()
+            showLocationSuggestions = false
+            return@LaunchedEffect
+        }
+        delay(300)
+        val results = viewModel.searchBarcodes(query).sortedBy { it.itemName.lowercase() }
+        locationSuggestions = results
+        showLocationSuggestions = results.isNotEmpty()
+    }
+
     val canSave = viewModel.editBarcodeNameQuery.isNotBlank() && !saveState.isLoading
 
     Scaffold(
@@ -152,6 +179,84 @@ fun EditBarcodeScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.fillMaxWidth().padding(12.dp)
                     )
+                }
+            }
+
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = viewModel.editBarcodeLocationQuery,
+                        onValueChange = { query ->
+                            viewModel.editBarcodeLocationQuery = query
+                            lastTypedLocation = query
+                            locationSelected = false
+                        },
+                        label = { Text("Location") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        colors = lgrTextFieldColors(),
+                        trailingIcon = {
+                            if (viewModel.editBarcodeLocationQuery.isNotEmpty()) {
+                                IconButton(onClick = {
+                                    viewModel.editBarcodeLocationQuery = ""
+                                    lastTypedLocation = ""
+                                    locationSelected = false
+                                    locationSuggestions = emptyList()
+                                    showLocationSuggestions = false
+                                }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                }
+                            }
+                        }
+                    )
+                    IconButton(onClick = onScanParent) {
+                        Icon(
+                            Icons.Default.QrCodeScanner,
+                            contentDescription = "Scan location",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                if (showLocationSuggestions) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column {
+                            locationSuggestions.forEach { suggestion ->
+                                val isSelf = suggestion.code == barcode?.code
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .then(if (!isSelf) Modifier.clickable {
+                                            viewModel.editBarcodeLocationQuery = suggestion.code
+                                            locationSelected = true
+                                            showLocationSuggestions = false
+                                        } else Modifier)
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = suggestion.itemName,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = if (isSelf) GREY else Color.Unspecified,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Text(
+                                        text = "(${suggestion.code})",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = GREY
+                                    )
+                                }
+                                HorizontalDivider()
+                            }
+                        }
+                    }
                 }
             }
 

@@ -138,6 +138,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var editBarcodeOwnerQuery by mutableStateOf("")
     var editBarcodeOwnerUrl by mutableStateOf<String?>(null)
     var editBarcodeSelectedPerson by mutableStateOf<Person?>(null)
+    var editBarcodeLocationQuery by mutableStateOf("")
     var saveBarcodeEditState by mutableStateOf(UiState<Barcode>())
         private set
 
@@ -222,6 +223,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         editBarcodeOwnerUrl = barcode.owner
         editBarcodeSelectedPerson = null
         editBarcodeOwnerQuery = ""
+        editBarcodeLocationQuery = barcode.apiParentNames?.lastOrNull()?.code ?: ""
         if (barcode.owner != null) {
             viewModelScope.launch {
                 editBarcodeOwnerQuery = resolveOwnerName(barcode.owner)
@@ -249,8 +251,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         runCatching {
             repo.updateBarcode(ApiClient.getBarcodeUrl(barcode.code), itemUrl, description, ownerUrl)
         }.onSuccess { updated ->
-            scannedBarcode = UiState(data = updated)
-            saveBarcodeEditState = UiState(data = updated)
+            val locationCode = editBarcodeLocationQuery.trim()
+            val parentUrl = if (locationCode.isNotBlank()) ApiClient.getBarcodeUrl(locationCode) else null
+            runCatching { repo.patchBarcodeParent(ApiClient.getBarcodeUrl(barcode.code), parentUrl) }
+            val refreshed = runCatching { repo.getBarcode(barcode.code) }.getOrNull() ?: updated
+            scannedBarcode = UiState(data = refreshed)
+            saveBarcodeEditState = UiState(data = refreshed)
             barcodesNeedRefresh = true
             itemsNeedRefresh = true
         }.onFailure {
@@ -267,6 +273,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         editBarcodeOwnerQuery = ""
         editBarcodeOwnerUrl = null
         editBarcodeSelectedPerson = null
+        editBarcodeLocationQuery = ""
     }
 
     fun fillOwnerWithCurrentUser() = viewModelScope.launch {
@@ -287,12 +294,28 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             .getOrNull()?.results ?: emptyList()
     }
 
+    suspend fun searchBarcodes(query: String): List<Barcode> {
+        if (query.isBlank()) return emptyList()
+        val results = runCatching { repo.getBarcodes(search = query, limit = 20) }
+            .getOrNull()?.results ?: return emptyList()
+        val q = query.lowercase()
+        return results.sortedWith(compareBy(
+            { if (it.code.lowercase().startsWith(q)) 0 else if (it.code.lowercase().contains(q)) 1 else 2 },
+            { it.itemName.lowercase() }
+        ))
+    }
+
     fun onNewBarcodeCodeScanned(code: String) {
         newBarcodeCode = code
     }
 
     fun onNewBarcodeParentScanned() {
         newBarcodeParentCode = pendingNewParent?.code ?: ""
+        clearPendingNewParent()
+    }
+
+    fun onEditBarcodeParentScanned() {
+        editBarcodeLocationQuery = pendingNewParent?.code ?: ""
         clearPendingNewParent()
     }
 

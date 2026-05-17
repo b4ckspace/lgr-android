@@ -20,7 +20,8 @@ interface ApiService {
         @Query("search") search: String? = null,
         @Query("limit") limit: Int = 50,
         @Query("offset") offset: Int = 0,
-        @Query("parent__isnull") noParent: Boolean? = null
+        @Query("parent__isnull") noParent: Boolean? = null,
+        @Query("item") item: String? = null
     ): PagedResponse<Barcode>
 
     @PATCH

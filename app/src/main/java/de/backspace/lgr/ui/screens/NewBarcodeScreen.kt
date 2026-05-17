@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import de.backspace.lgr.data.model.Barcode
 import de.backspace.lgr.data.model.Item
 import de.backspace.lgr.data.model.Person
 import de.backspace.lgr.viewmodel.AppViewModel
@@ -48,6 +49,10 @@ fun NewBarcodeScreen(
     var showSuggestions by remember { mutableStateOf(false) }
     var ownerSuggestions by remember { mutableStateOf<List<Person>>(emptyList()) }
     var showOwnerSuggestions by remember { mutableStateOf(false) }
+    var locationQuery by remember { mutableStateOf(viewModel.newBarcodeParentCode) }
+    var locationSelected by remember { mutableStateOf(viewModel.newBarcodeParentCode.isNotBlank()) }
+    var locationSuggestions by remember { mutableStateOf<List<Barcode>>(emptyList()) }
+    var showLocationSuggestions by remember { mutableStateOf(false) }
     val itemFocusRequester = remember { FocusRequester() }
     val ownerFocusRequester = remember { FocusRequester() }
     var itemNameTfv by remember { mutableStateOf(TextFieldValue(viewModel.newBarcodeNameQuery)) }
@@ -110,6 +115,26 @@ fun NewBarcodeScreen(
         showOwnerSuggestions = results.isNotEmpty()
     }
 
+    // Sync location field when scan updates newBarcodeParentCode externally
+    LaunchedEffect(viewModel.newBarcodeParentCode) {
+        if (locationQuery != viewModel.newBarcodeParentCode) {
+            locationQuery = viewModel.newBarcodeParentCode
+            locationSelected = viewModel.newBarcodeParentCode.isNotBlank()
+        }
+    }
+
+    LaunchedEffect(locationQuery, locationSelected) {
+        if (locationQuery.length < 2 || locationSelected) {
+            locationSuggestions = emptyList()
+            showLocationSuggestions = false
+            return@LaunchedEffect
+        }
+        delay(300)
+        val results = viewModel.searchBarcodes(locationQuery).sortedBy { it.itemName.lowercase() }
+        locationSuggestions = results
+        showLocationSuggestions = results.isNotEmpty()
+    }
+
     val canSave = viewModel.newBarcodeCode.isNotBlank() && viewModel.newBarcodeNameQuery.isNotBlank() && !newBarcodeState.isLoading
 
     Scaffold(
@@ -164,25 +189,80 @@ fun NewBarcodeScreen(
                 }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = viewModel.newBarcodeParentCode,
-                    onValueChange = { viewModel.newBarcodeParentCode = it },
-                    label = { Text("Location") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    colors = lgrTextFieldColors()
-                )
-                IconButton(onClick = onScanParent) {
-                    Icon(
-                        Icons.Default.QrCodeScanner,
-                        contentDescription = "Scan location",
-                        tint = MaterialTheme.colorScheme.primary
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = locationQuery,
+                        onValueChange = { query ->
+                            locationQuery = query
+                            viewModel.newBarcodeParentCode = query
+                            locationSelected = false
+                        },
+                        label = { Text("Location") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        colors = lgrTextFieldColors(),
+                        trailingIcon = {
+                            if (locationQuery.isNotEmpty()) {
+                                IconButton(onClick = {
+                                    locationQuery = ""
+                                    viewModel.newBarcodeParentCode = ""
+                                    locationSelected = false
+                                    locationSuggestions = emptyList()
+                                    showLocationSuggestions = false
+                                }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                }
+                            }
+                        }
                     )
+                    IconButton(onClick = onScanParent) {
+                        Icon(
+                            Icons.Default.QrCodeScanner,
+                            contentDescription = "Scan location",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                if (showLocationSuggestions) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column {
+                            locationSuggestions.forEach { barcode ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            locationQuery = barcode.code
+                                            viewModel.newBarcodeParentCode = barcode.code
+                                            locationSelected = true
+                                            showLocationSuggestions = false
+                                        }
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = barcode.itemName,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Text(
+                                        text = "(${barcode.code})",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = GREY
+                                    )
+                                }
+                                HorizontalDivider()
+                            }
+                        }
+                    }
                 }
             }
 

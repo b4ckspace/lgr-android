@@ -73,6 +73,7 @@ object ApiClient {
 
     fun getBarcodeUrl(code: String) = "${baseUrl}api/barcodes/$code/"
     fun getPersonUrl(id: String) = "${baseUrl}api/persons/$id/"
+    fun getItemUrl(id: String) = "${baseUrl}api/items/$id/"
 
     fun reset() {
         cookieJar.clear()

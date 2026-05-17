@@ -135,6 +135,7 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 
 **Editing a barcode:**
 Tap the Edit icon (pencil) in the top bar to open the edit screen. The barcode code is shown read-only and cannot be changed. The loan status is not editable. Editable fields:
+- **Location** — type-ahead barcode search (min. 2 characters, 300 ms debounce). Suggestions show the item name and barcode code; selecting one sets the parent barcode. Pre-filled with the current parent (if any).
 - **Item** — type-ahead search; selecting a suggestion fills in the item description. If the typed name does not exist yet, a new item is created on save.
 - **Description** — per-barcode description.
 - **Item description** — editable when no item is selected from suggestions; read-only once an item is chosen.
@@ -219,7 +220,7 @@ Form to register a new barcode in the system.
 
 | Field | Notes |
 |---|---|
-| **Location** | Optional parent barcode. Enter manually or tap the scan icon. |
+| **Location** | Optional parent barcode. Type-ahead barcode search (min. 2 characters, 300 ms debounce) — suggestions show item name and code. Or tap the scan icon to scan a barcode. |
 | **Barcode** * | The barcode string. Enter manually or scan. Only accepts codes not already in the system (burp if already known). |
 | **Item** * | Type-ahead search against the item catalogue (min. 2 characters, 300 ms debounce). Selecting a suggestion fills in the item description. If the name does not exist yet, a new item is created on save. |
 | **Description** | Free-text description for this specific barcode instance. |

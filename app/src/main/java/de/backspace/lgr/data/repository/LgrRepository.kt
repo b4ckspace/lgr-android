@@ -53,7 +53,8 @@ class LgrRepository {
         api.createItem(CreateItemRequest(name, description))
 
     suspend fun getBarcodeCountForItem(itemName: String): Int =
-        runCatching { api.getBarcodes(search = itemName, limit = 1).count }.getOrDefault(0)
+        runCatching { api.getBarcodes(search = itemName, limit = 200) }
+            .getOrNull()?.results?.count { it.itemName.equals(itemName, ignoreCase = true) } ?: 0
 
     suspend fun getBarcodesByItem(itemName: String): List<Barcode> {
         val response = api.getBarcodes(search = itemName, limit = 1000)
