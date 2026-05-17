@@ -23,7 +23,7 @@ private sealed class Screen(val route: String, val label: String, val icon: Imag
     object MyLoans : Screen("my_loans", "My\nLoans", Icons.Default.AccountCircle, enabled = false)
 }
 
-private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search", "item_detail", "edit_barcode")
+private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search", "item_detail", "edit_barcode", "edit_item")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -171,6 +171,24 @@ fun AppNavigation(viewModel: AppViewModel) {
                     onBarcodeClick = { barcode ->
                         viewModel.loadBarcode(barcode.code)
                         navController.navigate("barcode_detail")
+                    },
+                    onEditItem = {
+                        val item = viewModel.currentItem ?: return@ItemDetailScreen
+                        viewModel.enterItemEditMode(item)
+                        navController.navigate("edit_item")
+                    }
+                )
+            }
+            composable("edit_item") {
+                EditItemScreen(
+                    viewModel = viewModel,
+                    onBack = {
+                        viewModel.clearItemEditState()
+                        navController.popBackStack()
+                    },
+                    onSaved = {
+                        viewModel.clearItemEditState()
+                        navController.popBackStack()
                     }
                 )
             }

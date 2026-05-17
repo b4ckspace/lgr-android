@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
@@ -30,7 +31,8 @@ private val ITEM_RED = Color(0xFFE53935)
 fun ItemDetailScreen(
     viewModel: AppViewModel,
     onBack: () -> Unit,
-    onBarcodeClick: (Barcode) -> Unit
+    onBarcodeClick: (Barcode) -> Unit,
+    onEditItem: () -> Unit = {}
 ) {
     val item = viewModel.currentItem ?: return
     val barcodesState = viewModel.itemBarcodes
@@ -90,18 +92,23 @@ fun ItemDetailScreen(
             }
             Spacer(Modifier.weight(1f))
             if (!viewModel.readonlyMode) {
-                IconButton(
-                    onClick = { showDeleteDialog = true },
-                    enabled = !hasBarcodes && !deleteState.isLoading
-                ) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Delete Item",
-                        tint = if (hasBarcodes || deleteState.isLoading)
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                        else
-                            MaterialTheme.colorScheme.onSurface
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
+                    IconButton(onClick = onEditItem) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit Item")
+                    }
+                    IconButton(
+                        onClick = { showDeleteDialog = true },
+                        enabled = !hasBarcodes && !deleteState.isLoading
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Delete Item",
+                            tint = if (hasBarcodes || deleteState.isLoading)
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            else
+                                MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
         }

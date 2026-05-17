@@ -60,6 +60,13 @@ class LgrRepository {
         return response.results.filter { it.itemName == itemName }
     }
 
+    suspend fun updateItem(url: String, name: String, description: String): Item {
+        val map: Map<String, Any?> = mapOf("name" to name, "description" to description)
+        val json = com.google.gson.Gson().toJson(map)
+        val body = json.toRequestBody("application/json; charset=utf-8".toMediaType())
+        return api.patchItem(url, body)
+    }
+
     suspend fun deleteItem(url: String) {
         val response = api.deleteItem(url)
         if (!response.isSuccessful) throw retrofit2.HttpException(response)

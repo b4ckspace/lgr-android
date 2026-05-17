@@ -126,6 +126,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var newBarcodeOwnerUrl by mutableStateOf<String?>(null)
     var newBarcodeSelectedPerson by mutableStateOf<Person?>(null)
 
+    var editItemNameQuery by mutableStateOf("")
+    var editItemDescription by mutableStateOf("")
+    var saveItemEditState by mutableStateOf(UiState<Item>())
+        private set
+
     var editBarcodeNameQuery by mutableStateOf("")
     var editBarcodeSelectedItem by mutableStateOf<Item?>(null)
     var editBarcodeItemDescription by mutableStateOf("")
@@ -351,6 +356,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             pendingNewParent = null
             saveParentState = UiState()
             barcodesNeedRefresh = true
+            itemsNeedRefresh = true
             newBarcodeState = UiState(data = barcode)
         }.onFailure {
             newBarcodeState = UiState(error = it.toUserMessage())
@@ -467,11 +473,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         itemsNeedRefresh = false
         itemsGeneration++
 
+        val effectiveSearch = search ?: itemsSearch.takeIf { it.isNotBlank() }
+
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             if (!search.isNullOrBlank()) delay(300)
             items = UiState(isLoading = true)
-            runCatching { repo.getItems(search, noBarcodes = noBarcodes) }
+            runCatching { repo.getItems(effectiveSearch, noBarcodes = noBarcodes) }
                 .onSuccess { items = UiState(data = it.results); itemsNextPage = it.next; itemsCount = it.count }
                 .onFailure { items = UiState(error = it.localizedMessage) }
         }
@@ -618,11 +626,38 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val item = currentItem ?: return@launch
         deleteItemState = UiState(isLoading = true)
         runCatching { repo.deleteItem(item.url) }
-            .onSuccess { deleteItemState = UiState(data = Unit) }
+            .onSuccess { deleteItemState = UiState(data = Unit); itemsNeedRefresh = true }
             .onFailure { deleteItemState = UiState(error = it.toUserMessage()) }
     }
 
     fun resetDeleteItemState() { deleteItemState = UiState() }
+
+    fun enterItemEditMode(item: Item) {
+        saveItemEditState = UiState()
+        editItemNameQuery = item.name
+        editItemDescription = item.description
+    }
+
+    fun saveItemEdit() = viewModelScope.launch {
+        val item = currentItem ?: return@launch
+        saveItemEditState = UiState(isLoading = true)
+        runCatching {
+            repo.updateItem(item.url, editItemNameQuery.trim(), editItemDescription.trim())
+        }.onSuccess { updated ->
+            currentItem = updated
+            saveItemEditState = UiState(data = updated)
+            itemsNeedRefresh = true
+            barcodesNeedRefresh = true
+        }.onFailure {
+            saveItemEditState = UiState(error = it.toUserMessage())
+        }
+    }
+
+    fun clearItemEditState() {
+        saveItemEditState = UiState()
+        editItemNameQuery = ""
+        editItemDescription = ""
+    }
 
     fun loadBarcode(code: String) = viewModelScope.launch {
         pendingNewParent = null

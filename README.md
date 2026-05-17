@@ -179,7 +179,8 @@ Reachable by tapping an item in the Items tab, or by tapping the item name in a 
 - **Barcodes** section — all barcodes that use this item type, each tappable to open its Barcode Detail
 
 **Actions (authenticated):**
-- **Delete** (red trashcan icon) — opens a confirmation dialog and permanently deletes the item.
+- **Edit** (pencil icon) — opens the Edit Item screen. Editable fields: Name and Description. Save/Cancel buttons in the top bar. The item list is refreshed after saving.
+- **Delete** (trashcan icon) — opens a confirmation dialog and permanently deletes the item.
   - The trashcan is disabled (greyed out) if any barcodes are linked to the item.
 
 ---

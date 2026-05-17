@@ -65,6 +65,9 @@ interface ApiService {
     @POST("api/items/")
     suspend fun createItem(@Body request: CreateItemRequest): Item
 
+    @PATCH
+    suspend fun patchItem(@Url url: String, @Body body: okhttp3.RequestBody): Item
+
     @DELETE
     suspend fun deleteItem(@Url url: String): retrofit2.Response<Void>
 
