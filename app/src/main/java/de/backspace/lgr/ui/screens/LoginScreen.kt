@@ -53,7 +53,6 @@ fun LoginScreen(viewModel: AppViewModel) {
         verticalArrangement = Arrangement.Center
     ) {
         Text("LGR", style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.primary)
-        Text("Lagerverwaltung", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(40.dp))
 
         val errorMsg = when {
