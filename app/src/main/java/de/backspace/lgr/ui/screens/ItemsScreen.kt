@@ -21,7 +21,7 @@ import de.backspace.lgr.viewmodel.AppViewModel
 
 @Composable
 fun ItemsScreen(viewModel: AppViewModel, onOpenDetail: ((List<Item>, Int) -> Unit)? = null) {
-    var search by remember { mutableStateOf("") }
+    var search by remember { mutableStateOf(viewModel.itemsSearch) }
     val listState = rememberLazyListState()
 
     LaunchedEffect(Unit) { viewModel.loadItems() }

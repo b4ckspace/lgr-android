@@ -38,7 +38,7 @@ fun BarcodesScreen(
     var showLoanDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
-    LaunchedEffect(Unit) { viewModel.loadBarcodes(viewModel.barcodesSearch) }
+    LaunchedEffect(Unit) { viewModel.loadBarcodes() }
 
     val shouldLoadMore by remember {
         derivedStateOf {
