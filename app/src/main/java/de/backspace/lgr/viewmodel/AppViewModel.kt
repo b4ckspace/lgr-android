@@ -877,6 +877,17 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun refreshBarcodes() {
+        barcodesNeedRefresh = true
+        barcodesReturnFromDetail = false
+        loadBarcodes()
+    }
+
+    fun refreshItems() {
+        itemsNeedRefresh = true
+        loadItems()
+    }
+
     fun updateBarcodesSearch(query: String) {
         barcodesSearch = query
         loadBarcodes(query)

@@ -15,7 +15,10 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -29,6 +32,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BarcodesScreen(
     viewModel: AppViewModel,
@@ -38,6 +42,14 @@ fun BarcodesScreen(
     var search by remember { mutableStateOf(viewModel.barcodesSearch) }
     var showLoanDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    LaunchedEffect(pullToRefreshState.isRefreshing) {
+        if (pullToRefreshState.isRefreshing) viewModel.refreshBarcodes()
+    }
+    LaunchedEffect(viewModel.barcodes.isLoading) {
+        if (!viewModel.barcodes.isLoading && pullToRefreshState.isRefreshing) pullToRefreshState.endRefresh()
+    }
 
     LaunchedEffect(Unit) { viewModel.loadBarcodes() }
     var lastBarcodesGeneration by rememberSaveable { mutableStateOf(viewModel.barcodesGeneration) }
@@ -69,7 +81,7 @@ fun BarcodesScreen(
         )
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
         Column(modifier = Modifier.fillMaxSize()) {
             OutlinedTextField(
                 value = search,
@@ -156,6 +168,8 @@ fun BarcodesScreen(
                 }
             }
         }
+
+        PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
 
         if (viewModel.selectedBarcodes.isNotEmpty() && viewModel.isAuthenticated) {
             FloatingActionButton(

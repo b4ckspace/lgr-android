@@ -10,6 +10,9 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -20,10 +23,19 @@ import androidx.compose.ui.unit.dp
 import de.backspace.lgr.data.model.Item
 import de.backspace.lgr.viewmodel.AppViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemsScreen(viewModel: AppViewModel, onOpenDetail: ((List<Item>, Int) -> Unit)? = null) {
     var search by remember { mutableStateOf(viewModel.itemsSearch) }
     val listState = rememberLazyListState()
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    LaunchedEffect(pullToRefreshState.isRefreshing) {
+        if (pullToRefreshState.isRefreshing) viewModel.refreshItems()
+    }
+    LaunchedEffect(viewModel.items.isLoading) {
+        if (!viewModel.items.isLoading && pullToRefreshState.isRefreshing) pullToRefreshState.endRefresh()
+    }
 
     LaunchedEffect(Unit) { viewModel.loadItems() }
     var lastItemsGeneration by rememberSaveable { mutableStateOf(viewModel.itemsGeneration) }
@@ -46,6 +58,7 @@ fun ItemsScreen(viewModel: AppViewModel, onOpenDetail: ((List<Item>, Int) -> Uni
         if (shouldLoadMore) viewModel.loadMoreItems()
     }
 
+    Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
     Column(modifier = Modifier.fillMaxSize()) {
         OutlinedTextField(
             value = search,
@@ -104,6 +117,8 @@ fun ItemsScreen(viewModel: AppViewModel, onOpenDetail: ((List<Item>, Int) -> Uni
                 }
             }
         }
+    }
+    PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
     }
 }
 
