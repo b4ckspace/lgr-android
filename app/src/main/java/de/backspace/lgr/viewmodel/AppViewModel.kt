@@ -148,18 +148,22 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private var childLoanJob: Job? = null
     private val ownerNameCache = mutableMapOf<String, String>()
 
-    suspend fun resolveOwnerName(url: String): String =
-        ownerNameCache.getOrPut(url) {
-            runCatching { repo.getPersonByUrl(url) }
-                .getOrNull()
-                ?.let { p ->
-                    listOf(p.firstname, p.lastname)
-                        .filter { it.isNotBlank() }
-                        .joinToString(" ")
-                        .ifBlank { p.nickname }
-                }
-                ?: url
-        }
+    suspend fun resolveOwnerName(url: String): String {
+        ownerNameCache[url]?.takeIf { it != url }?.let { return it }
+        val id = url.trimEnd('/').substringAfterLast('/')
+        val rewritten = ApiClient.getPersonUrl(id)
+        val name = runCatching { repo.getPersonByUrl(rewritten) }
+            .getOrNull()
+            ?.let { p ->
+                listOf(p.firstname, p.lastname)
+                    .filter { it.isNotBlank() }
+                    .joinToString(" ")
+                    .ifBlank { p.nickname }
+            }
+            ?: url
+        ownerNameCache[url] = name
+        return name
+    }
 
     init {
         if (serverUrl.isNotEmpty()) {
