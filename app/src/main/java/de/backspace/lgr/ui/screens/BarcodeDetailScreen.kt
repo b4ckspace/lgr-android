@@ -191,7 +191,7 @@ fun BarcodeDetailScreen(
                             }
 
                             item { DetailRow("Barcode", barcode.code) }
-                            item { DetailRow("Item", barcode.itemName, onClick = onItemClick) }
+                            item { DetailRow("Item", barcode.itemName, valueColor = MaterialTheme.colorScheme.onSurface, onClick = onItemClick) }
                             if (barcode.description.isNotBlank())
                                 item { DetailRow("Description", barcode.description) }
                             if (barcode.itemDescription.isNotBlank())
@@ -561,7 +561,7 @@ private fun DetailRow(label: String, value: String, valueColor: Color = Color.Un
         Text(
             text = value,
             style = MaterialTheme.typography.bodyLarge,
-            color = if (onClick != null) MaterialTheme.colorScheme.primary else valueColor
+            color = if (onClick != null && valueColor == Color.Unspecified) MaterialTheme.colorScheme.primary else valueColor
         )
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
     }
