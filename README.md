@@ -107,6 +107,7 @@ Searchable, paginated list of all barcodes.
 - **No location filter** — filter chip to show only barcodes without a parent location.
 - **Result count** shown in the filter bar ("1 result" / "N results").
 - **Infinite scroll** — next pages load automatically as you scroll.
+- **Pull to refresh** — pull down on the list to force a reload (respects the active search and filter).
 - **Cached on tab switch** — switching away and back reuses the loaded result set; a new network request is only made when the search or filter changes.
 - **Barcode selection** — check the checkbox on any barcode card to add it to a loan selection. A banner shows the current count; the cart FAB appears when items are selected.
 
@@ -163,6 +164,7 @@ Searchable, paginated list of item types (the catalogue, not individual barcoded
 - **No barcodes filter** — shows only item types that have no barcodes registered yet.
 - Displays name, description, and tag count per item.
 - Infinite scroll.
+- **Pull to refresh** — pull down on the list to force a reload (respects the active search and filter).
 - **Cached on tab switch** — the result set and active search string are preserved when switching away and back.
 - Tap any item to open its **Item Detail** page.
 - **Arrow buttons and swipe left/right** navigate through the result set (same as Barcodes).
