@@ -80,7 +80,7 @@ Authentication uses Django session cookies. CSRF tokens are extracted from the c
 ### Login
 
 - Enter the server base URL (e.g. `http://192.168.1.10:8000`) and credentials.
-- **Readonly without login** opens the app in read-only mode — scanning and listing work, creating/editing/deleting does not.
+- **Read-only without login** opens the app in read-only mode — scanning and listing work, creating/editing/deleting does not.
 - The server URL is remembered across sessions.
 - Release builds show the app version and build date in the lower-right corner of the login screen.
 
@@ -256,7 +256,7 @@ The Loans, My Loans, and Persons tabs are present in the navigation bar but not 
 
 ## Read-only Mode
 
-When launched via *Readonly without login*, the app operates in read-only mode:
+When launched via *Read-only without login*, the app operates in read-only mode:
 
 - All scanning and listing features are available.
 - The New, Edit, Delete, and Save actions are hidden.

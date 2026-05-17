@@ -135,7 +135,7 @@ fun LoginScreen(viewModel: AppViewModel) {
             modifier = Modifier.fillMaxWidth().height(50.dp),
             enabled = serverUrl.isNotBlank()
         ) {
-            Text("Readonly without login")
+            Text("Read-only without login")
         }
     }
 
