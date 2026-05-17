@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,6 +40,13 @@ fun BarcodesScreen(
     val listState = rememberLazyListState()
 
     LaunchedEffect(Unit) { viewModel.loadBarcodes() }
+    var lastBarcodesGeneration by rememberSaveable { mutableStateOf(viewModel.barcodesGeneration) }
+    LaunchedEffect(viewModel.barcodesGeneration) {
+        if (viewModel.barcodesGeneration != lastBarcodesGeneration) {
+            listState.scrollToItem(0)
+        }
+        lastBarcodesGeneration = viewModel.barcodesGeneration
+    }
 
     val shouldLoadMore by remember {
         derivedStateOf {

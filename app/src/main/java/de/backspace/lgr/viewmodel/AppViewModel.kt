@@ -82,10 +82,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     private var barcodesReturnFromDetail = false
     private var barcodesNeedRefresh = true
+    var barcodesGeneration by mutableStateOf(0)
+        private set
     var itemsNoBarcodeFilter by mutableStateOf(false)
         private set
     private var itemsNeedRefresh = true
     var itemsSearch by mutableStateOf("")
+        private set
+    var itemsGeneration by mutableStateOf(0)
         private set
     var barcodeListContext by mutableStateOf<List<Barcode>?>(null)
         private set
@@ -382,6 +386,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (search != null) itemsSearch = search
         if (search == null && !itemsNeedRefresh && items.data != null) return
         itemsNeedRefresh = false
+        itemsGeneration++
 
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
@@ -413,6 +418,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (returning && barcodes.data != null) return
         if (search == null && !barcodesNeedRefresh && barcodes.data != null) return
         barcodesNeedRefresh = false
+        barcodesGeneration++
 
         searchJob?.cancel()
         searchJob = viewModelScope.launch {

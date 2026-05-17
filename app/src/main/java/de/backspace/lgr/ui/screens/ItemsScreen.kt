@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,6 +26,13 @@ fun ItemsScreen(viewModel: AppViewModel, onOpenDetail: ((List<Item>, Int) -> Uni
     val listState = rememberLazyListState()
 
     LaunchedEffect(Unit) { viewModel.loadItems() }
+    var lastItemsGeneration by rememberSaveable { mutableStateOf(viewModel.itemsGeneration) }
+    LaunchedEffect(viewModel.itemsGeneration) {
+        if (viewModel.itemsGeneration != lastItemsGeneration) {
+            listState.scrollToItem(0)
+        }
+        lastItemsGeneration = viewModel.itemsGeneration
+    }
 
     // Load next page when near the end
     val shouldLoadMore by remember {
