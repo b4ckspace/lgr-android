@@ -33,6 +33,13 @@ class LgrRepository {
         if (!response.isSuccessful) throw retrofit2.HttpException(response)
     }
 
+    suspend fun updateBarcode(url: String, itemUrl: String, description: String, ownerUrl: String?): Barcode {
+        val map: Map<String, Any?> = mapOf("item" to itemUrl, "description" to description, "owner" to ownerUrl)
+        val json = com.google.gson.Gson().toJson(map)
+        val body = json.toRequestBody("application/json; charset=utf-8".toMediaType())
+        return api.patchBarcode(url, body)
+    }
+
     suspend fun getPersons(search: String? = null, limit: Int = 50, offset: Int = 0) =
         api.getPersons(search.takeIf { !it.isNullOrBlank() }, limit, offset)
 

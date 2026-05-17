@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -43,6 +44,7 @@ fun BarcodeDetailScreen(
     onScanParent: () -> Unit,
     onAddContent: () -> Unit,
     onNewBarcode: () -> Unit = {},
+    onEditBarcode: () -> Unit = {},
     onItemClick: (() -> Unit)? = null
 ) {
     val state = viewModel.scannedBarcode
@@ -121,6 +123,9 @@ fun BarcodeDetailScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
                         IconButton(onClick = onNewBarcode) {
                             Icon(Icons.Default.NoteAdd, contentDescription = "New Barcode")
+                        }
+                        IconButton(onClick = onEditBarcode) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit Barcode")
                         }
                         IconButton(onClick = {
                             viewModel.toggleBarcodeSelection(barcode.code)

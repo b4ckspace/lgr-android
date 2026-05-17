@@ -128,8 +128,18 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 
 **Actions (authenticated):**
 - **New** — create a new barcode (same as Home → New)
+- **Edit** — open the Edit Barcode screen (see below)
 - **Cart** — add the current barcode to the loan selection and return to the list
 - **Delete** — confirmation dialog, then permanently deletes the barcode and returns to the list
+
+**Editing a barcode:**
+Tap the Edit icon (pencil) in the top bar to open the edit screen. The barcode code is shown read-only and cannot be changed. The loan status is not editable. Editable fields:
+- **Item** — type-ahead search; selecting a suggestion fills in the item description. If the typed name does not exist yet, a new item is created on save.
+- **Description** — per-barcode description.
+- **Item description** — editable when no item is selected from suggestions; read-only once an item is chosen.
+- **Owner** — type-ahead person search; tap the person icon to set to the current user.
+
+Tap **Save** to write the changes; tap **Cancel** or the back arrow to discard.
 
 **Location editing:**
 - Tap the scan icon next to *Location* to scan a new parent barcode. The new parent chain is shown with newly added ancestors highlighted in green. Save or Cancel.

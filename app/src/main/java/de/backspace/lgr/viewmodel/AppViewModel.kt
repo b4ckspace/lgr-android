@@ -126,6 +126,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var newBarcodeOwnerUrl by mutableStateOf<String?>(null)
     var newBarcodeSelectedPerson by mutableStateOf<Person?>(null)
 
+    var editBarcodeNameQuery by mutableStateOf("")
+    var editBarcodeSelectedItem by mutableStateOf<Item?>(null)
+    var editBarcodeItemDescription by mutableStateOf("")
+    var editBarcodeDescription by mutableStateOf("")
+    var editBarcodeOwnerQuery by mutableStateOf("")
+    var editBarcodeOwnerUrl by mutableStateOf<String?>(null)
+    var editBarcodeSelectedPerson by mutableStateOf<Person?>(null)
+    var saveBarcodeEditState by mutableStateOf(UiState<Barcode>())
+        private set
+
     val isAuthenticated get() = auth.data?.authenticated == true
     val username get() = auth.data?.username
 
@@ -180,6 +190,74 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             newBarcodeOwnerUrl = null
             fillOwnerWithCurrentUser()
         }
+    }
+
+    fun fillEditOwnerWithCurrentUser() = viewModelScope.launch {
+        val uname = username ?: return@launch
+        val results = runCatching { repo.getPersons(search = uname, limit = 10) }
+            .getOrNull()?.results ?: return@launch
+        val person = results.find { it.nickname == uname } ?: results.firstOrNull() ?: return@launch
+        val display = listOf(person.firstname, person.lastname)
+            .filter { it.isNotBlank() }.joinToString(" ").ifBlank { person.nickname }
+        editBarcodeOwnerQuery = display
+        editBarcodeOwnerUrl = person.url
+        editBarcodeSelectedPerson = person
+    }
+
+    fun enterBarcodeEditMode(barcode: Barcode) {
+        saveBarcodeEditState = UiState()
+        editBarcodeNameQuery = barcode.itemName
+        editBarcodeSelectedItem = Item(url = barcode.item, name = barcode.itemName, description = barcode.itemDescription, tags = emptyList())
+        editBarcodeItemDescription = barcode.itemDescription
+        editBarcodeDescription = barcode.description
+        editBarcodeOwnerUrl = barcode.owner
+        editBarcodeSelectedPerson = null
+        editBarcodeOwnerQuery = ""
+        if (barcode.owner != null) {
+            viewModelScope.launch {
+                editBarcodeOwnerQuery = resolveOwnerName(barcode.owner)
+            }
+        }
+    }
+
+    fun saveBarcodeEdit() = viewModelScope.launch {
+        val barcode = scannedBarcode.data ?: return@launch
+        saveBarcodeEditState = UiState(isLoading = true)
+        val itemName = editBarcodeNameQuery.trim()
+        val selectedItem = editBarcodeSelectedItem
+        val itemDescription = editBarcodeItemDescription.trim()
+        val description = editBarcodeDescription.trim()
+        val ownerUrl = editBarcodeOwnerUrl
+        val itemUrl = if (selectedItem != null) {
+            selectedItem.url
+        } else {
+            val existing = runCatching { repo.getItems(search = itemName, limit = 50) }
+                .getOrNull()?.results?.find { it.name.equals(itemName, ignoreCase = true) }
+            existing?.url ?: runCatching { repo.createItem(itemName, itemDescription) }
+                .getOrElse { saveBarcodeEditState = UiState(error = it.toUserMessage()); return@launch }
+                .url
+        }
+        runCatching {
+            repo.updateBarcode(ApiClient.getBarcodeUrl(barcode.code), itemUrl, description, ownerUrl)
+        }.onSuccess { updated ->
+            scannedBarcode = UiState(data = updated)
+            saveBarcodeEditState = UiState(data = updated)
+            barcodesNeedRefresh = true
+            itemsNeedRefresh = true
+        }.onFailure {
+            saveBarcodeEditState = UiState(error = it.toUserMessage())
+        }
+    }
+
+    fun clearBarcodeEditState() {
+        saveBarcodeEditState = UiState()
+        editBarcodeNameQuery = ""
+        editBarcodeSelectedItem = null
+        editBarcodeItemDescription = ""
+        editBarcodeDescription = ""
+        editBarcodeOwnerQuery = ""
+        editBarcodeOwnerUrl = null
+        editBarcodeSelectedPerson = null
     }
 
     fun fillOwnerWithCurrentUser() = viewModelScope.launch {
@@ -272,6 +350,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             saveContentState = UiState()
             pendingNewParent = null
             saveParentState = UiState()
+            barcodesNeedRefresh = true
             newBarcodeState = UiState(data = barcode)
         }.onFailure {
             newBarcodeState = UiState(error = it.toUserMessage())
@@ -415,16 +494,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun loadBarcodes(search: String? = null, noParent: Boolean = barcodesNoParentFilter) {
         val returning = barcodesReturnFromDetail
         barcodesReturnFromDetail = false
-        if (returning && barcodes.data != null) return
+        if (returning && barcodes.data != null && !barcodesNeedRefresh) return
         if (search == null && !barcodesNeedRefresh && barcodes.data != null) return
         barcodesNeedRefresh = false
         barcodesGeneration++
+
+        val effectiveSearch = search ?: barcodesSearch.takeIf { it.isNotBlank() }
 
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             if (!search.isNullOrBlank()) delay(300)
             barcodes = UiState(isLoading = true)
-            runCatching { repo.getBarcodes(search, noParent = noParent) }
+            runCatching { repo.getBarcodes(effectiveSearch, noParent = noParent) }
                 .onSuccess { barcodes = UiState(data = it.results); barcodesNextPage = it.next; barcodesCount = it.count }
                 .onFailure { barcodes = UiState(error = it.localizedMessage) }
         }
@@ -493,6 +574,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             .onSuccess {
                 deleteBarcodeState = UiState(data = Unit)
                 barcodesReturnFromDetail = false
+                barcodesNeedRefresh = true
             }
             .onFailure { deleteBarcodeState = UiState(error = it.toUserMessage()) }
     }

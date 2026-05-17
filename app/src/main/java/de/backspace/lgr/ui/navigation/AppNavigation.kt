@@ -23,7 +23,7 @@ private sealed class Screen(val route: String, val label: String, val icon: Imag
     object MyLoans : Screen("my_loans", "My\nLoans", Icons.Default.AccountCircle, enabled = false)
 }
 
-private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search", "item_detail")
+private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search", "item_detail", "edit_barcode")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -146,6 +146,11 @@ fun AppNavigation(viewModel: AppViewModel) {
                         viewModel.clearNewBarcodeState()
                         navController.navigate("new_barcode")
                     },
+                    onEditBarcode = {
+                        val barcode = viewModel.scannedBarcode.data ?: return@BarcodeDetailScreen
+                        viewModel.enterBarcodeEditMode(barcode)
+                        navController.navigate("edit_barcode")
+                    },
                     onItemClick = {
                         val barcode = viewModel.scannedBarcode.data ?: return@BarcodeDetailScreen
                         val item = de.backspace.lgr.data.model.Item(
@@ -166,6 +171,19 @@ fun AppNavigation(viewModel: AppViewModel) {
                     onBarcodeClick = { barcode ->
                         viewModel.loadBarcode(barcode.code)
                         navController.navigate("barcode_detail")
+                    }
+                )
+            }
+            composable("edit_barcode") {
+                EditBarcodeScreen(
+                    viewModel = viewModel,
+                    onBack = {
+                        viewModel.clearBarcodeEditState()
+                        navController.popBackStack()
+                    },
+                    onSaved = {
+                        viewModel.clearBarcodeEditState()
+                        navController.popBackStack()
                     }
                 )
             }
