@@ -152,6 +152,23 @@ Searchable, paginated list of item types (the catalogue, not individual barcoded
 - **No barcodes filter** — shows only item types that have no barcodes registered yet.
 - Displays name, description, and tag count per item.
 - Infinite scroll.
+- Tap any item to open its **Item Detail** page.
+- **Arrow buttons and swipe left/right** navigate through the result set (same as Barcodes).
+
+---
+
+### Item Detail
+
+Reachable by tapping an item in the Items tab, or by tapping the item name in a Barcode Detail view (shown in primary colour as a link).
+
+**Displayed fields:**
+- Item name
+- Item description (if set)
+- **Barcodes** section — all barcodes that use this item type, each tappable to open its Barcode Detail
+
+**Actions (authenticated):**
+- **Delete** (red trashcan icon) — opens a confirmation dialog and permanently deletes the item.
+  - The trashcan is disabled (greyed out) if any barcodes are linked to the item.
 
 ---
 

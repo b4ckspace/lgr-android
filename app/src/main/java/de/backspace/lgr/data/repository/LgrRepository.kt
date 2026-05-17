@@ -48,6 +48,16 @@ class LgrRepository {
     suspend fun getBarcodeCountForItem(itemName: String): Int =
         runCatching { api.getBarcodes(search = itemName, limit = 1).count }.getOrDefault(0)
 
+    suspend fun getBarcodesByItem(itemName: String): List<Barcode> {
+        val response = api.getBarcodes(search = itemName, limit = 1000)
+        return response.results.filter { it.itemName == itemName }
+    }
+
+    suspend fun deleteItem(url: String) {
+        val response = api.deleteItem(url)
+        if (!response.isSuccessful) throw retrofit2.HttpException(response)
+    }
+
     suspend fun getItemsPage(url: String) = api.getItemsPage(url)
 
     suspend fun getTags() = api.getTags()

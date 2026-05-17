@@ -53,6 +53,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var loanState by mutableStateOf(UiState<LoanResponse>())
     var deleteBarcodeState by mutableStateOf(UiState<Unit>())
         private set
+    var currentItem by mutableStateOf<Item?>(null)
+        private set
+    var itemBarcodes by mutableStateOf(UiState<List<Barcode>>())
+        private set
+    var deleteItemState by mutableStateOf(UiState<Unit>())
+        private set
+    var itemListContext by mutableStateOf<List<Item>?>(null)
+        private set
+    var itemListIndex by mutableStateOf(0)
+        private set
     var scannedBarcode by mutableStateOf(UiState<Barcode>())
     var scannedChildCodes by mutableStateOf<Set<String>>(emptySet())
         private set
@@ -476,6 +486,49 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun resetDeleteBarcodeState() { deleteBarcodeState = UiState() }
+
+    fun openItemDetail(item: Item) {
+        currentItem = item
+        deleteItemState = UiState()
+        itemListContext = null
+        itemBarcodes = UiState(isLoading = true)
+        viewModelScope.launch {
+            runCatching { repo.getBarcodesByItem(item.name) }
+                .onSuccess { itemBarcodes = UiState(data = it) }
+                .onFailure { itemBarcodes = UiState(error = it.localizedMessage) }
+        }
+    }
+
+    fun openItemFromList(list: List<Item>, index: Int) {
+        openItemDetail(list[index])
+        itemListContext = list
+        itemListIndex = index
+    }
+
+    fun navigateToItemInList(index: Int) {
+        val list = itemListContext ?: return
+        if (index !in list.indices) return
+        val item = list[index]
+        currentItem = item
+        deleteItemState = UiState()
+        itemListIndex = index
+        itemBarcodes = UiState(isLoading = true)
+        viewModelScope.launch {
+            runCatching { repo.getBarcodesByItem(item.name) }
+                .onSuccess { itemBarcodes = UiState(data = it) }
+                .onFailure { itemBarcodes = UiState(error = it.localizedMessage) }
+        }
+    }
+
+    fun deleteItem() = viewModelScope.launch {
+        val item = currentItem ?: return@launch
+        deleteItemState = UiState(isLoading = true)
+        runCatching { repo.deleteItem(item.url) }
+            .onSuccess { deleteItemState = UiState(data = Unit) }
+            .onFailure { deleteItemState = UiState(error = it.toUserMessage()) }
+    }
+
+    fun resetDeleteItemState() { deleteItemState = UiState() }
 
     fun loadBarcode(code: String) = viewModelScope.launch {
         pendingNewParent = null

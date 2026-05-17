@@ -65,6 +65,9 @@ interface ApiService {
     @POST("api/items/")
     suspend fun createItem(@Body request: CreateItemRequest): Item
 
+    @DELETE
+    suspend fun deleteItem(@Url url: String): retrofit2.Response<Void>
+
     @GET
     suspend fun getItemsPage(@Url url: String): PagedResponse<Item>
 

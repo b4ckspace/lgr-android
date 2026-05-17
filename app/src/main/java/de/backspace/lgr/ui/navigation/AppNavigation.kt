@@ -23,7 +23,7 @@ private sealed class Screen(val route: String, val label: String, val icon: Imag
     object MyLoans : Screen("my_loans", "My\nLoans", Icons.Default.AccountCircle, enabled = false)
 }
 
-private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search")
+private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search", "item_detail")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,7 +103,15 @@ fun AppNavigation(viewModel: AppViewModel) {
                     showNew = !viewModel.readonlyMode
                 )
             }
-            composable(Screen.Items.route) { ItemsScreen(viewModel) }
+            composable(Screen.Items.route) {
+                ItemsScreen(
+                    viewModel = viewModel,
+                    onOpenDetail = { list, index ->
+                        viewModel.openItemFromList(list, index)
+                        navController.navigate("item_detail")
+                    }
+                )
+            }
             composable(Screen.Barcodes.route) {
                 BarcodesScreen(
                     viewModel = viewModel,
@@ -137,6 +145,27 @@ fun AppNavigation(viewModel: AppViewModel) {
                     onNewBarcode = {
                         viewModel.clearNewBarcodeState()
                         navController.navigate("new_barcode")
+                    },
+                    onItemClick = {
+                        val barcode = viewModel.scannedBarcode.data ?: return@BarcodeDetailScreen
+                        val item = de.backspace.lgr.data.model.Item(
+                            url = barcode.item,
+                            name = barcode.itemName,
+                            description = barcode.itemDescription,
+                            tags = emptyList()
+                        )
+                        viewModel.openItemDetail(item)
+                        navController.navigate("item_detail")
+                    }
+                )
+            }
+            composable("item_detail") {
+                ItemDetailScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onBarcodeClick = { barcode ->
+                        viewModel.loadBarcode(barcode.code)
+                        navController.navigate("barcode_detail")
                     }
                 )
             }

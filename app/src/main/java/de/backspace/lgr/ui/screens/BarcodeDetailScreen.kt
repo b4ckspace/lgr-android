@@ -42,7 +42,8 @@ fun BarcodeDetailScreen(
     onScanContent: () -> Unit,
     onScanParent: () -> Unit,
     onAddContent: () -> Unit,
-    onNewBarcode: () -> Unit = {}
+    onNewBarcode: () -> Unit = {},
+    onItemClick: (() -> Unit)? = null
 ) {
     val state = viewModel.scannedBarcode
     val barcodeList = viewModel.barcodeListContext
@@ -185,7 +186,7 @@ fun BarcodeDetailScreen(
                             }
 
                             item { DetailRow("Barcode", barcode.code) }
-                            item { DetailRow("Item", barcode.itemName) }
+                            item { DetailRow("Item", barcode.itemName, onClick = onItemClick) }
                             if (barcode.description.isNotBlank())
                                 item { DetailRow("Description", barcode.description) }
                             if (barcode.itemDescription.isNotBlank())
@@ -548,11 +549,15 @@ private fun ChildRow(
 }
 
 @Composable
-private fun DetailRow(label: String, value: String, valueColor: Color = Color.Unspecified) {
-    Column {
+private fun DetailRow(label: String, value: String, valueColor: Color = Color.Unspecified, onClick: (() -> Unit)? = null) {
+    Column(modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(2.dp))
-        Text(text = value, style = MaterialTheme.typography.bodyLarge, color = valueColor)
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (onClick != null) MaterialTheme.colorScheme.primary else valueColor
+        )
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
     }
 }
