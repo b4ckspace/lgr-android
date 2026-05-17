@@ -1,6 +1,6 @@
 # LGR Android
 
-Android client for the **LGR** (Lagerverwaltung) warehouse management system. Connects to a Django REST Framework backend to browse, scan, and manage barcoded inventory items, locations, and loans.
+Android client for the **LGR** warehouse management system. Connects to a Django REST Framework backend to browse, scan, and manage barcoded inventory items, locations, and loans.
 
 ## Requirements
 
