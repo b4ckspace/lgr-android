@@ -105,7 +105,7 @@ fun EditBarcodeScreen(
         }
         delay(300)
         val results = viewModel.searchItemsWithCounts(query).sortedBy { (item, _) -> item.name.lowercase() }
-        val exactMatch = results.find { (item, _) -> item.name.equals(query, ignoreCase = true) }
+        val exactMatch = results.find { (item, _) -> item.name.equals(query.trim(), ignoreCase = true) }
         if (exactMatch != null && results.size == 1) {
             viewModel.editBarcodeNameQuery = exactMatch.first.name
             viewModel.editBarcodeSelectedItem = exactMatch.first
