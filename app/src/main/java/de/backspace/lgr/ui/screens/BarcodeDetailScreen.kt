@@ -7,6 +7,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FactCheck
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.flow.collect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -80,6 +82,22 @@ fun BarcodeDetailScreen(
     }
 
     val onBarcodeClick: (String) -> Unit = { code -> viewModel.navigateToBarcode(code) }
+
+    val listState = rememberLazyListState()
+    val currentBarcodeCode by rememberUpdatedState(state.data?.code)
+
+    LaunchedEffect(state.data?.code) {
+        val code = state.data?.code ?: return@LaunchedEffect
+        val (index, offset) = viewModel.getScrollPosition(code)
+        listState.scrollToItem(index, offset)
+    }
+
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
+            .collect { (index, offset) ->
+                currentBarcodeCode?.let { viewModel.saveScrollPosition(it, index, offset) }
+            }
+    }
 
     LaunchedEffect(deleteState.error) {
         if (deleteState.error != null) showDeleteDialog = true
@@ -184,6 +202,7 @@ fun BarcodeDetailScreen(
 
                     Column(modifier = Modifier.fillMaxSize().imePadding()) {
                         LazyColumn(
+                            state = listState,
                             modifier = Modifier.fillMaxWidth().weight(1f),
                             contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)

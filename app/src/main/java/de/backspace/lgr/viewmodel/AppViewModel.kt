@@ -148,6 +148,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private var searchJob: Job? = null
     private var childLoanJob: Job? = null
     private val ownerNameCache = mutableMapOf<String, String>()
+    private val barcodeScrollPositions = mutableMapOf<String, Pair<Int, Int>>()
+
+    fun saveScrollPosition(code: String, index: Int, offset: Int) {
+        barcodeScrollPositions[code] = index to offset
+    }
+
+    fun getScrollPosition(code: String): Pair<Int, Int> =
+        barcodeScrollPositions[code] ?: (0 to 0)
 
     suspend fun resolveOwnerName(url: String): String {
         ownerNameCache[url]?.takeIf { it != url }?.let { return it }
