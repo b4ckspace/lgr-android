@@ -150,7 +150,7 @@ Tap **Save** to write the changes; tap **Cancel** or the back arrow to discard.
 - Shows all child barcodes with their item names. Tappable for navigation.
 - Loan status shown per child (blue label if on loan).
 - Three icon buttons in the *Content* header (authenticated):
-  - **Verify icon** — opens *Scan all content* scanner; scan every physical item in the container. Items in the database but not yet scanned are shown in red; newly scanned items in green.
+  - **Verify icon** — opens *Scan all content* scanner; scan every physical item in the container. Items in the database but not yet scanned are shown in red; newly scanned items in green. A **Cancel** button (and the back arrow) abort the scan without changing content.
   - **Scan icon** — opens *Add content* scanner; adds newly scanned items to the existing content without removing anything.
   - **Search icon** — shows a text search field inline below the header. Type a barcode code or item name (min. 2 characters, 300 ms debounce); tap any suggestion to add it immediately. Already-present and already-added barcodes are shown in grey and cannot be selected. Tap the search icon again (now shown as ×) to close the field. The field is also closed automatically when Save or Cancel is tapped.
 - All three add modes share the same list of added barcodes and can be combined freely within a session.
@@ -199,7 +199,7 @@ Used to audit whether the physical contents of a container match the database.
    - New item (not yet in DB for this location): short beep, scanner border flashes green.
    - Already scanned (duplicate): triple beep.
    - Unknown barcode: burp.
-4. Tap **Done** to open the verification result screen.
+4. Tap **Done** to open the verification result screen, or **Cancel** (or the back arrow) to abort and return to the Home screen.
 
 The result screen shows a two-column table:
 

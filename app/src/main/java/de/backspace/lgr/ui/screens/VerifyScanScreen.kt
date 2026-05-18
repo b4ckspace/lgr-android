@@ -96,21 +96,31 @@ fun VerifyScanScreen(
                     modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
                     color = Color.Black.copy(alpha = 0.65f)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    @OptIn(ExperimentalLayoutApi::class)
+                    FlowRow(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.Center
                     ) {
                         Text(
                             text = "$contentCount barcode(s) scanned",
                             color = Color.White,
-                            style = MaterialTheme.typography.bodyLarge
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.align(Alignment.CenterVertically)
                         )
-                        Button(
-                            onClick = onDone,
-                            colors = ButtonDefaults.buttonColors(containerColor = DONE_GREEN)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Done")
+                            OutlinedButton(
+                                onClick = onBack,
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White)
+                            ) { Text("Cancel") }
+                            Button(
+                                onClick = onDone,
+                                colors = ButtonDefaults.buttonColors(containerColor = DONE_GREEN)
+                            ) { Text("Done") }
                         }
                     }
                 }

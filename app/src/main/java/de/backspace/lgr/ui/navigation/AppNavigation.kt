@@ -220,7 +220,8 @@ fun AppNavigation(viewModel: AppViewModel) {
             composable("content_scan") {
                 ContentScanScreen(
                     viewModel = viewModel,
-                    onDone = { navController.popBackStack() }
+                    onDone = { navController.popBackStack() },
+                    onCancel = { viewModel.cancelContentScan(); navController.popBackStack() }
                 )
             }
             composable("scan_parent") {
@@ -289,7 +290,7 @@ fun AppNavigation(viewModel: AppViewModel) {
                 VerifyScanScreen(
                     viewModel = viewModel,
                     onDone = { navController.navigate("verify_detail") },
-                    onBack = { navController.popBackStack() }
+                    onBack = { viewModel.clearVerifyState(); navController.popBackStack() }
                 )
             }
             composable("verify_detail") {
