@@ -182,7 +182,7 @@ fun BarcodeDetailScreen(
                 state.data != null -> {
                     val barcode = state.data
 
-                    Column(modifier = Modifier.fillMaxSize()) {
+                    Column(modifier = Modifier.fillMaxSize().imePadding()) {
                         LazyColumn(
                             modifier = Modifier.fillMaxWidth().weight(1f),
                             contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
