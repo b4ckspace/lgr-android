@@ -127,8 +127,18 @@ fun EditBarcodeScreen(
         }
         delay(300)
         val results = viewModel.searchPersons(query).sortedBy { it.displayName().lowercase() }
-        ownerSuggestions = results
-        showOwnerSuggestions = results.isNotEmpty()
+        val exactMatches = results.filter { it.displayName().equals(query.trim(), ignoreCase = true) }
+        if (exactMatches.size == 1) {
+            val person = exactMatches.first()
+            viewModel.editBarcodeOwnerQuery = person.displayName()
+            viewModel.editBarcodeSelectedPerson = person
+            viewModel.editBarcodeOwnerUrl = person.url
+            ownerSuggestions = emptyList()
+            showOwnerSuggestions = false
+        } else {
+            ownerSuggestions = results
+            showOwnerSuggestions = results.isNotEmpty()
+        }
     }
 
     LaunchedEffect(viewModel.editBarcodeLocationQuery) {
@@ -182,6 +192,26 @@ fun EditBarcodeScreen(
             )
         }
     ) { padding ->
+        val contentTopPx = with(density) { padding.calculateTopPadding().toPx() }
+
+        // When suggestions appear, scroll so the focused field sits at the very top of the viewport.
+        // focusedBounds.top (screen Y) + current scroll - contentTopPx = field's Y in scroll content.
+        fun fieldScrollTarget() =
+            (focusedBounds.top - contentTopPx + scrollState.value).toInt().coerceAtLeast(0)
+
+        LaunchedEffect(showLocationSuggestions) {
+            if (showLocationSuggestions && focusedBounds != Rect.Zero)
+                scrollState.animateScrollTo(fieldScrollTarget())
+        }
+        LaunchedEffect(showSuggestions) {
+            if (showSuggestions && focusedBounds != Rect.Zero)
+                scrollState.animateScrollTo(fieldScrollTarget())
+        }
+        LaunchedEffect(showOwnerSuggestions) {
+            if (showOwnerSuggestions && focusedBounds != Rect.Zero)
+                scrollState.animateScrollTo(fieldScrollTarget())
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
