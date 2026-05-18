@@ -1,5 +1,6 @@
 package de.backspace.lgr.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -56,7 +57,9 @@ private fun buildRows(location: Barcode, scanned: List<Barcode>): List<VerifyRow
 fun VerifyBarcodeScreen(
     viewModel: AppViewModel,
     onBack: () -> Unit,
-    onRescan: () -> Unit
+    onRescan: () -> Unit,
+    onCancel: (() -> Unit)? = null,
+    onBarcodeClick: ((String) -> Unit)? = null
 ) {
     val location = viewModel.verifyLocation
     val scanned = viewModel.verifyContents
@@ -181,12 +184,19 @@ fun VerifyBarcodeScreen(
                             Text("—", style = MaterialTheme.typography.bodyMedium)
                         } else {
                             rows.forEach { row ->
+                                val leftCode = row.leftCode
+                                val rightCode = row.rightCode
+                                val clickHandler = onBarcodeClick
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.Top
                                 ) {
                                     // Left cell
-                                    Box(modifier = Modifier.weight(1f).padding(end = 4.dp)) {
+                                    Box(
+                                        modifier = Modifier.weight(1f).padding(end = 4.dp)
+                                            .then(if (leftCode != null && clickHandler != null)
+                                                Modifier.clickable { clickHandler(leftCode) } else Modifier)
+                                    ) {
                                         if (row.leftCode != null) {
                                             val color = if (row.type == RowType.LEFT_ONLY) VERIFY_RED
                                                         else MaterialTheme.colorScheme.onSurface
@@ -205,7 +215,11 @@ fun VerifyBarcodeScreen(
                                         }
                                     }
                                     // Right cell
-                                    Box(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
+                                    Box(
+                                        modifier = Modifier.weight(1f).padding(start = 4.dp)
+                                            .then(if (rightCode != null && clickHandler != null)
+                                                Modifier.clickable { clickHandler(rightCode) } else Modifier)
+                                    ) {
                                         if (row.rightCode != null) {
                                             val color = if (row.type == RowType.RIGHT_ONLY) VERIFY_GREEN
                                                         else MaterialTheme.colorScheme.onSurface
@@ -246,26 +260,31 @@ fun VerifyBarcodeScreen(
                 }
             }
 
-            if (hasMismatches) {
+            if (hasMismatches || onCancel != null) {
                 HorizontalDivider()
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
                 ) {
-                    Button(
-                        onClick = { viewModel.saveVerifyChanges() },
-                        enabled = !saveState.isLoading
-                    ) {
-                        if (saveState.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        } else {
-                            Text("Save")
+                    if (onCancel != null) {
+                        OutlinedButton(onClick = onCancel) { Text("Cancel") }
+                    }
+                    if (hasMismatches) {
+                        Button(
+                            onClick = { viewModel.saveVerifyChanges() },
+                            enabled = !saveState.isLoading
+                        ) {
+                            if (saveState.isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            } else {
+                                Text("Save")
+                            }
                         }
                     }
                 }

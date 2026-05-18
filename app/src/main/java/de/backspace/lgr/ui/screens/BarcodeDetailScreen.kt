@@ -8,6 +8,9 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FactCheck
@@ -45,6 +48,7 @@ private val GREEN = Color(0xFF4CAF50)
 private val RED = Color(0xFFE53935)
 private val LOAN_BLUE = Color(0xFF1976D2)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BarcodeDetailScreen(
     viewModel: AppViewModel,
@@ -82,6 +86,14 @@ fun BarcodeDetailScreen(
     }
 
     val onBarcodeClick: (String) -> Unit = { code -> viewModel.navigateToBarcode(code) }
+
+    val pullToRefreshState = rememberPullToRefreshState()
+    LaunchedEffect(pullToRefreshState.isRefreshing) {
+        if (pullToRefreshState.isRefreshing) viewModel.refreshBarcodeDetail()
+    }
+    LaunchedEffect(state.isLoading) {
+        if (!state.isLoading && pullToRefreshState.isRefreshing) pullToRefreshState.endRefresh()
+    }
 
     val listState = rememberLazyListState()
     val currentBarcodeCode by rememberUpdatedState(state.data?.code)
@@ -134,6 +146,7 @@ fun BarcodeDetailScreen(
         )
     }
 
+    Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp),
@@ -290,6 +303,8 @@ fun BarcodeDetailScreen(
                 }
             }
         }
+    }
+    PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
     }
 }
 

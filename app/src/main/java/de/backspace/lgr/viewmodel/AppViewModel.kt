@@ -3,6 +3,12 @@ package de.backspace.lgr.viewmodel
 import android.app.Application
 import android.content.Context
 import androidx.compose.runtime.*
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import de.backspace.lgr.data.api.ApiClient
@@ -13,7 +19,12 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+
+private val Context.appDataStore: DataStore<Preferences> by preferencesDataStore(name = "lgr_settings")
+private val FILTERS_EXPANDED_KEY = booleanPreferencesKey("filters_expanded")
 
 data class UiState<T>(
     val data: T? = null,
@@ -80,6 +91,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var barcodesNoParentFilter by mutableStateOf(false)
         private set
+    var selectedOwners by mutableStateOf<List<Person>>(emptyList())
+        private set
+    var ownerSearchQuery by mutableStateOf("")
+        private set
+    var ownerSuggestions by mutableStateOf<List<Person>>(emptyList())
+        private set
+    var filtersExpanded by mutableStateOf(false)
+        private set
+    private var ownerSearchJob: Job? = null
     private var barcodesReturnFromDetail = false
     private var barcodesNeedRefresh = true
     var barcodesGeneration by mutableStateOf(0)
@@ -178,6 +198,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (serverUrl.isNotEmpty()) {
             ApiClient.configure(serverUrl)
             checkAuth()
+        }
+        viewModelScope.launch {
+            application.appDataStore.data
+                .catch { emit(emptyPreferences()) }
+                .first()[FILTERS_EXPANDED_KEY]?.let { filtersExpanded = it }
         }
     }
 
@@ -548,15 +573,34 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         barcodesNeedRefresh = false
         barcodesGeneration++
 
-        val effectiveSearch = search ?: barcodesSearch.takeIf { it.isNotBlank() }
+        val textSearch = (search ?: barcodesSearch).takeIf { it.isNotBlank() }
+        // filterset_fields uses ModelChoiceFilter which expects the numeric PK, not the full URL
+        val ownerIds = selectedOwners.map { it.url.trimEnd('/').substringAfterLast('/') }
 
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             if (!search.isNullOrBlank()) delay(300)
             barcodes = UiState(isLoading = true)
-            runCatching { repo.getBarcodes(effectiveSearch, noParent = noParent) }
-                .onSuccess { barcodes = UiState(data = it.results); barcodesNextPage = it.next; barcodesCount = it.count }
-                .onFailure { barcodes = UiState(error = it.localizedMessage) }
+            if (ownerIds.size <= 1) {
+                runCatching { repo.getBarcodes(textSearch, noParent = noParent, owner = ownerIds.firstOrNull()) }
+                    .onSuccess { barcodes = UiState(data = it.results); barcodesNextPage = it.next; barcodesCount = it.count }
+                    .onFailure { barcodes = UiState(error = it.localizedMessage) }
+            } else {
+                try {
+                    coroutineScope {
+                        val jobs = ownerIds.map { ownerId ->
+                            async { repo.getBarcodes(textSearch, limit = 200, noParent = noParent, owner = ownerId) }
+                        }
+                        val results = jobs.awaitAll()
+                        val merged = results.flatMap { it.results }.distinctBy { it.code }.sortedBy { it.code }
+                        barcodes = UiState(data = merged)
+                        barcodesNextPage = null
+                        barcodesCount = results.sumOf { it.count }
+                    }
+                } catch (e: Exception) {
+                    barcodes = UiState(error = e.localizedMessage)
+                }
+            }
         }
     }
 
@@ -952,6 +996,72 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleBarcodesNoParentFilter() {
         barcodesNoParentFilter = !barcodesNoParentFilter
         loadBarcodes(barcodesSearch)
+    }
+
+    fun updateOwnerSearchQuery(query: String) {
+        ownerSearchQuery = query
+        ownerSearchJob?.cancel()
+        if (query.length < 2) {
+            ownerSuggestions = emptyList()
+            return
+        }
+        ownerSearchJob = viewModelScope.launch {
+            delay(300)
+            val results = runCatching { repo.getPersons(search = query, limit = 10) }
+                .getOrNull()?.results ?: emptyList()
+            ownerSuggestions = results.sortedBy { it.nickname.lowercase() }
+        }
+    }
+
+    fun selectOnlyOwnerPerson(person: Person) {
+        selectedOwners = listOf(person)
+        ownerSearchQuery = ""
+        ownerSuggestions = emptyList()
+        loadBarcodes(barcodesSearch)
+    }
+
+    fun toggleOwnerPersonSelection(person: Person) {
+        selectedOwners = if (selectedOwners.any { it.url == person.url })
+            selectedOwners.filter { it.url != person.url }
+        else
+            selectedOwners + person
+        loadBarcodes(barcodesSearch)
+    }
+
+    fun removeOwnerPerson(person: Person) {
+        selectedOwners = selectedOwners.filter { it.url != person.url }
+        loadBarcodes(barcodesSearch)
+    }
+
+    fun clearOwnerFilter() {
+        selectedOwners = emptyList()
+        ownerSearchQuery = ""
+        ownerSuggestions = emptyList()
+        loadBarcodes(barcodesSearch)
+    }
+
+    fun updateFiltersExpanded(expanded: Boolean) {
+        filtersExpanded = expanded
+        viewModelScope.launch {
+            getApplication<Application>().appDataStore.edit { prefs ->
+                prefs[FILTERS_EXPANDED_KEY] = expanded
+            }
+        }
+    }
+
+    fun refreshBarcodeDetail() {
+        val code = scannedBarcode.data?.code ?: return
+        loadBarcode(code)
+    }
+
+    fun refreshItemDetail() {
+        val item = currentItem ?: return
+        itemBarcodes = UiState(isLoading = true)
+        viewModelScope.launch {
+            runCatching { repo.getBarcodesByItem(item.name) }
+                .onSuccess { itemBarcodes = UiState(data = it) }
+                .onFailure { itemBarcodes = UiState(error = it.localizedMessage) }
+        }
     }
 
     fun openBarcodeFromList(list: List<Barcode>, index: Int) {

@@ -4,20 +4,23 @@ import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Handler
 import android.os.Looper
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -27,12 +30,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import de.backspace.lgr.data.model.Barcode
 import de.backspace.lgr.data.model.BarcodeStatus
+import de.backspace.lgr.data.model.Person
 import de.backspace.lgr.viewmodel.AppViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
-@OptIn(ExperimentalMaterial3Api::class)
+private fun Person.displayName(): String =
+    listOf(firstname, lastname).filter { it.isNotBlank() }.joinToString(" ").ifBlank { nickname }
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun BarcodesScreen(
     viewModel: AppViewModel,
@@ -108,18 +115,17 @@ fun BarcodesScreen(
                 colors = lgrTextFieldColors()
             )
 
+            // Always-visible row: expand toggle on left, result count on right
             Row(
                 modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                FilterChip(
-                    selected = viewModel.barcodesNoParentFilter,
-                    onClick = { viewModel.toggleBarcodesNoParentFilter() },
-                    label = { Text("No location") },
-                    leadingIcon = if (viewModel.barcodesNoParentFilter) {
-                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
-                    } else null
-                )
+                IconButton(onClick = { viewModel.updateFiltersExpanded(!viewModel.filtersExpanded) }) {
+                    Icon(
+                        if (viewModel.filtersExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (viewModel.filtersExpanded) "Collapse filters" else "Expand filters"
+                    )
+                }
                 Spacer(modifier = Modifier.weight(1f))
                 viewModel.barcodesCount?.let { count ->
                     Text(
@@ -128,6 +134,89 @@ fun BarcodesScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(end = 8.dp)
                     )
+                }
+            }
+
+            // Collapsible additional filters
+            AnimatedVisibility(visible = viewModel.filtersExpanded) {
+                Column(modifier = Modifier.padding(horizontal = 8.dp)) {
+                    FilterChip(
+                        selected = viewModel.barcodesNoParentFilter,
+                        onClick = { viewModel.toggleBarcodesNoParentFilter() },
+                        label = { Text("No location") },
+                        leadingIcon = if (viewModel.barcodesNoParentFilter) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
+                        } else null
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    OutlinedTextField(
+                        value = viewModel.ownerSearchQuery,
+                        onValueChange = { viewModel.updateOwnerSearchQuery(it) },
+                        label = { Text("Owner") },
+                        trailingIcon = {
+                            if (viewModel.ownerSearchQuery.isNotBlank()) {
+                                IconButton(onClick = { viewModel.updateOwnerSearchQuery("") }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Clear owner search")
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = lgrTextFieldColors()
+                    )
+                    if (viewModel.ownerSuggestions.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        ) {
+                            Column {
+                                viewModel.ownerSuggestions.forEach { person ->
+                                    val isSelected = viewModel.selectedOwners.any { it.url == person.url }
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().clickable {
+                                            viewModel.selectOnlyOwnerPerson(person)
+                                        }.padding(horizontal = 12.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Checkbox(
+                                            checked = isSelected,
+                                            onCheckedChange = { viewModel.toggleOwnerPersonSelection(person) }
+                                        )
+                                        Text(
+                                            text = person.displayName(),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.padding(start = 4.dp)
+                                        )
+                                    }
+                                    HorizontalDivider()
+                                }
+                            }
+                        }
+                    }
+                    if (viewModel.selectedOwners.isNotEmpty()) {
+                        Spacer(Modifier.height(4.dp))
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            viewModel.selectedOwners.forEach { person ->
+                                InputChip(
+                                    selected = true,
+                                    onClick = {},
+                                    label = { Text(person.displayName()) },
+                                    trailingIcon = {
+                                        Icon(
+                                            Icons.Default.Clear,
+                                            contentDescription = "Remove ${person.displayName()}",
+                                            modifier = Modifier.size(InputChipDefaults.IconSize)
+                                                .clickable { viewModel.removeOwnerPerson(person) }
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
                 }
             }
 

@@ -13,6 +13,9 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +34,7 @@ import de.backspace.lgr.viewmodel.AppViewModel
 private val ITEM_GREY = Color(0xFF9E9E9E)
 private val ITEM_RED = Color(0xFFE53935)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemDetailScreen(
     viewModel: AppViewModel,
@@ -47,6 +51,13 @@ fun ItemDetailScreen(
     val hasBarcodes = barcodesState.data?.isNotEmpty() == true
     val swipeThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
     var dragTotal by remember(currentIndex) { mutableStateOf(0f) }
+    val pullToRefreshState = rememberPullToRefreshState()
+    LaunchedEffect(pullToRefreshState.isRefreshing) {
+        if (pullToRefreshState.isRefreshing) viewModel.refreshItemDetail()
+    }
+    LaunchedEffect(barcodesState.isLoading) {
+        if (!barcodesState.isLoading && pullToRefreshState.isRefreshing) pullToRefreshState.endRefresh()
+    }
 
     LaunchedEffect(deleteState.data) {
         if (deleteState.data != null) {
@@ -86,6 +97,7 @@ fun ItemDetailScreen(
         )
     }
 
+    Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp),
@@ -207,6 +219,8 @@ fun ItemDetailScreen(
                 }
             }
         }
+    }
+    PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
     }
 }
 

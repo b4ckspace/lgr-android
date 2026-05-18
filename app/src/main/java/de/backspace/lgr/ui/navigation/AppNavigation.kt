@@ -297,8 +297,24 @@ fun AppNavigation(viewModel: AppViewModel) {
                 VerifyBarcodeScreen(
                     viewModel = viewModel,
                     onBack = { navController.popBackStack() },
-                    onRescan = {
-                        navController.popBackStack()
+                    onRescan = { navController.popBackStack() },
+                    onCancel = {
+                        val code = viewModel.verifyLocation?.code
+                        viewModel.clearVerifyState()
+                        if (code != null) {
+                            viewModel.clearBarcodeListContext()
+                            viewModel.loadBarcode(code)
+                            navController.navigate("barcode_detail") {
+                                popUpTo("home") { inclusive = false }
+                            }
+                        } else {
+                            navController.popBackStack("home", inclusive = false)
+                        }
+                    },
+                    onBarcodeClick = { code ->
+                        viewModel.clearBarcodeListContext()
+                        viewModel.loadBarcode(code)
+                        navController.navigate("barcode_detail")
                     }
                 )
             }

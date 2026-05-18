@@ -104,8 +104,10 @@ Searchable, paginated list of all barcodes.
 
 - **Text search** — searches code, item name, description. Supports `!user:` and `!item:` syntax (backend-defined).
 - **Scan to search** — tap the camera icon in the search field; scans an existing barcode and fills it into the search field automatically. Beeps on found, burps on unknown.
-- **No location filter** — filter chip to show only barcodes without a parent location.
-- **Result count** shown in the filter bar ("1 result" / "N results").
+- **Result count** and **filter toggle** — a row below the search field shows the result count (right) and an expand/collapse icon (left) to show/hide additional filters. The state is remembered across app restarts.
+- **Additional filters** (collapsible, hidden by default):
+  - **No location** — filter chip to show only barcodes without a parent location.
+  - **Owner** — type-ahead person search (min. 2 characters). Tap a person's name to filter by that person only; tap the checkbox to add/remove from a multi-owner selection. Selected owners appear as removable chips. Filters by the barcode's *Owner* field (not loan person).
 - **Infinite scroll** — next pages load automatically as you scroll.
 - **Pull to refresh** — pull down on the list to force a reload (respects the active search and filter).
 - **Cached on tab switch** — switching away and back reuses the loaded result set; a new network request is only made when the search or filter changes.
@@ -126,6 +128,7 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 **Navigation:**
 - When opened from the list, arrow buttons and swipe left/right navigate through the result set.
 - Tapping a location breadcrumb or a content item navigates into that barcode, maintaining back-navigation history (Android back button / swipe right goes back through the chain).
+- **Pull to refresh** — pull down to reload the current barcode's data from the backend.
 
 **Actions (authenticated):**
 - **New** — create a new barcode (same as Home → New)
@@ -182,6 +185,8 @@ Reachable by tapping an item in the Items tab, or by tapping the item name in a 
 - Item description (if set)
 - **Barcodes** section — all barcodes that use this item type, each tappable to open its Barcode Detail
 
+**Pull to refresh** — pull down to reload the item's linked barcodes.
+
 **Actions (authenticated):**
 - **Edit** (pencil icon) — opens the Edit Item screen. Editable fields: Name and Description. Save/Cancel buttons in the top bar. The item list is refreshed after saving.
 - **Delete** (trashcan icon) — opens a confirmation dialog and permanently deletes the item.
@@ -210,8 +215,10 @@ The result screen shows a two-column table:
 - Items in both columns (matched) are shown normally.
 - Items only in *Current* (missing physically) are shown in red.
 - Items only in *Scanned* (unexpected extras) are shown in green.
+- Tapping any barcode entry in either column navigates to its Barcode Detail. The Android back button returns to the verify result.
+- A re-scan icon in the *Contents* header lets you re-run the content scan.
 
-If there are mismatches, a **Save** button writes the scanned reality to the backend (updates parent references of all scanned barcodes).
+If there are mismatches, a **Save** button writes the scanned reality to the backend (updates parent references of all scanned barcodes). A **Cancel** button discards any unsaved changes and navigates to the location barcode's detail page.
 
 ---
 
