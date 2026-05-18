@@ -15,7 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -49,6 +55,22 @@ fun EditBarcodeScreen(
     var showLocationSuggestions by remember { mutableStateOf(false) }
     val itemFocusRequester = remember { FocusRequester() }
     val ownerFocusRequester = remember { FocusRequester() }
+    val scrollState = rememberScrollState()
+    val density = LocalDensity.current
+    val view = LocalView.current
+
+    // Scroll the focused field into view when the keyboard appears.
+    // focusedBounds is updated continuously via onGloballyPositioned while a field is focused.
+    var focusedBounds by remember { mutableStateOf(Rect.Zero) }
+    val imeBottom = WindowInsets.ime.getBottom(density)
+    LaunchedEffect(imeBottom) {
+        if (imeBottom > 0 && focusedBounds != Rect.Zero) {
+            delay(50) // debounce: skip intermediate animation frames
+            val visibleBottom = view.height - imeBottom
+            val overflow = focusedBounds.bottom - visibleBottom + 24f // 24px breathing room
+            if (overflow > 0) scrollState.animateScrollTo(scrollState.value + overflow.toInt())
+        }
+    }
     var itemNameTfv by remember { mutableStateOf(TextFieldValue(viewModel.editBarcodeNameQuery)) }
     var ownerQueryTfv by remember { mutableStateOf(TextFieldValue(viewModel.editBarcodeOwnerQuery)) }
 
@@ -164,7 +186,7 @@ fun EditBarcodeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .imePadding()
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -183,6 +205,7 @@ fun EditBarcodeScreen(
             }
 
             Column {
+                var locationFocused by remember { mutableStateOf(false) }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -196,7 +219,9 @@ fun EditBarcodeScreen(
                             locationSelected = false
                         },
                         label = { Text("Location") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f)
+                            .onFocusChanged { locationFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
+                            .onGloballyPositioned { if (locationFocused) focusedBounds = it.boundsInRoot() },
                         singleLine = true,
                         colors = lgrTextFieldColors(),
                         trailingIcon = {
@@ -273,6 +298,7 @@ fun EditBarcodeScreen(
             }
 
             Column {
+                var itemFocused by remember { mutableStateOf(false) }
                 OutlinedTextField(
                     value = itemNameTfv,
                     onValueChange = { tfv ->
@@ -284,7 +310,9 @@ fun EditBarcodeScreen(
                         viewModel.editBarcodeSelectedItem = null
                     },
                     label = { Text("Item *") },
-                    modifier = Modifier.fillMaxWidth().focusRequester(itemFocusRequester),
+                    modifier = Modifier.fillMaxWidth().focusRequester(itemFocusRequester)
+                        .onFocusChanged { itemFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
+                        .onGloballyPositioned { if (itemFocused) focusedBounds = it.boundsInRoot() },
                     singleLine = true,
                     colors = lgrTextFieldColors(),
                     trailingIcon = {
@@ -344,22 +372,28 @@ fun EditBarcodeScreen(
                 }
             }
 
+            var descFocused by remember { mutableStateOf(false) }
             OutlinedTextField(
                 value = viewModel.editBarcodeDescription,
                 onValueChange = { viewModel.editBarcodeDescription = it },
                 label = { Text("Description") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth()
+                    .onFocusChanged { descFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
+                    .onGloballyPositioned { if (descFocused) focusedBounds = it.boundsInRoot() },
                 minLines = 2,
                 maxLines = 4,
                 colors = lgrTextFieldColors()
             )
 
             val itemSelected = viewModel.editBarcodeSelectedItem != null
+            var itemDescFocused by remember { mutableStateOf(false) }
             OutlinedTextField(
                 value = viewModel.editBarcodeItemDescription,
                 onValueChange = { if (!itemSelected) viewModel.editBarcodeItemDescription = it },
                 label = { Text("Item description") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth()
+                    .onFocusChanged { itemDescFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
+                    .onGloballyPositioned { if (itemDescFocused) focusedBounds = it.boundsInRoot() },
                 minLines = 2,
                 maxLines = 4,
                 readOnly = itemSelected,
@@ -367,6 +401,7 @@ fun EditBarcodeScreen(
             )
 
             Column {
+                var ownerFieldFocused by remember { mutableStateOf(false) }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -381,7 +416,9 @@ fun EditBarcodeScreen(
                             viewModel.editBarcodeOwnerUrl = null
                         },
                         label = { Text("Owner") },
-                        modifier = Modifier.weight(1f).focusRequester(ownerFocusRequester),
+                        modifier = Modifier.weight(1f).focusRequester(ownerFocusRequester)
+                            .onFocusChanged { ownerFieldFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
+                            .onGloballyPositioned { if (ownerFieldFocused) focusedBounds = it.boundsInRoot() },
                         singleLine = true,
                         colors = lgrTextFieldColors(),
                         trailingIcon = {
