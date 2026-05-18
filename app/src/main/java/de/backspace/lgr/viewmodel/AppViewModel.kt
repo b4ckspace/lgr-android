@@ -807,6 +807,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         contentScanActive = false
     }
 
+    fun addBarcodeToContent(barcode: Barcode) {
+        val currentBarcode = scannedBarcode.data ?: return
+        if (newScannedBarcodes.any { it.code == barcode.code }) return
+        if (currentBarcode.apiChildNames?.any { it.code == barcode.code } == true) return
+        if (!contentScanActive && !addContentScanActive) {
+            newScannedBarcodes = emptyList()
+            saveContentState = UiState()
+        }
+        addContentScanActive = true
+        newScannedBarcodes = newScannedBarcodes + barcode
+    }
+
     fun cancelContentScan() {
         scannedChildCodes = emptySet()
         newScannedBarcodes = emptyList()
@@ -876,13 +888,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         if (errors.isEmpty()) {
-            val keptChildren = children.filter { it.code in scannedChildCodes || childLoanInfos[it.code]?.loan == true }
-            val addedChildren = newScannedBarcodes.map { b -> ChildInfo(name = "${b.itemName} (${b.code})", code = b.code) }
             scannedChildCodes = emptySet()
             newScannedBarcodes = emptyList()
             contentScanActive = false
             saveContentState = UiState(data = Unit)
-            scannedBarcode = UiState(data = parentBarcode.copy(apiChildNames = keptChildren + addedChildren))
+            val refreshed = runCatching { repo.getBarcode(parentBarcode.code) }.getOrNull() ?: parentBarcode
+            scannedBarcode = UiState(data = refreshed)
+            loadChildLoanInfos(refreshed.apiChildNames ?: emptyList())
         } else {
             saveContentState = UiState(error = errors.joinToString("\n"))
         }
@@ -899,12 +911,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         if (errors.isEmpty()) {
-            val addedChildren = newScannedBarcodes.map { b -> ChildInfo(name = "${b.itemName} (${b.code})", code = b.code) }
-            val existingChildren = parentBarcode.apiChildNames ?: emptyList()
             newScannedBarcodes = emptyList()
             addContentScanActive = false
             saveContentState = UiState(data = Unit)
-            scannedBarcode = UiState(data = parentBarcode.copy(apiChildNames = existingChildren + addedChildren))
+            val refreshed = runCatching { repo.getBarcode(parentBarcode.code) }.getOrNull() ?: parentBarcode
+            scannedBarcode = UiState(data = refreshed)
+            loadChildLoanInfos(refreshed.apiChildNames ?: emptyList())
         } else {
             saveContentState = UiState(error = errors.joinToString("\n"))
         }

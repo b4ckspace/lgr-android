@@ -8,9 +8,12 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
@@ -414,6 +417,23 @@ private fun ContentListSection(
     val existingChildren = barcode.apiChildNames ?: emptyList()
     val totalCount = existingChildren.size + viewModel.newScannedBarcodes.size
 
+    var showTextSearch by remember { mutableStateOf(false) }
+    var textSearchQuery by remember { mutableStateOf("") }
+    var textSearchSuggestions by remember { mutableStateOf<List<de.backspace.lgr.data.model.Barcode>>(emptyList()) }
+    var showSuggestions by remember { mutableStateOf(false) }
+
+    LaunchedEffect(textSearchQuery) {
+        if (textSearchQuery.length < 2) {
+            textSearchSuggestions = emptyList()
+            showSuggestions = false
+            return@LaunchedEffect
+        }
+        kotlinx.coroutines.delay(300)
+        val results = viewModel.searchBarcodes(textSearchQuery)
+        textSearchSuggestions = results
+        showSuggestions = results.isNotEmpty()
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -442,6 +462,83 @@ private fun ContentListSection(
                             modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
+                    }
+                    IconButton(
+                        onClick = {
+                            showTextSearch = !showTextSearch
+                            if (!showTextSearch) {
+                                textSearchQuery = ""
+                                textSearchSuggestions = emptyList()
+                                showSuggestions = false
+                            }
+                        },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            if (showTextSearch) Icons.Default.Close else Icons.Default.Search,
+                            contentDescription = if (showTextSearch) "Close search" else "Search to add",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+        }
+
+        if (showTextSearch) {
+            Column {
+                OutlinedTextField(
+                    value = textSearchQuery,
+                    onValueChange = { textSearchQuery = it },
+                    label = { Text("Search to add") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = lgrTextFieldColors(),
+                    trailingIcon = {
+                        if (textSearchQuery.isNotEmpty()) {
+                            IconButton(onClick = { textSearchQuery = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            }
+                        }
+                    }
+                )
+                if (showSuggestions) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column {
+                            textSearchSuggestions.forEach { suggestion ->
+                                val isSelf = suggestion.code == barcode.code
+                                val isAlreadyContent =
+                                    existingChildren.any { it.code == suggestion.code } ||
+                                    viewModel.newScannedBarcodes.any { it.code == suggestion.code }
+                                val isDisabled = isSelf || isAlreadyContent
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .then(if (!isDisabled) Modifier.clickable {
+                                            viewModel.addBarcodeToContent(suggestion)
+                                        } else Modifier)
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = suggestion.itemName,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = if (isDisabled) GREY else Color.Unspecified,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Text(
+                                        text = "(${suggestion.code})",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = GREY
+                                    )
+                                }
+                                HorizontalDivider()
+                            }
+                        }
                     }
                 }
             }
