@@ -815,6 +815,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         contentScanActive = false
     }
 
+    private fun List<Barcode>.sortedByNameThenCode() =
+        sortedWith(compareBy({ it.itemName.lowercase() }, { it.code }))
+
     fun addBarcodeToContent(barcode: Barcode) {
         val currentBarcode = scannedBarcode.data ?: return
         if (newScannedBarcodes.any { it.code == barcode.code }) return
@@ -824,7 +827,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             saveContentState = UiState()
         }
         addContentScanActive = true
-        newScannedBarcodes = newScannedBarcodes + barcode
+        newScannedBarcodes = (newScannedBarcodes + barcode).sortedByNameThenCode()
     }
 
     fun cancelContentScan() {
@@ -844,7 +847,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             ScanResult.FOUND_EXISTING
         } else {
             val b = runCatching { repo.getBarcode(code) }.getOrNull() ?: return ScanResult.NOT_FOUND
-            newScannedBarcodes = newScannedBarcodes + b
+            newScannedBarcodes = (newScannedBarcodes + b).sortedByNameThenCode()
             ScanResult.FOUND_NEW
         }
     }
@@ -854,7 +857,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (newScannedBarcodes.any { it.code == code }) return ScanResult.DUPLICATE
         if (currentBarcode.apiChildNames?.any { it.code == code } == true) return ScanResult.FOUND_EXISTING
         val b = runCatching { repo.getBarcode(code) }.getOrNull() ?: return ScanResult.NOT_FOUND
-        newScannedBarcodes = newScannedBarcodes + b
+        newScannedBarcodes = (newScannedBarcodes + b).sortedByNameThenCode()
         return ScanResult.FOUND_NEW
     }
 
