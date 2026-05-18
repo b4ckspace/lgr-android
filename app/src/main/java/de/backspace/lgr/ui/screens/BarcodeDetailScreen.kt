@@ -422,6 +422,15 @@ private fun ContentListSection(
     var textSearchSuggestions by remember { mutableStateOf<List<de.backspace.lgr.data.model.Barcode>>(emptyList()) }
     var showSuggestions by remember { mutableStateOf(false) }
 
+    LaunchedEffect(viewModel.addContentScanActive) {
+        if (!viewModel.addContentScanActive) {
+            showTextSearch = false
+            textSearchQuery = ""
+            textSearchSuggestions = emptyList()
+            showSuggestions = false
+        }
+    }
+
     LaunchedEffect(textSearchQuery) {
         if (textSearchQuery.length < 2) {
             textSearchSuggestions = emptyList()
