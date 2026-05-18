@@ -152,7 +152,7 @@ Tap **Save** to write the changes; tap **Cancel** or the back arrow to discard.
 - Three icon buttons in the *Content* header (authenticated):
   - **Verify icon** — opens *Scan all content* scanner; scan every physical item in the container. Items in the database but not yet scanned are shown in red; newly scanned items in green.
   - **Scan icon** — opens *Add content* scanner; adds newly scanned items to the existing content without removing anything.
-  - **Search icon** — shows a text search field inline below the header. Type a barcode code or item name (min. 2 characters, 300 ms debounce); tap any suggestion to add it immediately. Already-present and already-added barcodes are shown in grey and cannot be selected. Tap the search icon again (now shown as ×) to close the field.
+  - **Search icon** — shows a text search field inline below the header. Type a barcode code or item name (min. 2 characters, 300 ms debounce); tap any suggestion to add it immediately. Already-present and already-added barcodes are shown in grey and cannot be selected. Tap the search icon again (now shown as ×) to close the field. The field is also closed automatically when Save or Cancel is tapped.
 - All three add modes share the same list of added barcodes and can be combined freely within a session.
 - Once any content has been added or scanned, **Save** and **Cancel** buttons appear at the bottom. Cancel discards all changes; Save writes them to the backend. The scan state resets when navigating to a different barcode.
 
