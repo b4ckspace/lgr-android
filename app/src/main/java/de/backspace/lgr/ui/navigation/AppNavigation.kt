@@ -356,6 +356,17 @@ fun AppNavigation(viewModel: AppViewModel) {
                         viewModel.clearBarcodeListContext()
                         viewModel.loadBarcode(code)
                         navController.navigate("barcode_detail")
+                    },
+                    onItemClick = {
+                        val location = viewModel.verifyLocation ?: return@VerifyBarcodeScreen
+                        val item = de.backspace.lgr.data.model.Item(
+                            url = location.item,
+                            name = location.itemName,
+                            description = location.itemDescription,
+                            tags = emptyList()
+                        )
+                        viewModel.openItemDetail(item)
+                        navController.navigate("item_detail")
                     }
                 )
             }

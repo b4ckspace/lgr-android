@@ -63,13 +63,13 @@ fun NewBarcodeScreen(
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
     var focusedBounds by remember { mutableStateOf(Rect.Zero) }
+    var viewportTop by remember { mutableStateOf(0f) }
     var viewportBottom by remember { mutableStateOf(0f) }
     val imeBottom = WindowInsets.ime.getBottom(density)
     LaunchedEffect(imeBottom) {
         if (imeBottom > 0 && focusedBounds != Rect.Zero && viewportBottom > 0f) {
             delay(50)
-            val visibleBottom = viewportBottom - imeBottom
-            val overflow = focusedBounds.bottom - visibleBottom + 24f
+            val overflow = focusedBounds.bottom - viewportBottom + 24f
             if (overflow > 0) scrollState.animateScrollTo(scrollState.value + overflow.toInt())
         }
     }
@@ -174,28 +174,13 @@ fun NewBarcodeScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
-                actions = {
-                    TextButton(
-                        onClick = { viewModel.createNewBarcode() },
-                        enabled = canSave
-                    ) {
-                        if (newBarcodeState.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        } else {
-                            Text("Save")
-                        }
-                    }
-                }
+                windowInsets = WindowInsets(0)
             )
-        }
+        },
+        contentWindowInsets = WindowInsets(0)
     ) { padding ->
-        val contentTopPx = with(density) { padding.calculateTopPadding().toPx() }
         fun fieldScrollTarget() =
-            (focusedBounds.top - contentTopPx + scrollState.value).toInt().coerceAtLeast(0)
+            (focusedBounds.top - viewportTop + scrollState.value).toInt().coerceAtLeast(0)
         LaunchedEffect(showLocationSuggestions) {
             if (showLocationSuggestions && focusedBounds != Rect.Zero) scrollState.animateScrollTo(fieldScrollTarget())
         }
@@ -205,18 +190,27 @@ fun NewBarcodeScreen(
         LaunchedEffect(showOwnerSuggestions) {
             if (showOwnerSuggestions && focusedBounds != Rect.Zero) scrollState.animateScrollTo(fieldScrollTarget())
         }
+        LaunchedEffect(newBarcodeState.error) {
+            if (newBarcodeState.error != null) scrollState.animateScrollTo(0)
+        }
 
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding).imePadding()
+        ) {
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .onGloballyPositioned { viewportBottom = it.boundsInRoot().bottom }
+                .weight(1f)
+                .fillMaxWidth()
+                .onGloballyPositioned {
+                    val bounds = it.boundsInRoot()
+                    viewportTop = bounds.top
+                    viewportBottom = bounds.bottom
+                }
         ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .imePadding()
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -522,6 +516,27 @@ fun NewBarcodeScreen(
 
         }
         } // Box
+        HorizontalDivider()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+        ) {
+            OutlinedButton(onClick = onBack) { Text("Cancel") }
+            Button(
+                onClick = { viewModel.createNewBarcode() },
+                enabled = canSave
+            ) {
+                if (newBarcodeState.isLoading) CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+                else Text("Save")
+            }
+        }
+        } // outer Column
     }
 }
 

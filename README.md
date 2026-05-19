@@ -144,10 +144,10 @@ Tap the Edit icon (pencil) in the top bar to open the edit screen. The barcode c
 - **Item description** — editable when no item is selected from suggestions; read-only once an item is chosen.
 - **Owner** — type-ahead person search; tap the person icon to set to the current user.
 
-Tap **Save** to write the changes; tap **Cancel** or the back arrow to discard.
+**Cancel** and **Save** buttons sit at the bottom of the screen (above the keyboard). Tap **Save** to write the changes; tap **Cancel** or the back arrow to discard.
 
 **Location editing:**
-- Tap the scan icon next to *Location* to scan a new parent barcode. The new parent chain is shown with newly added ancestors highlighted in green. Save or Cancel.
+- Tap the scan icon next to *Location* to scan a new parent barcode. The new parent chain is shown with newly added ancestors highlighted in green. **Save** and **Cancel** appear at the bottom of the screen.
 
 **Content list:**
 - Shows all child barcodes with their item names. Tappable for navigation.
@@ -188,7 +188,7 @@ Reachable by tapping an item in the Items tab, or by tapping the item name in a 
 **Pull to refresh** — pull down to reload the item's linked barcodes.
 
 **Actions (authenticated):**
-- **Edit** (pencil icon) — opens the Edit Item screen. Editable fields: Name and Description. Save/Cancel buttons in the top bar. The item list is refreshed after saving.
+- **Edit** (pencil icon) — opens the Edit Item screen. Editable fields: Name and Description. **Cancel** and **Save** buttons are at the bottom of the screen. The item list is refreshed after saving.
 - **Delete** (trashcan icon) — opens a confirmation dialog and permanently deletes the item.
   - The trashcan is disabled (greyed out) if any barcodes are linked to the item.
 
@@ -229,6 +229,7 @@ The result screen shows a two-column table:
 - Items only in *Current* (missing physically) are shown in red.
 - Items only in *Scanned* (unexpected extras) are shown in green.
 - Tapping any barcode entry in either column navigates to its Barcode Detail. The Android back button returns to the verify result.
+- The location breadcrumb ancestors and the **Item** row are tappable links (shown in primary colour) — tapping navigates to the respective Barcode Detail or Item Detail.
 - A re-scan icon in the *Content* header lets you re-run the content scan.
 - The list auto-scrolls so the *Content* header is the first visible item when the screen opens.
 - The result screen highlights the **Barcodes** tab.
@@ -256,7 +257,7 @@ Form to register a new barcode in the system.
 | **Item description** | Pre-filled from the selected item (read-only). Editable when no item is selected. |
 | **Owner** | Optional. Type-ahead person search or tap the person icon to assign yourself. |
 
-Tap **Save** in the top bar to create. On success, the detail view of the new barcode opens immediately.
+**Cancel** and **Save** buttons sit at the bottom of the screen (above the keyboard when it is open). Tap **Save** to create; on success, the detail view of the new barcode opens immediately. If the server returns an error, the screen scrolls back to the top to show it.
 
 ---
 

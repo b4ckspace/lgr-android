@@ -221,8 +221,8 @@ fun BarcodeDetailScreen(
                         (if (barcode.apiLoanInfo != null) 1 else 0) +
                         (if (barcode.code in viewModel.selectedBarcodes) 1 else 0)
 
-                    LaunchedEffect(viewModel.contentScanDoneTrigger) {
-                        if (viewModel.contentScanDoneTrigger > 0)
+                    LaunchedEffect(viewModel.saveContentState.data) {
+                        if (viewModel.saveContentState.data != null)
                             listState.animateScrollToItem(contentItemIndex)
                     }
 

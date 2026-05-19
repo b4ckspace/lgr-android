@@ -63,7 +63,8 @@ fun VerifyBarcodeScreen(
     onSaved: () -> Unit,
     onVerifyNext: () -> Unit,
     onOk: () -> Unit,
-    onBarcodeClick: ((String) -> Unit)? = null
+    onBarcodeClick: ((String) -> Unit)? = null,
+    onItemClick: (() -> Unit)? = null
 ) {
     val location = viewModel.verifyLocation
     val scanned = viewModel.verifyContents
@@ -127,7 +128,14 @@ fun VerifyBarcodeScreen(
                         } else {
                             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 ancestors.reversed().forEachIndexed { i, info ->
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Row(
+                                        modifier = Modifier.then(
+                                            if (onBarcodeClick != null)
+                                                Modifier.clickable { onBarcodeClick.invoke(info.code) }
+                                            else Modifier
+                                        ),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
                                         if (i > 0) Text("› ", style = MaterialTheme.typography.bodyLarge, color = VERIFY_GREY)
                                         val name = info.name.removeSuffix(" (${info.code})")
                                         Text(
@@ -136,7 +144,8 @@ fun VerifyBarcodeScreen(
                                                 append(" ")
                                                 withStyle(SpanStyle(color = VERIFY_GREY)) { append("(${info.code})") }
                                             },
-                                            style = MaterialTheme.typography.bodyLarge
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = if (onBarcodeClick != null) MaterialTheme.colorScheme.primary else Color.Unspecified
                                         )
                                     }
                                 }
@@ -147,7 +156,7 @@ fun VerifyBarcodeScreen(
                 }
 
                 item { VerifyDetailRow("Barcode", location.code) }
-                item { VerifyDetailRow("Item", location.itemName) }
+                item { VerifyDetailRow("Item", location.itemName, onClick = onItemClick) }
                 if (location.description.isNotBlank())
                     item { VerifyDetailRow("Description", location.description) }
 
@@ -309,11 +318,15 @@ fun VerifyBarcodeScreen(
 }
 
 @Composable
-private fun VerifyDetailRow(label: String, value: String) {
-    Column {
+private fun VerifyDetailRow(label: String, value: String, onClick: (() -> Unit)? = null) {
+    Column(modifier = if (onClick != null) Modifier.clickable { onClick() } else Modifier) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(2.dp))
-        Text(value, style = MaterialTheme.typography.bodyLarge)
+        Text(
+            value,
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (onClick != null) MaterialTheme.colorScheme.primary else Color.Unspecified
+        )
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
     }
 }
