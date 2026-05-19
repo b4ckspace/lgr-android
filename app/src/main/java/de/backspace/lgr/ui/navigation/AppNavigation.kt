@@ -1,6 +1,9 @@
 package de.backspace.lgr.ui.navigation
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -14,13 +17,13 @@ import androidx.navigation.compose.rememberNavController
 import de.backspace.lgr.ui.screens.*
 import de.backspace.lgr.viewmodel.AppViewModel
 
-private sealed class Screen(val route: String, val label: String, val icon: ImageVector, val enabled: Boolean = true) {
-    object Home : Screen("home", "Home\n ", Icons.Default.Home)
-    object Items : Screen("items", "Items\n ", Icons.Default.Inventory)
-    object Barcodes : Screen("barcodes", "Bar-\ncodes", Icons.Default.QrCode)
-    object Persons : Screen("persons", "Per-\nsons", Icons.Default.People)
-    object Loans : Screen("loans", "Loans\n ", Icons.Default.List, enabled = false)
-    object MyLoans : Screen("my_loans", "My\nLoans", Icons.Default.AccountCircle, enabled = false)
+private sealed class Screen(val route: String, val title: String, val icon: ImageVector, val enabled: Boolean = true) {
+    object Home : Screen("home", "Home", Icons.Default.Home)
+    object Items : Screen("items", "Items", Icons.Default.Inventory)
+    object Barcodes : Screen("barcodes", "Barcodes", Icons.Default.QrCode)
+    object Persons : Screen("persons", "Persons", Icons.Default.People)
+    object Loans : Screen("loans", "Loans", Icons.Default.List, enabled = false)
+    object MyLoans : Screen("my_loans", "My Loans", Icons.Default.AccountCircle, enabled = false)
 }
 
 // Routes where the shared top bar is hidden (screens have their own TopAppBar or are camera-only)
@@ -67,7 +70,7 @@ fun AppNavigation(viewModel: AppViewModel) {
         topBar = {
             if (showChrome) {
                 TopAppBar(
-                    title = { Text(if (viewModel.username.isNullOrBlank()) "LGR" else "LGR — ${viewModel.username}") },
+                    title = { Text(activeTab?.title ?: "LGR") },
                     actions = {
                         if (viewModel.readonlyMode) {
                             TextButton(onClick = { viewModel.exitReadonlyMode() }) { Text("Login") }
@@ -80,13 +83,15 @@ fun AppNavigation(viewModel: AppViewModel) {
         },
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar {
+                NavigationBar(
+                    modifier = Modifier.height(48.dp),
+                    windowInsets = WindowInsets(0, 0, 0, 0)
+                ) {
                     tabs.forEach { screen ->
                         val isEnabled = screen.enabled &&
                             (screen != Screen.Persons || viewModel.isAuthenticated)
                         NavigationBarItem(
-                            icon = { Icon(screen.icon, contentDescription = screen.label) },
-                            label = { Text(screen.label) },
+                            icon = { Icon(screen.icon, contentDescription = screen.title) },
                             selected = screen == activeTab,
                             enabled = isEnabled,
                             onClick = {
