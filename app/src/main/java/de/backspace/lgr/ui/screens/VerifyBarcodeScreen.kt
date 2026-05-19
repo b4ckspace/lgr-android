@@ -3,6 +3,7 @@ package de.backspace.lgr.ui.screens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -85,6 +86,13 @@ fun VerifyBarcodeScreen(
         location.apiChildNames?.none { it.code == b.code } == true
     }.size
 
+    // item indices: 0=location, 1=barcode, 2=item, 3=description (optional), then content
+    val contentItemIndex = 3 + if (location.description.isNotBlank()) 1 else 0
+    val listState = rememberLazyListState()
+    LaunchedEffect(Unit) {
+        listState.animateScrollToItem(contentItemIndex)
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -99,6 +107,7 @@ fun VerifyBarcodeScreen(
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             LazyColumn(
+                state = listState,
                 modifier = Modifier.fillMaxWidth().weight(1f),
                 contentPadding = PaddingValues(24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
