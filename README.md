@@ -229,9 +229,16 @@ The result screen shows a two-column table:
 - Items only in *Current* (missing physically) are shown in red.
 - Items only in *Scanned* (unexpected extras) are shown in green.
 - Tapping any barcode entry in either column navigates to its Barcode Detail. The Android back button returns to the verify result.
-- A re-scan icon in the *Contents* header lets you re-run the content scan.
+- A re-scan icon in the *Content* header lets you re-run the content scan.
+- The result screen highlights the **Barcodes** tab.
 
-If there are mismatches, a **Save** button writes the scanned reality to the backend (updates parent references of all scanned barcodes). A **Cancel** button discards any unsaved changes and navigates to the location barcode's detail page.
+**If there are mismatches:**
+- **Cancel** — discards changes and navigates to the location barcode's detail page.
+- **Save** — writes the scanned reality to the backend (updates parent references), then navigates to the location barcode's detail page.
+
+**If everything matches:**
+- **Verify next** — resets the scan state and returns to the location scanner to verify another container.
+- **OK** — navigates to the location barcode's detail page.
 
 ---
 
