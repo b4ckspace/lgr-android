@@ -266,7 +266,8 @@ fun BarcodeDetailScreen(
                             }
                         }
 
-                        val showSave = viewModel.contentScanActive || viewModel.addContentScanActive
+                        val showSave = viewModel.contentScanActive ||
+                            (viewModel.addContentScanActive && viewModel.newScannedBarcodes.isNotEmpty())
                         if (!viewModel.readonlyMode && showSave) {
                             HorizontalDivider()
                             ContentButtonsSection(viewModel = viewModel, barcode = barcode)

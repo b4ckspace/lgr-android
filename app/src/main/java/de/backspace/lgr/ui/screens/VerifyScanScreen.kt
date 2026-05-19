@@ -36,7 +36,7 @@ fun VerifyScanScreen(
 
     BarcodeScannerScaffold(
         onBack = onBack,
-        label = if (phase == VerifyPhase.LOCATION) "Scan location" else "Scan content",
+        label = if (phase == VerifyPhase.LOCATION) "Scan location" else "Scan all content",
         borderColor = if (scanFlash) SCAN_GREEN else Color.White,
         onBarcodeDetected = { code ->
             if (cooldown.compareAndSet(false, true)) {
