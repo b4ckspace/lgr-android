@@ -247,7 +247,7 @@ fun AppNavigation(viewModel: AppViewModel) {
             composable("content_scan") {
                 ContentScanScreen(
                     viewModel = viewModel,
-                    onDone = { navController.popBackStack() },
+                    onDone = { viewModel.onContentScanDone(); navController.popBackStack() },
                     onCancel = { viewModel.cancelContentScan(); navController.popBackStack() }
                 )
             }
@@ -262,7 +262,7 @@ fun AppNavigation(viewModel: AppViewModel) {
             composable("add_content_scan") {
                 ContentScanScreen(
                     viewModel = viewModel,
-                    onDone = { navController.popBackStack() },
+                    onDone = { viewModel.onContentScanDone(); navController.popBackStack() },
                     addOnly = true
                 )
             }

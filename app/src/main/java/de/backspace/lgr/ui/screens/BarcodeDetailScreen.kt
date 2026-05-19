@@ -213,6 +213,19 @@ fun BarcodeDetailScreen(
                 state.data != null -> {
                     val barcode = state.data
 
+                    // content item index varies with optional rows above it
+                    val contentItemIndex = 3 +
+                        (if (barcode.description.isNotBlank()) 1 else 0) +
+                        (if (barcode.itemDescription.isNotBlank()) 1 else 0) +
+                        (if (barcode.owner != null) 1 else 0) +
+                        (if (barcode.apiLoanInfo != null) 1 else 0) +
+                        (if (barcode.code in viewModel.selectedBarcodes) 1 else 0)
+
+                    LaunchedEffect(viewModel.contentScanDoneTrigger) {
+                        if (viewModel.contentScanDoneTrigger > 0)
+                            listState.animateScrollToItem(contentItemIndex)
+                    }
+
                     Column(modifier = Modifier.fillMaxSize().imePadding()) {
                         LazyColumn(
                             state = listState,

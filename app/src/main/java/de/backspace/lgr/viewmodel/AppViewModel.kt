@@ -87,6 +87,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var saveContentState by mutableStateOf(UiState<Unit>())
         private set
+    var contentScanDoneTrigger by mutableStateOf(0)
+        private set
     var childLoanInfos by mutableStateOf<Map<String, LoanInfo>>(emptyMap())
         private set
     var barcodesSearch by mutableStateOf("")
@@ -892,6 +894,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         addContentScanActive = true
         newScannedBarcodes = (newScannedBarcodes + barcode).sortedByNameThenCode()
     }
+
+    fun onContentScanDone() { contentScanDoneTrigger++ }
 
     fun cancelContentScan() {
         scannedChildCodes = emptySet()
