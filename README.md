@@ -194,6 +194,19 @@ Reachable by tapping an item in the Items tab, or by tapping the item name in a 
 
 ---
 
+### Persons tab
+
+Searchable, paginated list of persons (requires login).
+
+- Text search by name/nickname.
+- Displays full name (primary), nickname (if different), and email per person.
+- Infinite scroll.
+- **Pull to refresh** — pull down to force a reload.
+- **Cached on tab switch** — the result set and active search string are preserved when switching away and back.
+- The tab is disabled when not logged in.
+
+---
+
 ### Verify workflow
 
 Used to audit whether the physical contents of a container match the database.
@@ -241,7 +254,7 @@ Tap **Save** in the top bar to create. On success, the detail view of the new ba
 
 ### Loans (work in progress)
 
-The Loans, My Loans, and Persons tabs are present in the navigation bar but not yet implemented. Loan creation via the barcode selection + cart flow is functional.
+The Loans and My Loans tabs are present in the navigation bar but not yet implemented. Loan creation via the barcode selection + cart flow is functional.
 
 **Creating a loan:**
 1. Select one or more barcodes in the Barcodes tab (or via the cart icon in the detail view).
@@ -275,7 +288,7 @@ When launched via *Read-only without login*, the app operates in read-only mode:
 
 ## Known Limitations
 
-- The Persons, Loans, and My Loans tabs are placeholders (display nothing).
+- The Loans and My Loans tabs are placeholders (display nothing).
 - No offline support — all data is fetched live from the backend.
 - Session is not persisted across app restarts; you must log in again after closing the app.
 - The server URL must be reachable directly (no OAuth / proxy support).

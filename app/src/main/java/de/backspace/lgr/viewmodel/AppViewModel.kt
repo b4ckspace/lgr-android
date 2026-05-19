@@ -54,6 +54,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var persons by mutableStateOf(UiState<List<Person>>())
     var personsNextPage by mutableStateOf<String?>(null)
+    var personsCount by mutableStateOf<Int?>(null)
+        private set
     var loans by mutableStateOf(UiState<List<Loan>>())
     var loansNextPage by mutableStateOf<String?>(null)
     var myLoans by mutableStateOf(UiState<List<Loan>>())
@@ -110,6 +112,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var itemsSearch by mutableStateOf("")
         private set
     var itemsGeneration by mutableStateOf(0)
+        private set
+    private var personsNeedRefresh = true
+    var personsSearch by mutableStateOf("")
+        private set
+    var personsGeneration by mutableStateOf(0)
         private set
     var barcodeListContext by mutableStateOf<List<Barcode>?>(null)
         private set
@@ -613,12 +620,19 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun loadPersons(search: String? = null) {
+        if (search != null) personsSearch = search
+        if (search == null && !personsNeedRefresh && persons.data != null) return
+        personsNeedRefresh = false
+        personsGeneration++
+
+        val effectiveSearch = search ?: personsSearch.takeIf { it.isNotBlank() }
+
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             if (!search.isNullOrBlank()) delay(300)
             persons = UiState(isLoading = true)
-            runCatching { repo.getPersons(search) }
-                .onSuccess { persons = UiState(data = it.results); personsNextPage = it.next }
+            runCatching { repo.getPersons(effectiveSearch) }
+                .onSuccess { persons = UiState(data = it.results); personsNextPage = it.next; personsCount = it.count }
                 .onFailure { persons = UiState(error = it.localizedMessage) }
         }
     }
@@ -629,6 +643,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             runCatching { repo.getPersonsPage(next) }
                 .onSuccess { persons = UiState(data = (persons.data ?: emptyList()) + it.results); personsNextPage = it.next }
         }
+    }
+
+    fun refreshPersons() {
+        personsNeedRefresh = true
+        loadPersons()
     }
 
     fun loadLoans() = viewModelScope.launch {

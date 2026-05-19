@@ -18,7 +18,7 @@ private sealed class Screen(val route: String, val label: String, val icon: Imag
     object Home : Screen("home", "Home\n ", Icons.Default.Home)
     object Items : Screen("items", "Items\n ", Icons.Default.Inventory)
     object Barcodes : Screen("barcodes", "Bar-\ncodes", Icons.Default.QrCode)
-    object Persons : Screen("persons", "Per-\nsons", Icons.Default.People, enabled = false)
+    object Persons : Screen("persons", "Per-\nsons", Icons.Default.People)
     object Loans : Screen("loans", "Loans\n ", Icons.Default.List, enabled = false)
     object MyLoans : Screen("my_loans", "My\nLoans", Icons.Default.AccountCircle, enabled = false)
 }
@@ -62,11 +62,13 @@ fun AppNavigation(viewModel: AppViewModel) {
             if (showChrome) {
                 NavigationBar {
                     tabs.forEach { screen ->
+                        val isEnabled = screen.enabled &&
+                            (screen != Screen.Persons || viewModel.isAuthenticated)
                         NavigationBarItem(
                             icon = { Icon(screen.icon, contentDescription = screen.label) },
                             label = { Text(screen.label) },
                             selected = currentRoute == screen.route,
-                            enabled = screen.enabled,
+                            enabled = isEnabled,
                             onClick = {
                                 navController.navigate(screen.route) {
                                     popUpTo(navController.graph.startDestinationId) { saveState = true }
