@@ -286,6 +286,12 @@ When launched via *Read-only without login*, the app operates in read-only mode:
 
 ---
 
+## Navigation
+
+A compact icon-only bottom bar is always visible (except on camera/scanner screens). The top bar title reflects the active tab name (Home, Items, Barcodes, Persons, Loans, My Loans). On sub-pages (detail, edit, scan) the tab icon corresponding to the parent tab stays subtly highlighted.
+
+---
+
 ## Known Limitations
 
 - The Loans and My Loans tabs are placeholders (display nothing).
