@@ -19,7 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -55,6 +60,19 @@ fun NewBarcodeScreen(
     var showLocationSuggestions by remember { mutableStateOf(false) }
     val itemFocusRequester = remember { FocusRequester() }
     val ownerFocusRequester = remember { FocusRequester() }
+    val scrollState = rememberScrollState()
+    val density = LocalDensity.current
+    var focusedBounds by remember { mutableStateOf(Rect.Zero) }
+    var viewportBottom by remember { mutableStateOf(0f) }
+    val imeBottom = WindowInsets.ime.getBottom(density)
+    LaunchedEffect(imeBottom) {
+        if (imeBottom > 0 && focusedBounds != Rect.Zero && viewportBottom > 0f) {
+            delay(50)
+            val visibleBottom = viewportBottom - imeBottom
+            val overflow = focusedBounds.bottom - visibleBottom + 24f
+            if (overflow > 0) scrollState.animateScrollTo(scrollState.value + overflow.toInt())
+        }
+    }
     var itemNameTfv by remember { mutableStateOf(TextFieldValue(viewModel.newBarcodeNameQuery)) }
     var ownerQueryTfv by remember { mutableStateOf(TextFieldValue(viewModel.newBarcodeOwnerQuery)) }
 
@@ -175,11 +193,29 @@ fun NewBarcodeScreen(
             )
         }
     ) { padding ->
-        Column(
+        val contentTopPx = with(density) { padding.calculateTopPadding().toPx() }
+        fun fieldScrollTarget() =
+            (focusedBounds.top - contentTopPx + scrollState.value).toInt().coerceAtLeast(0)
+        LaunchedEffect(showLocationSuggestions) {
+            if (showLocationSuggestions && focusedBounds != Rect.Zero) scrollState.animateScrollTo(fieldScrollTarget())
+        }
+        LaunchedEffect(showSuggestions) {
+            if (showSuggestions && focusedBounds != Rect.Zero) scrollState.animateScrollTo(fieldScrollTarget())
+        }
+        LaunchedEffect(showOwnerSuggestions) {
+            if (showOwnerSuggestions && focusedBounds != Rect.Zero) scrollState.animateScrollTo(fieldScrollTarget())
+        }
+
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
+                .onGloballyPositioned { viewportBottom = it.boundsInRoot().bottom }
+        ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
                 .imePadding()
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -200,6 +236,7 @@ fun NewBarcodeScreen(
             }
 
             Column {
+                var locationFocused by remember { mutableStateOf(false) }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -213,7 +250,9 @@ fun NewBarcodeScreen(
                             locationSelected = false
                         },
                         label = { Text("Location") },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f)
+                            .onFocusChanged { locationFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
+                            .onGloballyPositioned { if (locationFocused) focusedBounds = it.boundsInRoot() },
                         singleLine = true,
                         colors = lgrTextFieldColors(),
                         trailingIcon = {
@@ -276,6 +315,7 @@ fun NewBarcodeScreen(
                 }
             }
 
+            var barcodeFocused by remember { mutableStateOf(false) }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -285,7 +325,9 @@ fun NewBarcodeScreen(
                     value = viewModel.newBarcodeCode,
                     onValueChange = { viewModel.newBarcodeCode = it },
                     label = { Text("Barcode *") },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f)
+                        .onFocusChanged { barcodeFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
+                        .onGloballyPositioned { if (barcodeFocused) focusedBounds = it.boundsInRoot() },
                     singleLine = true,
                     colors = lgrTextFieldColors()
                 )
@@ -299,6 +341,7 @@ fun NewBarcodeScreen(
             }
 
             Column {
+                var itemFocused by remember { mutableStateOf(false) }
                 OutlinedTextField(
                         value = itemNameTfv,
                         onValueChange = { tfv ->
@@ -310,7 +353,9 @@ fun NewBarcodeScreen(
                             viewModel.newBarcodeSelectedItem = null
                         },
                         label = { Text("Item *") },
-                        modifier = Modifier.fillMaxWidth().focusRequester(itemFocusRequester),
+                        modifier = Modifier.fillMaxWidth().focusRequester(itemFocusRequester)
+                            .onFocusChanged { itemFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
+                            .onGloballyPositioned { if (itemFocused) focusedBounds = it.boundsInRoot() },
                         singleLine = true,
                         colors = lgrTextFieldColors(),
                         trailingIcon = {
@@ -370,22 +415,28 @@ fun NewBarcodeScreen(
                     }
                 }
 
+            var descFocused by remember { mutableStateOf(false) }
             OutlinedTextField(
                 value = viewModel.newBarcodeDescription,
                 onValueChange = { viewModel.newBarcodeDescription = it },
                 label = { Text("Description") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth()
+                    .onFocusChanged { descFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
+                    .onGloballyPositioned { if (descFocused) focusedBounds = it.boundsInRoot() },
                 minLines = 2,
                 maxLines = 4,
                 colors = lgrTextFieldColors()
             )
 
             val itemSelected = viewModel.newBarcodeSelectedItem != null
+            var itemDescFocused by remember { mutableStateOf(false) }
             OutlinedTextField(
                 value = viewModel.newBarcodeItemDescription,
                 onValueChange = { if (!itemSelected) viewModel.newBarcodeItemDescription = it },
                 label = { Text("Item description") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth()
+                    .onFocusChanged { itemDescFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
+                    .onGloballyPositioned { if (itemDescFocused) focusedBounds = it.boundsInRoot() },
                 minLines = 2,
                 maxLines = 4,
                 readOnly = itemSelected,
@@ -393,6 +444,7 @@ fun NewBarcodeScreen(
             )
 
             Column {
+                var ownerFieldFocused by remember { mutableStateOf(false) }
                 Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -407,7 +459,9 @@ fun NewBarcodeScreen(
                                 viewModel.newBarcodeOwnerUrl = null
                             },
                             label = { Text("Owner") },
-                            modifier = Modifier.weight(1f).focusRequester(ownerFocusRequester),
+                            modifier = Modifier.weight(1f).focusRequester(ownerFocusRequester)
+                                .onFocusChanged { ownerFieldFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
+                                .onGloballyPositioned { if (ownerFieldFocused) focusedBounds = it.boundsInRoot() },
                             singleLine = true,
                             colors = lgrTextFieldColors(),
                             trailingIcon = {
@@ -467,6 +521,7 @@ fun NewBarcodeScreen(
                 }
 
         }
+        } // Box
     }
 }
 

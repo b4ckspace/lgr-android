@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -57,16 +56,17 @@ fun EditBarcodeScreen(
     val ownerFocusRequester = remember { FocusRequester() }
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
-    val view = LocalView.current
 
     // Scroll the focused field into view when the keyboard appears.
     // focusedBounds is updated continuously via onGloballyPositioned while a field is focused.
+    // viewportBottom tracks the actual bottom of the content area (excluding the bottom nav bar).
     var focusedBounds by remember { mutableStateOf(Rect.Zero) }
+    var viewportBottom by remember { mutableStateOf(0f) }
     val imeBottom = WindowInsets.ime.getBottom(density)
     LaunchedEffect(imeBottom) {
-        if (imeBottom > 0 && focusedBounds != Rect.Zero) {
+        if (imeBottom > 0 && focusedBounds != Rect.Zero && viewportBottom > 0f) {
             delay(50) // debounce: skip intermediate animation frames
-            val visibleBottom = view.height - imeBottom
+            val visibleBottom = viewportBottom - imeBottom
             val overflow = focusedBounds.bottom - visibleBottom + 24f // 24px breathing room
             if (overflow > 0) scrollState.animateScrollTo(scrollState.value + overflow.toInt())
         }
@@ -212,10 +212,15 @@ fun EditBarcodeScreen(
                 scrollState.animateScrollTo(fieldScrollTarget())
         }
 
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .onGloballyPositioned { viewportBottom = it.boundsInRoot().bottom }
+        ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
                 .verticalScroll(scrollState)
                 .imePadding()
                 .padding(24.dp),
@@ -504,5 +509,6 @@ fun EditBarcodeScreen(
                 }
             }
         }
+        } // Box
     }
 }

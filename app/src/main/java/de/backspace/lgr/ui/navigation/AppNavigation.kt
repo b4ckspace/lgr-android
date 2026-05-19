@@ -23,7 +23,25 @@ private sealed class Screen(val route: String, val label: String, val icon: Imag
     object MyLoans : Screen("my_loans", "My\nLoans", Icons.Default.AccountCircle, enabled = false)
 }
 
+// Routes where the shared top bar is hidden (screens have their own TopAppBar or are camera-only)
 private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search", "item_detail", "edit_barcode", "edit_item", "edit_barcode_scan_parent")
+
+// Camera/scanner screens where even the bottom bar is hidden (need full screen for viewfinder)
+private val cameraRoutes = setOf("scan", "content_scan", "scan_parent", "add_content_scan", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "barcodes_scan_search", "edit_barcode_scan_parent")
+
+// Maps every route to its logical parent tab so the tab stays highlighted on sub-pages
+private fun activeTabFor(route: String?): Screen? = when (route) {
+    "home", "scan", "verify_scan", "verify_detail" -> Screen.Home
+    "items", "item_detail", "edit_item" -> Screen.Items
+    "barcodes", "barcode_detail", "edit_barcode", "edit_barcode_scan_parent",
+    "content_scan", "scan_parent", "add_content_scan",
+    "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code",
+    "barcodes_scan_search" -> Screen.Barcodes
+    "persons" -> Screen.Persons
+    "loans" -> Screen.Loans
+    "my_loans" -> Screen.MyLoans
+    else -> null
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +51,8 @@ fun AppNavigation(viewModel: AppViewModel) {
     val currentRoute = backStack?.destination?.route
 
     val showChrome = fullScreenRoutes.none { currentRoute?.startsWith(it) == true }
+    val showBottomBar = cameraRoutes.none { currentRoute?.startsWith(it) == true }
+    val activeTab = activeTabFor(currentRoute)
 
     val tabs = buildList {
         add(Screen.Home)
@@ -59,7 +79,7 @@ fun AppNavigation(viewModel: AppViewModel) {
             }
         },
         bottomBar = {
-            if (showChrome) {
+            if (showBottomBar) {
                 NavigationBar {
                     tabs.forEach { screen ->
                         val isEnabled = screen.enabled &&
@@ -67,7 +87,7 @@ fun AppNavigation(viewModel: AppViewModel) {
                         NavigationBarItem(
                             icon = { Icon(screen.icon, contentDescription = screen.label) },
                             label = { Text(screen.label) },
-                            selected = currentRoute == screen.route,
+                            selected = screen == activeTab,
                             enabled = isEnabled,
                             onClick = {
                                 navController.navigate(screen.route) {
