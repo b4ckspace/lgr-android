@@ -230,6 +230,7 @@ The result screen shows a two-column table:
 - Items only in *Scanned* (unexpected extras) are shown in green.
 - Tapping any barcode entry in either column navigates to its Barcode Detail. The Android back button returns to the verify result.
 - A re-scan icon in the *Content* header lets you re-run the content scan.
+- The list auto-scrolls so the *Content* header is the first visible item when the screen opens.
 - The result screen highlights the **Barcodes** tab.
 
 **If there are mismatches:**
