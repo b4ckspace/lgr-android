@@ -58,12 +58,19 @@ fun VerifyBarcodeScreen(
     viewModel: AppViewModel,
     onBack: () -> Unit,
     onRescan: () -> Unit,
-    onCancel: (() -> Unit)? = null,
+    onCancel: () -> Unit,
+    onSaved: () -> Unit,
+    onVerifyNext: () -> Unit,
+    onOk: () -> Unit,
     onBarcodeClick: ((String) -> Unit)? = null
 ) {
     val location = viewModel.verifyLocation
     val scanned = viewModel.verifyContents
     val saveState = viewModel.verifyState
+
+    LaunchedEffect(saveState.data) {
+        if (saveState.data != null) onSaved()
+    }
 
     if (location == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -144,7 +151,7 @@ fun VerifyBarcodeScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "Contents ($totalCount)",
+                                "Content ($totalCount)",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -260,33 +267,32 @@ fun VerifyBarcodeScreen(
                 }
             }
 
-            if (hasMismatches || onCancel != null) {
-                HorizontalDivider()
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
-                ) {
-                    if (onCancel != null) {
-                        OutlinedButton(onClick = onCancel) { Text("Cancel") }
-                    }
-                    if (hasMismatches) {
-                        Button(
-                            onClick = { viewModel.saveVerifyChanges() },
-                            enabled = !saveState.isLoading
-                        ) {
-                            if (saveState.isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(18.dp),
-                                    strokeWidth = 2.dp,
-                                    color = MaterialTheme.colorScheme.onPrimary
-                                )
-                            } else {
-                                Text("Save")
-                            }
+            HorizontalDivider()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+            ) {
+                if (hasMismatches) {
+                    OutlinedButton(onClick = onCancel) { Text("Cancel") }
+                    Button(
+                        onClick = { viewModel.saveVerifyChanges() },
+                        enabled = !saveState.isLoading
+                    ) {
+                        if (saveState.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Text("Save")
                         }
                     }
+                } else {
+                    OutlinedButton(onClick = onVerifyNext) { Text("Verify next") }
+                    Button(onClick = onOk) { Text("OK") }
                 }
             }
         }

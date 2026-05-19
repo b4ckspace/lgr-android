@@ -34,12 +34,12 @@ private val cameraRoutes = setOf("scan", "content_scan", "scan_parent", "add_con
 
 // Maps every route to its logical parent tab so the tab stays highlighted on sub-pages
 private fun activeTabFor(route: String?): Screen? = when (route) {
-    "home", "scan", "verify_scan", "verify_detail" -> Screen.Home
+    "home", "scan", "verify_scan" -> Screen.Home
     "items", "item_detail", "edit_item" -> Screen.Items
     "barcodes", "barcode_detail", "edit_barcode", "edit_barcode_scan_parent",
     "content_scan", "scan_parent", "add_content_scan",
     "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code",
-    "barcodes_scan_search" -> Screen.Barcodes
+    "barcodes_scan_search", "verify_detail" -> Screen.Barcodes
     "persons" -> Screen.Persons
     "loans" -> Screen.Loans
     "my_loans" -> Screen.MyLoans
@@ -321,23 +321,30 @@ fun AppNavigation(viewModel: AppViewModel) {
                 )
             }
             composable("verify_detail") {
+                val navigateToBarcodeDetail: () -> Unit = {
+                    val code = viewModel.verifyLocation?.code
+                    viewModel.clearVerifyState()
+                    if (code != null) {
+                        viewModel.clearBarcodeListContext()
+                        viewModel.loadBarcode(code)
+                        navController.navigate("barcode_detail") {
+                            popUpTo("home") { inclusive = false }
+                        }
+                    } else {
+                        navController.popBackStack("home", inclusive = false)
+                    }
+                }
                 VerifyBarcodeScreen(
                     viewModel = viewModel,
                     onBack = { navController.popBackStack() },
                     onRescan = { navController.popBackStack() },
-                    onCancel = {
-                        val code = viewModel.verifyLocation?.code
+                    onCancel = navigateToBarcodeDetail,
+                    onSaved = navigateToBarcodeDetail,
+                    onVerifyNext = {
                         viewModel.clearVerifyState()
-                        if (code != null) {
-                            viewModel.clearBarcodeListContext()
-                            viewModel.loadBarcode(code)
-                            navController.navigate("barcode_detail") {
-                                popUpTo("home") { inclusive = false }
-                            }
-                        } else {
-                            navController.popBackStack("home", inclusive = false)
-                        }
+                        navController.popBackStack()
                     },
+                    onOk = navigateToBarcodeDetail,
                     onBarcodeClick = { code ->
                         viewModel.clearBarcodeListContext()
                         viewModel.loadBarcode(code)
