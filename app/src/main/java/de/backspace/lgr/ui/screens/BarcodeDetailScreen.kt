@@ -266,7 +266,10 @@ fun BarcodeDetailScreen(
                             }
                         }
 
-                        val showSave = viewModel.contentScanActive ||
+                        val existingChildren = barcode.apiChildNames ?: emptyList()
+                        val contentHasChanges = viewModel.newScannedBarcodes.isNotEmpty() ||
+                            existingChildren.any { it.code !in viewModel.scannedChildCodes }
+                        val showSave = (viewModel.contentScanActive && contentHasChanges) ||
                             (viewModel.addContentScanActive && viewModel.newScannedBarcodes.isNotEmpty())
                         if (!viewModel.readonlyMode && showSave) {
                             HorizontalDivider()
