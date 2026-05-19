@@ -1,8 +1,12 @@
 package de.backspace.lgr.ui.navigation
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -83,6 +87,7 @@ fun AppNavigation(viewModel: AppViewModel) {
         },
         bottomBar = {
             if (showBottomBar) {
+                Column {
                 NavigationBar(
                     modifier = Modifier.height(48.dp),
                     windowInsets = WindowInsets(0, 0, 0, 0)
@@ -104,6 +109,8 @@ fun AppNavigation(viewModel: AppViewModel) {
                         )
                     }
                 }
+                Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
+                } // Column
             }
         }
     ) { padding ->
