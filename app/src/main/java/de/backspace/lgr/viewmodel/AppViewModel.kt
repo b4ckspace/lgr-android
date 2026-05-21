@@ -186,6 +186,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var newBarcodeOwnerQuery by mutableStateOf("")
     var newBarcodeOwnerUrl by mutableStateOf<String?>(null)
     var newBarcodeSelectedPerson by mutableStateOf<Person?>(null)
+    var newBarcodeGenerating by mutableStateOf(false)
+        private set
 
     var editItemNameQuery by mutableStateOf("")
     var editItemDescription by mutableStateOf("")
@@ -274,6 +276,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun clearNewBarcodeState() {
         newBarcodeState = UiState()
         newBarcodeCode = ""
+        newBarcodeGenerating = false
         newBarcodeNameQuery = ""
         newBarcodeSelectedItem = null
         newBarcodeItemDescription = ""
@@ -492,6 +495,34 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             newBarcodeState = UiState(data = barcode)
         }.onFailure {
             newBarcodeState = UiState(error = it.toUserMessage())
+        }
+    }
+
+    fun generateNextAvailableBarcode() = viewModelScope.launch {
+        if (newBarcodeGenerating) return@launch
+        newBarcodeGenerating = true
+        var code = newBarcodeCode
+        for (i in 0 until 100) {
+            val exists = runCatching { repo.getBarcode(code) }.getOrNull() != null
+            if (!exists) {
+                newBarcodeCode = code
+                newBarcodeGenerating = false
+                return@launch
+            }
+            code = incrementBarcodeCode(code)
+        }
+        newBarcodeCode = code
+        newBarcodeGenerating = false
+    }
+
+    private fun incrementBarcodeCode(code: String): String {
+        val match = Regex("(\\d+)$").find(code)
+        return if (match != null) {
+            val digits = match.value
+            val number = digits.toLong() + 1
+            code.dropLast(digits.length) + number.toString()
+        } else {
+            code + "0"
         }
     }
 

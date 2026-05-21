@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PlusOne
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -420,6 +421,24 @@ fun NewBarcodeScreen(
                     singleLine = true,
                     colors = lgrTextFieldColors()
                 )
+                IconButton(
+                    onClick = { viewModel.generateNextAvailableBarcode() },
+                    enabled = !viewModel.newBarcodeGenerating
+                ) {
+                    if (viewModel.newBarcodeGenerating) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.PlusOne,
+                            contentDescription = "Generate next available barcode",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
                 IconButton(onClick = onScanCode) {
                     Icon(
                         Icons.Default.QrCodeScanner,
