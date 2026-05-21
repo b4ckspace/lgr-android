@@ -324,12 +324,14 @@ fun EditBarcodeScreen(
                 OutlinedTextField(
                     value = itemNameTfv,
                     onValueChange = { tfv ->
-                        itemNameTfv = tfv
-                        if (viewModel.editBarcodeSelectedItem != null) {
-                            viewModel.editBarcodeItemDescription = ""
+                        if (tfv.text != itemNameTfv.text) {
+                            if (viewModel.editBarcodeSelectedItem != null) {
+                                viewModel.editBarcodeItemDescription = ""
+                            }
+                            viewModel.editBarcodeNameQuery = tfv.text
+                            viewModel.editBarcodeSelectedItem = null
                         }
-                        viewModel.editBarcodeNameQuery = tfv.text
-                        viewModel.editBarcodeSelectedItem = null
+                        itemNameTfv = tfv
                     },
                     label = { Text("Item *") },
                     modifier = Modifier.fillMaxWidth().focusRequester(itemFocusRequester)
@@ -411,14 +413,14 @@ fun EditBarcodeScreen(
             var itemDescFocused by remember { mutableStateOf(false) }
             OutlinedTextField(
                 value = viewModel.editBarcodeItemDescription,
-                onValueChange = { if (!itemSelected) viewModel.editBarcodeItemDescription = it },
+                onValueChange = { viewModel.editBarcodeItemDescription = it },
                 label = { Text("Item description") },
                 modifier = Modifier.fillMaxWidth()
                     .onFocusChanged { itemDescFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
                     .onGloballyPositioned { if (itemDescFocused) focusedBounds = it.boundsInRoot() },
                 minLines = 2,
                 maxLines = 4,
-                readOnly = itemSelected,
+                enabled = !itemSelected,
                 colors = lgrTextFieldColors()
             )
 

@@ -357,6 +357,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             saveBarcodeEditState = UiState(data = refreshed)
             barcodesNeedRefresh = true
             itemsNeedRefresh = true
+            refreshItemDetail()
         }.onFailure {
             saveBarcodeEditState = UiState(error = it.toUserMessage())
         }
@@ -751,6 +752,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 deleteBarcodeState = UiState(data = Unit)
                 barcodesReturnFromDetail = false
                 barcodesNeedRefresh = true
+                refreshItemDetail()
             }
             .onFailure { deleteBarcodeState = UiState(error = it.toUserMessage()) }
     }

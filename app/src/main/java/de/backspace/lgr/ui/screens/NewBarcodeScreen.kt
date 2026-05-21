@@ -434,12 +434,14 @@ fun NewBarcodeScreen(
                 OutlinedTextField(
                         value = itemNameTfv,
                         onValueChange = { tfv ->
-                            itemNameTfv = tfv
-                            if (viewModel.newBarcodeSelectedItem != null) {
-                                viewModel.newBarcodeItemDescription = ""
+                            if (tfv.text != itemNameTfv.text) {
+                                if (viewModel.newBarcodeSelectedItem != null) {
+                                    viewModel.newBarcodeItemDescription = ""
+                                }
+                                viewModel.newBarcodeNameQuery = tfv.text
+                                viewModel.newBarcodeSelectedItem = null
                             }
-                            viewModel.newBarcodeNameQuery = tfv.text
-                            viewModel.newBarcodeSelectedItem = null
+                            itemNameTfv = tfv
                         },
                         label = { Text("Item *") },
                         modifier = Modifier.fillMaxWidth().focusRequester(itemFocusRequester)
@@ -522,14 +524,14 @@ fun NewBarcodeScreen(
             var itemDescFocused by remember { mutableStateOf(false) }
             OutlinedTextField(
                 value = viewModel.newBarcodeItemDescription,
-                onValueChange = { if (!itemSelected) viewModel.newBarcodeItemDescription = it },
+                onValueChange = { viewModel.newBarcodeItemDescription = it },
                 label = { Text("Item description") },
                 modifier = Modifier.fillMaxWidth()
                     .onFocusChanged { itemDescFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
                     .onGloballyPositioned { if (itemDescFocused) focusedBounds = it.boundsInRoot() },
                 minLines = 2,
                 maxLines = 4,
-                readOnly = itemSelected,
+                enabled = !itemSelected,
                 colors = lgrTextFieldColors()
             )
 
