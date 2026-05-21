@@ -1,11 +1,16 @@
 package de.backspace.lgr.ui.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -19,15 +24,24 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import kotlin.math.roundToInt
+import coil.compose.AsyncImage
 import de.backspace.lgr.data.model.Barcode
 import de.backspace.lgr.viewmodel.AppViewModel
 
@@ -48,6 +62,7 @@ fun ItemDetailScreen(
     val itemList = viewModel.itemListContext
     val currentIndex = viewModel.itemListIndex
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showFullscreenImage by remember { mutableStateOf(false) }
     val hasBarcodes = barcodesState.data?.isNotEmpty() == true
     val swipeThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
     var dragTotal by remember(currentIndex) { mutableStateOf(0f) }
@@ -97,6 +112,46 @@ fun ItemDetailScreen(
         )
     }
 
+    if (showFullscreenImage && item.image != null) {
+        Dialog(
+            onDismissRequest = { showFullscreenImage = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            var scale by remember { mutableStateOf(1f) }
+            var offset by remember { mutableStateOf(Offset.Zero) }
+            val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
+                scale = (scale * zoomChange).coerceIn(1f, 8f)
+                offset = if (scale > 1f) offset + panChange / scale else Offset.Zero
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .transformable(state = transformableState)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = { if (scale <= 1.05f) showFullscreenImage = false },
+                            onDoubleTap = {
+                                if (scale > 1f) { scale = 1f; offset = Offset.Zero } else scale = 2f
+                            }
+                        )
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = item.image,
+                    contentDescription = "Full size item image",
+                    imageLoader = viewModel.imageLoader,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .scale(scale)
+                        .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) },
+                    contentScale = ContentScale.Fit
+                )
+            }
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -106,6 +161,7 @@ fun ItemDetailScreen(
             IconButton(onClick = onBack) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Back")
             }
+            Text("Item", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.weight(1f))
             if (!viewModel.readonlyMode) {
                 Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
@@ -158,10 +214,25 @@ fun ItemDetailScreen(
                     contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    item { ItemDetailRow("Name", item.name) }
+                    item { ItemDetailRow("Item", item.name) }
+
+                    if (viewModel.supportsImages && item.image != null)
+                        item {
+                            AsyncImage(
+                                model = item.image,
+                                contentDescription = "Item image",
+                                imageLoader = viewModel.imageLoader,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { showFullscreenImage = true },
+                                contentScale = ContentScale.Crop
+                            )
+                        }
 
                     if (item.description.isNotBlank()) {
-                        item { ItemDetailRow("Description", item.description) }
+                        item { ItemDetailRow("Item description", item.description) }
                     }
 
                     item {

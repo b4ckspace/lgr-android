@@ -3,6 +3,9 @@ package de.backspace.lgr.viewmodel
 import android.app.Application
 import android.content.Context
 import androidx.compose.runtime.*
+import coil.ImageLoader
+import coil.disk.DiskCache
+import coil.memory.MemoryCache
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -135,6 +138,35 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     var readonlyMode by mutableStateOf(false)
         private set
+    var supportsImages by mutableStateOf(prefs.getBoolean("supports_images", false))
+        private set
+    var newBarcodePendingImageBytes by mutableStateOf<ByteArray?>(null)
+        private set
+    var editBarcodePendingImageBytes by mutableStateOf<ByteArray?>(null)
+        private set
+    var editBarcodeDeleteImage by mutableStateOf(false)
+        private set
+    var editItemPendingImageBytes by mutableStateOf<ByteArray?>(null)
+        private set
+    var editItemDeleteImage by mutableStateOf(false)
+        private set
+
+    val imageLoader: ImageLoader by lazy {
+        ImageLoader.Builder(getApplication())
+            .okHttpClient(
+                okhttp3.OkHttpClient.Builder()
+                    .cookieJar(ApiClient.cookieJar)
+                    .build()
+            )
+            .diskCache(
+                DiskCache.Builder()
+                    .directory(getApplication<Application>().cacheDir.resolve("image_cache"))
+                    .maxSizeBytes(50L * 1024 * 1024)
+                    .build()
+            )
+            .build()
+    }
+
     var verifyLocation by mutableStateOf<Barcode?>(null)
         private set
     var verifyContents by mutableStateOf<List<Barcode>>(emptyList())
@@ -222,6 +254,23 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         ApiClient.configure(url)
     }
 
+    fun applySupportsImages(value: Boolean) {
+        supportsImages = value
+        prefs.edit().putBoolean("supports_images", value).apply()
+    }
+
+    fun setNewBarcodePendingImage(bytes: ByteArray?) { newBarcodePendingImageBytes = bytes }
+    fun setEditBarcodePendingImage(bytes: ByteArray?) {
+        editBarcodePendingImageBytes = bytes
+        if (bytes != null) editBarcodeDeleteImage = false
+    }
+    fun applyEditBarcodeDeleteImage(value: Boolean) { editBarcodeDeleteImage = value }
+    fun setEditItemPendingImage(bytes: ByteArray?) {
+        editItemPendingImageBytes = bytes
+        if (bytes != null) editItemDeleteImage = false
+    }
+    fun applyEditItemDeleteImage(value: Boolean) { editItemDeleteImage = value }
+
     fun clearNewBarcodeState() {
         newBarcodeState = UiState()
         newBarcodeCode = ""
@@ -231,6 +280,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         newBarcodeDescription = ""
         newBarcodeParentCode = ""
         newBarcodeSelectedPerson = null
+        newBarcodePendingImageBytes = null
         clearPendingNewParent()
         val savedDisplay = prefs.getString("last_owner_display", null)
         val savedUrl = prefs.getString("last_owner_url", null)
@@ -281,6 +331,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val itemDescription = editBarcodeItemDescription.trim()
         val description = editBarcodeDescription.trim()
         val ownerUrl = editBarcodeOwnerUrl
+        val pendingImageBytes = editBarcodePendingImageBytes
         val itemUrl = if (selectedItem != null) {
             selectedItem.url
         } else {
@@ -296,6 +347,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             val locationCode = editBarcodeLocationQuery.trim()
             val parentUrl = if (locationCode.isNotBlank()) ApiClient.getBarcodeUrl(locationCode) else null
             runCatching { repo.patchBarcodeParent(ApiClient.getBarcodeUrl(barcode.code), parentUrl) }
+            if (pendingImageBytes != null && supportsImages) {
+                runCatching { repo.uploadItemImage(itemUrl, pendingImageBytes) }
+            } else if (editBarcodeDeleteImage && supportsImages) {
+                runCatching { repo.clearItemImage(itemUrl) }
+            }
             val refreshed = runCatching { repo.getBarcode(barcode.code) }.getOrNull() ?: updated
             scannedBarcode = UiState(data = refreshed)
             saveBarcodeEditState = UiState(data = refreshed)
@@ -316,6 +372,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         editBarcodeOwnerUrl = null
         editBarcodeSelectedPerson = null
         editBarcodeLocationQuery = ""
+        editBarcodePendingImageBytes = null
+        editBarcodeDeleteImage = false
     }
 
     fun fillOwnerWithCurrentUser() = viewModelScope.launch {
@@ -393,6 +451,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val parentCode = newBarcodeParentCode.trim()
         val ownerQuery = newBarcodeOwnerQuery
         val ownerUrl = newBarcodeOwnerUrl
+        val pendingImageBytes = newBarcodePendingImageBytes
 
         val itemUrl = if (selectedItem != null) {
             selectedItem.url
@@ -414,7 +473,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 if (ownerUrl != null) putString("last_owner_url", ownerUrl) else remove("last_owner_url")
                 apply()
             }
-            scannedBarcode = UiState(data = barcode)
+            val imageUploaded = pendingImageBytes != null && supportsImages &&
+                runCatching { repo.uploadItemImage(itemUrl, pendingImageBytes) }.isSuccess
+            val refreshed = if (imageUploaded) runCatching { repo.getBarcode(code) }.getOrNull() ?: barcode else barcode
+            scannedBarcode = UiState(data = refreshed)
             barcodeHistory = emptyList()
             barcodeForwardHistory = emptyList()
             barcodeListContext = null
@@ -746,14 +808,33 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun saveItemEdit() = viewModelScope.launch {
         val item = currentItem ?: return@launch
+        val pendingImageBytes = editItemPendingImageBytes
         saveItemEditState = UiState(isLoading = true)
         runCatching {
             repo.updateItem(item.url, editItemNameQuery.trim(), editItemDescription.trim())
         }.onSuccess { updated ->
-            currentItem = updated
-            saveItemEditState = UiState(data = updated)
+            val finalItem = if (pendingImageBytes != null && supportsImages) {
+                runCatching { repo.uploadItemImage(updated.url, pendingImageBytes) }.getOrNull() ?: updated
+            } else if (editItemDeleteImage && supportsImages) {
+                val oldImageUrl = updated.image
+                val cleared = runCatching { repo.clearItemImage(updated.url) }.getOrNull() ?: updated
+                if (oldImageUrl != null) {
+                    imageLoader.memoryCache?.remove(MemoryCache.Key(oldImageUrl))
+                    imageLoader.diskCache?.remove(oldImageUrl)
+                }
+                cleared
+            } else {
+                updated
+            }
+            currentItem = finalItem
+            saveItemEditState = UiState(data = finalItem)
             itemsNeedRefresh = true
             barcodesNeedRefresh = true
+            val barcodeCode = scannedBarcode.data?.let { if (it.item == item.url) it.code else null }
+            if (barcodeCode != null) {
+                val refreshed = runCatching { repo.getBarcode(barcodeCode) }.getOrNull()
+                if (refreshed != null) scannedBarcode = UiState(data = refreshed)
+            }
         }.onFailure {
             saveItemEditState = UiState(error = it.toUserMessage())
         }
@@ -763,6 +844,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         saveItemEditState = UiState()
         editItemNameQuery = ""
         editItemDescription = ""
+        editItemPendingImageBytes = null
+        editItemDeleteImage = false
     }
 
     fun loadBarcode(code: String) = viewModelScope.launch {

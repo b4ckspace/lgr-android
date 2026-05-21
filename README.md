@@ -54,6 +54,7 @@ adb install app/build/outputs/apk/release/app-release.apk
 | JSON | Gson |
 | Camera | CameraX |
 | Barcode scanning | ML Kit Barcode Scanning |
+| Image loading | Coil 2 |
 | Architecture | Single-ViewModel (AppViewModel) |
 
 ## Architecture
@@ -82,6 +83,7 @@ Authentication uses Django session cookies. CSRF tokens are extracted from the c
 - Enter the server base URL (e.g. `http://192.168.1.10:8000`) and credentials.
 - **Read-only without login** opens the app in read-only mode — scanning and listing work, creating/editing/deleting does not.
 - The server URL is remembered across sessions.
+- **Backend supports images** — toggle switch below the server URL. Enable this when the backend has image support (PR #2). The setting is persisted across restarts. When enabled, camera buttons appear in the New Barcode, Edit Barcode, and Edit Item screens.
 - Release builds show the app version and build date in the lower-right corner of the login screen.
 
 ---
@@ -121,7 +123,8 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 - Location (breadcrumb of parent chain, tappable to navigate)
 - Barcode code
 - Item name and description
-- Per-barcode description
+- **Item image** — shown below the item name when the backend supports images and an image has been set. Tap to view the image fullscreen; tap the fullscreen image to dismiss it.
+- Per-barcode description (labelled *Barcode description*)
 - Owner (resolved to display name)
 - Loan status — *Available* (green) or *On loan — Person* (blue)
 
@@ -140,9 +143,11 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 Tap the Edit icon (pencil) in the top bar to open the edit screen. The barcode code is shown read-only and cannot be changed. The loan status is not editable. Editable fields:
 - **Location** — type-ahead barcode search (min. 2 characters, 300 ms debounce). Suggestions show the item name and barcode code; selecting one sets the parent barcode. Pre-filled with the current parent (if any).
 - **Item** — type-ahead search; selecting a suggestion fills in the item description. If the typed name does not exist yet, a new item is created on save.
-- **Description** — per-barcode description.
+- **Barcode description** — per-barcode description.
 - **Item description** — editable when no item is selected from suggestions; read-only once an item is chosen.
 - **Owner** — type-ahead person search; tap the person icon to set to the current user.
+
+> Item photo editing is not available here — use Edit Item to change a photo.
 
 **Cancel** and **Save** buttons sit at the bottom of the screen (above the keyboard). Tap **Save** to write the changes; tap **Cancel** or the back arrow to discard.
 
@@ -181,14 +186,15 @@ Searchable, paginated list of item types (the catalogue, not individual barcoded
 Reachable by tapping an item in the Items tab, or by tapping the item name in a Barcode Detail view (shown in primary colour as a link).
 
 **Displayed fields:**
-- Item name
-- Item description (if set)
+- Item name (labelled *Item*)
+- **Item image** — shown below the name when the backend supports images and an image has been set. Tap to view fullscreen (pinch-to-zoom, double-tap to toggle 2×, tap to close when not zoomed).
+- Item description (labelled *Item description*, shown only if set)
 - **Barcodes** section — all barcodes that use this item type, each tappable to open its Barcode Detail
 
 **Pull to refresh** — pull down to reload the item's linked barcodes.
 
 **Actions (authenticated):**
-- **Edit** (pencil icon) — opens the Edit Item screen. Editable fields: Name and Description. **Cancel** and **Save** buttons are at the bottom of the screen. The item list is refreshed after saving.
+- **Edit** (pencil icon) — opens the Edit Item screen. Editable fields: Item (name), Item description, and (when backend supports images) Photo. The current item image is shown; tap the camera icon to take a new photo, or tap the trashcan to delete the current photo (tap undo to cancel). **Cancel** and **Save** buttons are at the bottom of the screen. The item list is refreshed after saving.
 - **Delete** (trashcan icon) — opens a confirmation dialog and permanently deletes the item.
   - The trashcan is disabled (greyed out) if any barcodes are linked to the item.
 
@@ -256,6 +262,7 @@ Form to register a new barcode in the system.
 | **Description** | Free-text description for this specific barcode instance. |
 | **Item description** | Pre-filled from the selected item (read-only). Editable when no item is selected. |
 | **Owner** | Optional. Type-ahead person search or tap the person icon to assign yourself. |
+| **Photo** | (When backend supports images) Tap the camera icon to take a photo for the item. A thumbnail preview is shown; tap the × to remove it before saving. Disabled when an existing item is selected from suggestions (use Edit Item to change that item's photo). |
 
 **Cancel** and **Save** buttons sit at the bottom of the screen (above the keyboard when it is open). Tap **Save** to create; on success, the detail view of the new barcode opens immediately. If the server returns an error, the screen scrolls back to the top to show it.
 

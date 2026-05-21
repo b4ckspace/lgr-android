@@ -398,7 +398,7 @@ fun EditBarcodeScreen(
             OutlinedTextField(
                 value = viewModel.editBarcodeDescription,
                 onValueChange = { viewModel.editBarcodeDescription = it },
-                label = { Text("Description") },
+                label = { Text("Barcode description") },
                 modifier = Modifier.fillMaxWidth()
                     .onFocusChanged { descFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
                     .onGloballyPositioned { if (descFocused) focusedBounds = it.boundsInRoot() },
@@ -495,6 +495,7 @@ fun EditBarcodeScreen(
                     }
                 }
             }
+
         }
         } // Box
         HorizontalDivider()

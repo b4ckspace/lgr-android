@@ -1,42 +1,87 @@
 package de.backspace.lgr.ui.screens
 
+import android.graphics.BitmapFactory
 import android.media.AudioManager
 import android.media.ToneGenerator
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import kotlin.math.roundToInt
+import androidx.core.content.FileProvider
+import coil.compose.AsyncImage
 import de.backspace.lgr.data.model.Barcode
 import de.backspace.lgr.data.model.Item
 import de.backspace.lgr.data.model.Person
 import de.backspace.lgr.viewmodel.AppViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
 private val GREY = Color(0xFF9E9E9E)
+
+private fun ByteArray.applyExifRotation(): ByteArray {
+    val exif = android.media.ExifInterface(java.io.ByteArrayInputStream(this))
+    val degrees = when (exif.getAttributeInt(
+        android.media.ExifInterface.TAG_ORIENTATION,
+        android.media.ExifInterface.ORIENTATION_NORMAL
+    )) {
+        android.media.ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+        android.media.ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+        android.media.ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+        else -> 0f
+    }
+    if (degrees == 0f) return this
+    val bitmap = BitmapFactory.decodeByteArray(this, 0, size) ?: return this
+    val matrix = android.graphics.Matrix().apply { postRotate(degrees) }
+    val rotated = android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    val out = java.io.ByteArrayOutputStream()
+    rotated.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, out)
+    return out.toByteArray()
+}
 
 private fun Person.displayName(): String =
     listOf(firstname, lastname).filter { it.isNotBlank() }.joinToString(" ").ifBlank { nickname }
@@ -76,6 +121,16 @@ fun NewBarcodeScreen(
     var itemNameTfv by remember { mutableStateOf(TextFieldValue(viewModel.newBarcodeNameQuery)) }
     var ownerQueryTfv by remember { mutableStateOf(TextFieldValue(viewModel.newBarcodeOwnerQuery)) }
 
+    val context = LocalContext.current
+    val cameraUri = remember { mutableStateOf<Uri?>(null) }
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) {
+            val uri = cameraUri.value ?: return@rememberLauncherForActivityResult
+            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            if (bytes != null) viewModel.setNewBarcodePendingImage(bytes.applyExifRotation())
+        }
+    }
+
     val newBarcodeState = viewModel.newBarcodeState
 
     LaunchedEffect(newBarcodeState.data) {
@@ -112,6 +167,7 @@ fun NewBarcodeScreen(
             viewModel.newBarcodeNameQuery = exactMatch.first.name
             viewModel.newBarcodeSelectedItem = exactMatch.first
             viewModel.newBarcodeItemDescription = exactMatch.first.description
+            viewModel.setNewBarcodePendingImage(null)
             itemSuggestions = emptyList()
             showSuggestions = false
         } else {
@@ -164,6 +220,45 @@ fun NewBarcodeScreen(
     }
 
     val canSave = viewModel.newBarcodeCode.isNotBlank() && viewModel.newBarcodeNameQuery.isNotBlank() && !newBarcodeState.isLoading
+    var showFullscreenImage by remember { mutableStateOf(false) }
+
+    val fsItemImage = viewModel.newBarcodeSelectedItem?.image
+    if (showFullscreenImage && fsItemImage != null) {
+        Dialog(
+            onDismissRequest = { showFullscreenImage = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            var scale by remember { mutableStateOf(1f) }
+            var offset by remember { mutableStateOf(Offset.Zero) }
+            val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
+                scale = (scale * zoomChange).coerceIn(1f, 8f)
+                offset = if (scale > 1f) offset + panChange / scale else Offset.Zero
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .transformable(state = transformableState)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = { if (scale <= 1.05f) showFullscreenImage = false },
+                            onDoubleTap = { if (scale > 1f) { scale = 1f; offset = Offset.Zero } else scale = 2f }
+                        )
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = fsItemImage,
+                    contentDescription = "Full size item image",
+                    imageLoader = viewModel.imageLoader,
+                    modifier = Modifier.fillMaxSize()
+                        .scale(scale)
+                        .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) },
+                    contentScale = ContentScale.Fit
+                )
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -385,6 +480,7 @@ fun NewBarcodeScreen(
                                                 viewModel.newBarcodeNameQuery = item.name
                                                 viewModel.newBarcodeSelectedItem = item
                                                 viewModel.newBarcodeItemDescription = item.description
+                                                viewModel.setNewBarcodePendingImage(null)
                                                 showSuggestions = false
                                             }
                                             .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -413,7 +509,7 @@ fun NewBarcodeScreen(
             OutlinedTextField(
                 value = viewModel.newBarcodeDescription,
                 onValueChange = { viewModel.newBarcodeDescription = it },
-                label = { Text("Description") },
+                label = { Text("Barcode description") },
                 modifier = Modifier.fillMaxWidth()
                     .onFocusChanged { descFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
                     .onGloballyPositioned { if (descFocused) focusedBounds = it.boundsInRoot() },
@@ -513,6 +609,77 @@ fun NewBarcodeScreen(
                         }
                     }
                 }
+
+            if (viewModel.supportsImages && !viewModel.readonlyMode) {
+                HorizontalDivider()
+                val selectedItemImage = viewModel.newBarcodeSelectedItem?.image
+                val pendingBytes = viewModel.newBarcodePendingImageBytes
+                if (itemSelected && selectedItemImage != null) {
+                    AsyncImage(
+                        model = selectedItemImage,
+                        contentDescription = "Item image",
+                        imageLoader = viewModel.imageLoader,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(160.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { showFullscreenImage = true },
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (!itemSelected && pendingBytes != null) {
+                        val bitmap = remember(pendingBytes) {
+                            BitmapFactory.decodeByteArray(pendingBytes, 0, pendingBytes.size)?.asImageBitmap()
+                        }
+                        if (bitmap != null) {
+                            Image(
+                                bitmap = bitmap,
+                                contentDescription = "Pending photo",
+                                modifier = Modifier.size(64.dp).clip(RoundedCornerShape(4.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        Text(
+                            "Photo attached",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { viewModel.setNewBarcodePendingImage(null) }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Remove photo", tint = MaterialTheme.colorScheme.error)
+                        }
+                    } else if (!itemSelected) {
+                        Text(
+                            "Photo",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        Spacer(Modifier.weight(1f))
+                    }
+                    IconButton(
+                        onClick = {
+                            val cameraDir = File(context.cacheDir, "camera_images").also { it.mkdirs() }
+                            val imageFile = File(cameraDir, "new_barcode.jpg")
+                            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", imageFile)
+                            cameraUri.value = uri
+                            cameraLauncher.launch(uri)
+                        },
+                        enabled = !itemSelected
+                    ) {
+                        Icon(
+                            Icons.Default.PhotoCamera,
+                            contentDescription = "Take photo",
+                            tint = if (itemSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                   else MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
 
         }
         } // Box

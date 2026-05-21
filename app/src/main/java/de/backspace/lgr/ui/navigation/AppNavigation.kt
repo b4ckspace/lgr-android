@@ -191,7 +191,8 @@ fun AppNavigation(viewModel: AppViewModel) {
                             url = barcode.item,
                             name = barcode.itemName,
                             description = barcode.itemDescription,
-                            tags = emptyList()
+                            tags = emptyList(),
+                            image = barcode.itemImage
                         )
                         viewModel.openItemDetail(item)
                         navController.navigate("item_detail")
@@ -363,7 +364,8 @@ fun AppNavigation(viewModel: AppViewModel) {
                             url = location.item,
                             name = location.itemName,
                             description = location.itemDescription,
-                            tags = emptyList()
+                            tags = emptyList(),
+                            image = location.itemImage
                         )
                         viewModel.openItemDetail(item)
                         navController.navigate("item_detail")

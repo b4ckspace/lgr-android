@@ -5,6 +5,9 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -38,6 +41,17 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import kotlin.math.roundToInt
+import coil.compose.AsyncImage
 import de.backspace.lgr.data.model.Barcode
 import de.backspace.lgr.data.model.ChildInfo
 import de.backspace.lgr.data.model.LoanInfo
@@ -66,6 +80,7 @@ fun BarcodeDetailScreen(
     val swipeThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
     var dragTotal by remember(currentIndex) { mutableStateOf(0f) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showFullscreenImage by remember { mutableStateOf(false) }
 
     val deleteState = viewModel.deleteBarcodeState
     LaunchedEffect(deleteState.data) {
@@ -146,6 +161,47 @@ fun BarcodeDetailScreen(
         )
     }
 
+    val barcodeForFullscreen = state.data
+    if (showFullscreenImage && barcodeForFullscreen?.itemImage != null) {
+        Dialog(
+            onDismissRequest = { showFullscreenImage = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            var scale by remember { mutableStateOf(1f) }
+            var offset by remember { mutableStateOf(Offset.Zero) }
+            val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
+                scale = (scale * zoomChange).coerceIn(1f, 8f)
+                offset = if (scale > 1f) offset + panChange / scale else Offset.Zero
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .transformable(state = transformableState)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = { if (scale <= 1.05f) showFullscreenImage = false },
+                            onDoubleTap = {
+                                if (scale > 1f) { scale = 1f; offset = Offset.Zero } else scale = 2f
+                            }
+                        )
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = barcodeForFullscreen.itemImage,
+                    contentDescription = "Full size item image",
+                    imageLoader = viewModel.imageLoader,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .scale(scale)
+                        .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) },
+                    contentScale = ContentScale.Fit
+                )
+            }
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -155,6 +211,7 @@ fun BarcodeDetailScreen(
             IconButton(onClick = onBack) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Back")
             }
+            Text("Barcode", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.weight(1f))
             if (!viewModel.readonlyMode) {
                 state.data?.let { barcode ->
@@ -215,6 +272,7 @@ fun BarcodeDetailScreen(
 
                     // content item index varies with optional rows above it
                     val contentItemIndex = 3 +
+                        (if (barcode.itemImage != null) 1 else 0) +
                         (if (barcode.description.isNotBlank()) 1 else 0) +
                         (if (barcode.itemDescription.isNotBlank()) 1 else 0) +
                         (if (barcode.owner != null) 1 else 0) +
@@ -244,8 +302,22 @@ fun BarcodeDetailScreen(
 
                             item { DetailRow("Barcode", barcode.code) }
                             item { DetailRow("Item", barcode.itemName, valueColor = MaterialTheme.colorScheme.onSurface, onClick = onItemClick) }
+                            if (barcode.itemImage != null)
+                                item {
+                                    AsyncImage(
+                                        model = barcode.itemImage,
+                                        contentDescription = "Item image",
+                                        imageLoader = viewModel.imageLoader,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(200.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable { showFullscreenImage = true },
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
                             if (barcode.description.isNotBlank())
-                                item { DetailRow("Description", barcode.description) }
+                                item { DetailRow("Barcode description", barcode.description) }
                             if (barcode.itemDescription.isNotBlank())
                                 item { DetailRow("Item description", barcode.itemDescription) }
                             if (barcode.owner != null)

@@ -3,6 +3,7 @@ package de.backspace.lgr.data.repository
 import de.backspace.lgr.data.api.ApiClient
 import de.backspace.lgr.data.model.*
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 
 class LgrRepository {
@@ -61,10 +62,22 @@ class LgrRepository {
         return response.results.filter { it.itemName == itemName }
     }
 
+    suspend fun uploadItemImage(itemUrl: String, imageBytes: ByteArray): Item {
+        val body = imageBytes.toRequestBody("image/jpeg".toMediaType())
+        val uniqueName = "image_${java.util.UUID.randomUUID().toString().replace("-", "").take(8)}.jpg"
+        val part = MultipartBody.Part.createFormData("image", uniqueName, body)
+        return api.uploadItemImage(itemUrl, part)
+    }
+
     suspend fun updateItem(url: String, name: String, description: String): Item {
         val map: Map<String, Any?> = mapOf("name" to name, "description" to description)
         val json = com.google.gson.Gson().toJson(map)
         val body = json.toRequestBody("application/json; charset=utf-8".toMediaType())
+        return api.patchItem(url, body)
+    }
+
+    suspend fun clearItemImage(url: String): Item {
+        val body = "{\"image\": null}".toRequestBody("application/json; charset=utf-8".toMediaType())
         return api.patchItem(url, body)
     }
 

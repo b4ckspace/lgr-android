@@ -83,6 +83,17 @@ fun LoginScreen(viewModel: AppViewModel) {
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Uri),
             keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
         )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Backend supports images", style = MaterialTheme.typography.bodyMedium)
+            Switch(
+                checked = viewModel.supportsImages,
+                onCheckedChange = { viewModel.applySupportsImages(it) }
+            )
+        }
         Spacer(Modifier.height(12.dp))
 
         OutlinedTextField(

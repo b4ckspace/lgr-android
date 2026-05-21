@@ -2,6 +2,7 @@ package de.backspace.lgr.data.api
 
 import de.backspace.lgr.data.model.*
 import de.backspace.lgr.data.model.Tag as LgrTag
+import okhttp3.MultipartBody
 import retrofit2.http.*
 
 interface ApiService {
@@ -69,6 +70,10 @@ interface ApiService {
 
     @PATCH
     suspend fun patchItem(@Url url: String, @Body body: okhttp3.RequestBody): Item
+
+    @Multipart
+    @PATCH
+    suspend fun uploadItemImage(@Url url: String, @Part image: MultipartBody.Part): Item
 
     @DELETE
     suspend fun deleteItem(@Url url: String): retrofit2.Response<Void>

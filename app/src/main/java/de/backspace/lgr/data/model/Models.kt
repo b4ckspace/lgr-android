@@ -36,7 +36,8 @@ data class Item(
     val url: String,
     val name: String,
     val description: String,
-    val tags: List<String>
+    val tags: List<String>,
+    val image: String? = null
 )
 
 data class ChildInfo(val name: String, val code: String)
@@ -53,7 +54,8 @@ data class Barcode(
     @SerializedName("item_description") val itemDescription: String,
     @SerializedName("api_child_names") val apiChildNames: List<ChildInfo>? = null,
     @SerializedName("api_parent_names") val apiParentNames: List<ChildInfo>? = null,
-    @SerializedName("api_loan_info") val apiLoanInfo: LoanInfo? = null
+    @SerializedName("api_loan_info") val apiLoanInfo: LoanInfo? = null,
+    @SerializedName("item_image") val itemImage: String? = null
 )
 
 data class Loan(
