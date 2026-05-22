@@ -159,7 +159,26 @@ fun AppNavigation(viewModel: AppViewModel) {
                         viewModel.clearVerifyState()
                         navController.navigate("verify_scan")
                     },
-                    showNew = !viewModel.readonlyMode
+                    onItems = {
+                        navController.navigate(Screen.Items.route) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    },
+                    onBarcodes = {
+                        navController.navigate(Screen.Barcodes.route) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    },
+                    onPersons = {
+                        navController.navigate(Screen.Persons.route) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    },
+                    showNew = !viewModel.readonlyMode,
+                    isAuthenticated = viewModel.isAuthenticated
                 )
             }
             composable(Screen.Items.route) {

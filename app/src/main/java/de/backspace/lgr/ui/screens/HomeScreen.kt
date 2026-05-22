@@ -4,9 +4,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.NoteAdd
-import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.FactCheck
+import androidx.compose.material.icons.filled.Inventory
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.NoteAdd
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,7 +24,11 @@ fun HomeScreen(
     onScanBarcode: () -> Unit,
     onNewBarcode: () -> Unit,
     onVerify: () -> Unit,
-    showNew: Boolean = true
+    onItems: () -> Unit,
+    onBarcodes: () -> Unit,
+    onPersons: () -> Unit,
+    showNew: Boolean = true,
+    isAuthenticated: Boolean = false
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -27,26 +36,33 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
-            HomeTile(icon = Icons.Default.QrCodeScanner, label = "Details", onClick = onScanBarcode)
-        }
-        item {
-            HomeTile(icon = Icons.Default.FactCheck, label = "Verify", onClick = onVerify)
-        }
+        item { HomeTile(icon = Icons.Default.QrCodeScanner, label = "Details", onClick = onScanBarcode) }
+        item { HomeTile(icon = Icons.Default.FactCheck, label = "Verify", onClick = onVerify) }
         if (showNew) {
-            item {
-                HomeTile(icon = Icons.Default.NoteAdd, label = "New", onClick = onNewBarcode)
-            }
+            item { HomeTile(icon = Icons.Default.NoteAdd, label = "New", onClick = onNewBarcode) }
         }
+        item { HomeTile(icon = Icons.Default.Inventory, label = "Items", onClick = onItems) }
+        item { HomeTile(icon = Icons.Default.QrCode, label = "Barcodes", onClick = onBarcodes) }
+        item { HomeTile(icon = Icons.Default.People, label = "Persons", onClick = onPersons, enabled = isAuthenticated) }
+        item { HomeTile(icon = Icons.Default.List, label = "Loans", onClick = {}, enabled = false) }
+        item { HomeTile(icon = Icons.Default.AccountCircle, label = "My Loans", onClick = {}, enabled = false) }
     }
 }
 
 @Composable
-private fun HomeTile(icon: ImageVector, label: String, onClick: () -> Unit) {
+private fun HomeTile(icon: ImageVector, label: String, onClick: () -> Unit, enabled: Boolean = true) {
+    val containerColor = if (enabled) MaterialTheme.colorScheme.primaryContainer
+                         else MaterialTheme.colorScheme.surfaceVariant
+    val contentColor = if (enabled) MaterialTheme.colorScheme.onPrimaryContainer
+                       else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
     Card(
         onClick = onClick,
+        enabled = enabled,
         modifier = Modifier.fillMaxWidth().aspectRatio(1f),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor,
+            disabledContainerColor = containerColor
+        )
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -57,13 +73,13 @@ private fun HomeTile(icon: ImageVector, label: String, onClick: () -> Unit) {
                 imageVector = icon,
                 contentDescription = label,
                 modifier = Modifier.size(52.dp),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                tint = contentColor
             )
             Spacer(Modifier.height(12.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = contentColor
             )
         }
     }
