@@ -62,6 +62,16 @@ fun AppNavigation(viewModel: AppViewModel) {
     val showBottomBar = cameraRoutes.none { currentRoute?.startsWith(it) == true }
     val activeTab = activeTabFor(currentRoute)
 
+    // Track the last non-root, non-camera route visited per tab so that
+    // switching away from a deeper screen and back restores it.
+    val tabLastRoutes = remember { HashMap<Screen, String>() }
+    LaunchedEffect(currentRoute) {
+        val route = currentRoute ?: return@LaunchedEffect
+        if (cameraRoutes.any { route.startsWith(it) }) return@LaunchedEffect
+        val tab = activeTabFor(route) ?: return@LaunchedEffect
+        if (route == tab.route) tabLastRoutes.remove(tab) else tabLastRoutes[tab] = route
+    }
+
     val tabs = buildList {
         add(Screen.Home)
         add(Screen.Items)
@@ -101,10 +111,24 @@ fun AppNavigation(viewModel: AppViewModel) {
                             selected = screen == activeTab,
                             enabled = isEnabled,
                             onClick = {
-                                navController.navigate(screen.route) {
-                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
+                                val targetRoute = if (screen != activeTab) {
+                                    tabLastRoutes[screen] ?: screen.route
+                                } else {
+                                    screen.route
+                                }
+                                if (targetRoute != screen.route) {
+                                    // Restore a sub-screen: put the tab root in the back stack
+                                    // first so the back arrow returns to the tab list.
+                                    navController.navigate(screen.route) {
+                                        popUpTo(navController.graph.startDestinationId)
+                                        launchSingleTop = true
+                                    }
+                                    navController.navigate(targetRoute)
+                                } else {
+                                    navController.navigate(targetRoute) {
+                                        popUpTo(navController.graph.startDestinationId)
+                                        launchSingleTop = true
+                                    }
                                 }
                             }
                         )
