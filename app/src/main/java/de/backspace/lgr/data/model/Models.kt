@@ -62,6 +62,7 @@ data class Loan(
     val id: Int?,
     val url: String?,
     val person: Int?,
+    @SerializedName("person_name") val personName: String? = null,
     val barcodes: List<String>,
     val description: String?,
     val status: String,

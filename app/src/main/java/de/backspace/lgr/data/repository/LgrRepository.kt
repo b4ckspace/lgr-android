@@ -90,11 +90,16 @@ class LgrRepository {
 
     suspend fun getTags() = api.getTags()
 
-    suspend fun getLoans(limit: Int = 50, offset: Int = 0) = api.getLoans(limit, offset)
+    suspend fun getLoans(status: String? = null, limit: Int = 50, offset: Int = 0) = api.getLoans(status, limit, offset)
     suspend fun getLoansPage(url: String) = api.getLoansPage(url)
 
-    suspend fun getMyLoans(limit: Int = 50, offset: Int = 0) = api.getMyLoans(limit, offset)
+    suspend fun getMyLoans(status: String? = null, limit: Int = 50, offset: Int = 0) = api.getMyLoans(status, limit, offset)
     suspend fun getMyLoansPage(url: String) = api.getMyLoansPage(url)
+
+    suspend fun returnLoan(url: String): Loan {
+        val body = "{\"status\":\"returned\"}".toRequestBody("application/json; charset=utf-8".toMediaType())
+        return api.patchLoan(url, body)
+    }
 
     suspend fun loanBarcodes(
         codes: List<String>,
