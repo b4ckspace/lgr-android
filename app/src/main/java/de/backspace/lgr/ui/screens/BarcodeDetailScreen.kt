@@ -25,8 +25,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.RemoveShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import kotlinx.coroutines.flow.collect
@@ -62,7 +63,7 @@ private val GREEN = Color(0xFF4CAF50)
 private val RED = Color(0xFFE53935)
 private val LOAN_BLUE = Color(0xFF1976D2)
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun BarcodeDetailScreen(
     viewModel: AppViewModel,
@@ -72,6 +73,7 @@ fun BarcodeDetailScreen(
     onAddContent: () -> Unit,
     onNewBarcode: () -> Unit = {},
     onEditBarcode: () -> Unit = {},
+    onGoToCart: () -> Unit = {},
     onItemClick: (() -> Unit)? = null
 ) {
     val state = viewModel.scannedBarcode
@@ -222,11 +224,41 @@ fun BarcodeDetailScreen(
                         IconButton(onClick = onEditBarcode) {
                             Icon(Icons.Default.Edit, contentDescription = "Edit Barcode")
                         }
-                        IconButton(onClick = {
-                            viewModel.toggleBarcodeSelection(barcode.code)
-                            onBack()
-                        }) {
-                            Icon(Icons.Default.ShoppingCart, contentDescription = "Select for Loan")
+                        BadgedBox(
+                            badge = {
+                                if (viewModel.selectedBarcodes.isNotEmpty()) {
+                                    Badge { Text(viewModel.selectedBarcodes.size.toString()) }
+                                }
+                            }
+                        ) {
+                            val isInCart = barcode.code in viewModel.selectedBarcodes
+                            val isOnLoan = barcode.apiLoanInfo?.loan == true
+                            val cartEnabled = isInCart || !isOnLoan
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .combinedClickable(
+                                        enabled = cartEnabled,
+                                        onClick = { viewModel.toggleBarcodeSelection(barcode.code) },
+                                        onLongClick = {
+                                            viewModel.expressLoan(barcode)
+                                            onGoToCart()
+                                        }
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    if (isInCart) Icons.Default.RemoveShoppingCart
+                                    else Icons.Default.AddShoppingCart,
+                                    contentDescription = if (isInCart) "Remove from loan cart"
+                                                         else "Add to loan cart",
+                                    tint = when {
+                                        isInCart -> MaterialTheme.colorScheme.primary
+                                        !cartEnabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                        else -> LocalContentColor.current
+                                    }
+                                )
+                            }
                         }
                         IconButton(onClick = { showDeleteDialog = true }) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete")

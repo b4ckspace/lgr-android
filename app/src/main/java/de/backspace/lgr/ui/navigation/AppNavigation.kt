@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
@@ -27,12 +28,12 @@ private sealed class Screen(val route: String, val title: String, val icon: Imag
     object Items : Screen("items", "Items", Icons.Default.Inventory)
     object Barcodes : Screen("barcodes", "Barcodes", Icons.Default.QrCode)
     object Persons : Screen("persons", "Persons", Icons.Default.People)
-    object Loans : Screen("loans", "Loans", Icons.Default.List, enabled = false)
-    object MyLoans : Screen("my_loans", "My Loans", Icons.Default.AccountCircle, enabled = false)
+    object Loans : Screen("loans", "Loans", Icons.Default.List)
+    object MyLoans : Screen("my_loans", "My Loans", Icons.Default.AccountCircle)
 }
 
 // Routes where the shared top bar is hidden (screens have their own TopAppBar or are camera-only)
-private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search", "item_detail", "edit_barcode", "edit_item", "edit_barcode_scan_parent")
+private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search", "item_detail", "edit_barcode", "edit_item", "edit_barcode_scan_parent", "loan_cart", "loan_detail")
 
 // Camera/scanner screens where even the bottom bar is hidden (need full screen for viewfinder)
 private val cameraRoutes = setOf("scan", "content_scan", "scan_parent", "add_content_scan", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "barcodes_scan_search", "edit_barcode_scan_parent")
@@ -46,7 +47,7 @@ private fun activeTabFor(route: String?): Screen? = when (route) {
     "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code",
     "barcodes_scan_search", "verify_detail" -> Screen.Barcodes
     "persons" -> Screen.Persons
-    "loans" -> Screen.Loans
+    "loans", "loan_detail" -> Screen.Loans
     "my_loans" -> Screen.MyLoans
     else -> null
 }
@@ -78,7 +79,7 @@ fun AppNavigation(viewModel: AppViewModel) {
         add(Screen.Barcodes)
         add(Screen.Persons)
         add(Screen.Loans)
-        if (viewModel.isAuthenticated) add(Screen.MyLoans)
+        add(Screen.MyLoans)
     }
 
     Scaffold(
@@ -87,6 +88,15 @@ fun AppNavigation(viewModel: AppViewModel) {
                 TopAppBar(
                     title = { Text(activeTab?.title ?: "LGR") },
                     actions = {
+                        if (viewModel.selectedBarcodes.isNotEmpty()) {
+                            BadgedBox(
+                                badge = { Badge { Text(viewModel.selectedBarcodes.size.toString()) } }
+                            ) {
+                                IconButton(onClick = { navController.navigate("loan_cart") }) {
+                                    Icon(Icons.Default.ShoppingCart, contentDescription = "Loan cart")
+                                }
+                            }
+                        }
                         if (viewModel.readonlyMode) {
                             TextButton(onClick = { viewModel.exitReadonlyMode() }) { Text("Login") }
                         } else {
@@ -105,7 +115,7 @@ fun AppNavigation(viewModel: AppViewModel) {
                 ) {
                     tabs.forEach { screen ->
                         val isEnabled = screen.enabled &&
-                            (screen != Screen.Persons || viewModel.isAuthenticated)
+                            (screen !in setOf(Screen.Persons, Screen.Loans, Screen.MyLoans) || viewModel.isAuthenticated)
                         NavigationBarItem(
                             icon = { Icon(screen.icon, contentDescription = screen.title) },
                             selected = screen == activeTab,
@@ -177,6 +187,18 @@ fun AppNavigation(viewModel: AppViewModel) {
                             launchSingleTop = true
                         }
                     },
+                    onLoans = {
+                        navController.navigate(Screen.Loans.route) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    },
+                    onMyLoans = {
+                        navController.navigate(Screen.MyLoans.route) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    },
                     showNew = !viewModel.readonlyMode,
                     isAuthenticated = viewModel.isAuthenticated
                 )
@@ -201,8 +223,18 @@ fun AppNavigation(viewModel: AppViewModel) {
                 )
             }
             composable(Screen.Persons.route) { PersonsScreen(viewModel) }
-            composable(Screen.Loans.route) { LoansScreen(viewModel) }
-            composable(Screen.MyLoans.route) { MyLoansScreen(viewModel) }
+            composable(Screen.Loans.route) {
+                LoansScreen(viewModel, onLoanClick = { loan ->
+                    viewModel.openLoan(loan, fromMyLoans = false)
+                    navController.navigate("loan_detail")
+                })
+            }
+            composable(Screen.MyLoans.route) {
+                MyLoansScreen(viewModel, onLoanClick = { loan ->
+                    viewModel.openLoan(loan, fromMyLoans = true)
+                    navController.navigate("loan_detail")
+                })
+            }
             composable("scan") {
                 BarcodeScanScreen(
                     viewModel = viewModel,
@@ -229,6 +261,7 @@ fun AppNavigation(viewModel: AppViewModel) {
                         viewModel.enterBarcodeEditMode(barcode)
                         navController.navigate("edit_barcode")
                     },
+                    onGoToCart = { navController.navigate("loan_cart") },
                     onItemClick = {
                         val barcode = viewModel.scannedBarcode.data ?: return@BarcodeDetailScreen
                         val item = de.backspace.lgr.data.model.Item(
@@ -370,6 +403,34 @@ fun AppNavigation(viewModel: AppViewModel) {
                     viewModel = viewModel,
                     onDone = { navController.navigate("verify_detail") },
                     onBack = { viewModel.clearVerifyState(); navController.popBackStack() }
+                )
+            }
+            composable("loan_cart") {
+                LoanCartScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onBarcodeClick = { code ->
+                        viewModel.clearBarcodeListContext()
+                        viewModel.loadBarcode(code)
+                        navController.navigate("barcode_detail")
+                    },
+                    onConfirmed = {
+                        navController.navigate(Screen.MyLoans.route) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
+            composable("loan_detail") {
+                LoanDetailScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onBarcodeClick = { code ->
+                        viewModel.clearBarcodeListContext()
+                        viewModel.loadBarcode(code)
+                        navController.navigate("barcode_detail")
+                    }
                 )
             }
             composable("verify_detail") {

@@ -12,8 +12,10 @@ import androidx.compose.ui.unit.dp
 import de.backspace.lgr.data.model.Loan
 import de.backspace.lgr.viewmodel.AppViewModel
 
+private val STATUS_OPTIONS = listOf("taken" to "Taken", "returned" to "Returned", "" to "All")
+
 @Composable
-fun LoansScreen(viewModel: AppViewModel) {
+fun LoansScreen(viewModel: AppViewModel, onLoanClick: (Loan) -> Unit = {}) {
     val listState = rememberLazyListState()
 
     LaunchedEffect(Unit) { viewModel.loadLoans() }
@@ -29,24 +31,30 @@ fun LoansScreen(viewModel: AppViewModel) {
         if (shouldLoadMore) viewModel.loadMoreLoans()
     }
 
-    val state = viewModel.loans
-    when {
-        state.isLoading && state.data == null -> LoadingBox()
-        state.error != null && state.data == null -> ErrorBox(state.error)
-        state.data != null -> LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
-            items(state.data, key = { it.id ?: it.hashCode() }) { loan ->
-                LoanCard(loan)
+    Column(modifier = Modifier.fillMaxSize()) {
+        LoanStatusFilterRow(
+            selected = viewModel.loansStatusFilter,
+            onSelect = { viewModel.loadLoans(it) }
+        )
+        val state = viewModel.loans
+        when {
+            state.isLoading && state.data == null -> LoadingBox()
+            state.error != null && state.data == null -> ErrorBox(state.error)
+            state.data != null -> LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
+                items(state.data, key = { it.id ?: it.hashCode() }) { loan ->
+                    LoanCard(loan, onClick = { onLoanClick(loan) })
+                }
+                if (viewModel.loansNextPage != null) {
+                    item { LoadingFooter() }
+                }
             }
-            if (viewModel.loansNextPage != null) {
-                item { LoadingFooter() }
-            }
+            else -> LoadingBox()
         }
-        else -> LoadingBox()
     }
 }
 
 @Composable
-fun MyLoansScreen(viewModel: AppViewModel) {
+fun MyLoansScreen(viewModel: AppViewModel, onLoanClick: (Loan) -> Unit = {}) {
     val listState = rememberLazyListState()
 
     LaunchedEffect(Unit) { viewModel.loadMyLoans() }
@@ -62,36 +70,61 @@ fun MyLoansScreen(viewModel: AppViewModel) {
         if (shouldLoadMore) viewModel.loadMoreMyLoans()
     }
 
-    val state = viewModel.myLoans
-    when {
-        state.isLoading && state.data == null -> LoadingBox()
-        state.error != null && state.data == null -> ErrorBox(state.error)
-        state.data != null -> {
-            if (state.data.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No active loans", style = MaterialTheme.typography.bodyLarge)
-                }
-            } else {
-                LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
-                    items(state.data, key = { it.id ?: it.hashCode() }) { loan ->
-                        LoanCard(loan)
+    Column(modifier = Modifier.fillMaxSize()) {
+        LoanStatusFilterRow(
+            selected = viewModel.myLoansStatusFilter,
+            onSelect = { viewModel.loadMyLoans(it) }
+        )
+        val state = viewModel.myLoans
+        when {
+            state.isLoading && state.data == null -> LoadingBox()
+            state.error != null && state.data == null -> ErrorBox(state.error)
+            state.data != null -> {
+                if (state.data.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No loans", style = MaterialTheme.typography.bodyLarge)
                     }
-                    if (viewModel.myLoansNextPage != null) {
-                        item { LoadingFooter() }
+                } else {
+                    LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
+                        items(state.data, key = { it.id ?: it.hashCode() }) { loan ->
+                            LoanCard(loan, onClick = { onLoanClick(loan) })
+                        }
+                        if (viewModel.myLoansNextPage != null) {
+                            item { LoadingFooter() }
+                        }
                     }
                 }
             }
+            else -> LoadingBox()
         }
-        else -> LoadingBox()
     }
 }
 
 @Composable
-fun LoanCard(loan: Loan) {
+private fun LoanStatusFilterRow(selected: String, onSelect: (String) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        STATUS_OPTIONS.forEach { (value, label) ->
+            FilterChip(
+                selected = selected == value,
+                onClick = { if (selected != value) onSelect(value) },
+                label = { Text(label) }
+            )
+        }
+    }
+}
+
+@Composable
+fun LoanCard(loan: Loan, onClick: (() -> Unit)? = null) {
     val isTaken = loan.status.equals("taken", ignoreCase = true)
     val statusColor = if (isTaken) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
 
     Card(
+        onClick = onClick ?: {},
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -126,7 +159,10 @@ fun LoanCard(loan: Loan) {
                 Text("Taken: ${loan.takenDate.take(10)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (loan.returnDate != null) {
-                Text("Due: ${loan.returnDate.take(10)}", style = MaterialTheme.typography.labelSmall, color = if (isTaken) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+                val dateStr = loan.returnDate.take(10)
+                val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+                val isOverdue = isTaken && dateStr < today
+                Text("Due: $dateStr", style = MaterialTheme.typography.labelSmall, color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (loan.returnedDate != null) {
                 Text("Returned: ${loan.returnedDate.take(10)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

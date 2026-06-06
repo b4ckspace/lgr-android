@@ -89,6 +89,7 @@ interface ApiService {
 
     @GET("api/loans/")
     suspend fun getLoans(
+        @Query("status") status: String? = null,
         @Query("limit") limit: Int = 50,
         @Query("offset") offset: Int = 0
     ): PagedResponse<Loan>
@@ -98,6 +99,7 @@ interface ApiService {
 
     @GET("api/my_loans/")
     suspend fun getMyLoans(
+        @Query("status") status: String? = null,
         @Query("limit") limit: Int = 50,
         @Query("offset") offset: Int = 0
     ): PagedResponse<Loan>
@@ -107,4 +109,7 @@ interface ApiService {
 
     @POST("loan")
     suspend fun postLoan(@Body request: LoanRequest): LoanResponse
+
+    @PATCH
+    suspend fun patchLoan(@Url url: String, @Body body: okhttp3.RequestBody): Loan
 }

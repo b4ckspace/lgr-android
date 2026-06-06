@@ -27,6 +27,8 @@ fun HomeScreen(
     onItems: () -> Unit,
     onBarcodes: () -> Unit,
     onPersons: () -> Unit,
+    onLoans: () -> Unit,
+    onMyLoans: () -> Unit,
     showNew: Boolean = true,
     isAuthenticated: Boolean = false
 ) {
@@ -38,14 +40,12 @@ fun HomeScreen(
     ) {
         item { HomeTile(icon = Icons.Default.QrCodeScanner, label = "Details", onClick = onScanBarcode) }
         item { HomeTile(icon = Icons.Default.FactCheck, label = "Verify", onClick = onVerify) }
-        if (showNew) {
-            item { HomeTile(icon = Icons.Default.NoteAdd, label = "New", onClick = onNewBarcode) }
-        }
+        item { HomeTile(icon = Icons.Default.NoteAdd, label = "New", onClick = onNewBarcode, enabled = showNew) }
         item { HomeTile(icon = Icons.Default.Inventory, label = "Items", onClick = onItems) }
         item { HomeTile(icon = Icons.Default.QrCode, label = "Barcodes", onClick = onBarcodes) }
         item { HomeTile(icon = Icons.Default.People, label = "Persons", onClick = onPersons, enabled = isAuthenticated) }
-        item { HomeTile(icon = Icons.Default.List, label = "Loans", onClick = {}, enabled = false) }
-        item { HomeTile(icon = Icons.Default.AccountCircle, label = "My Loans", onClick = {}, enabled = false) }
+        item { HomeTile(icon = Icons.Default.List, label = "Loans", onClick = onLoans, enabled = isAuthenticated) }
+        item { HomeTile(icon = Icons.Default.AccountCircle, label = "My Loans", onClick = onMyLoans, enabled = isAuthenticated) }
     }
 }
 
