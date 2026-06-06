@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -29,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import de.backspace.lgr.data.model.Barcode
-import de.backspace.lgr.data.model.BarcodeStatus
 import de.backspace.lgr.data.model.Person
 import de.backspace.lgr.viewmodel.AppViewModel
 import kotlinx.coroutines.delay
@@ -47,7 +45,6 @@ fun BarcodesScreen(
     onScanSearch: () -> Unit = {}
 ) {
     var search by remember { mutableStateOf(viewModel.barcodesSearch) }
-    var showLoanDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val pullToRefreshState = rememberPullToRefreshState()
 
@@ -76,16 +73,6 @@ fun BarcodesScreen(
     }
     LaunchedEffect(shouldLoadMore) {
         if (shouldLoadMore) viewModel.loadMoreBarcodes()
-    }
-
-    if (showLoanDialog) {
-        LoanDialog(
-            viewModel = viewModel,
-            onDismiss = {
-                showLoanDialog = false
-                viewModel.resetLoanState()
-            }
-        )
     }
 
     Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
@@ -220,56 +207,30 @@ fun BarcodesScreen(
                 }
             }
 
-            if (viewModel.selectedBarcodes.isNotEmpty()) {
-                Surface(color = MaterialTheme.colorScheme.primaryContainer) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "${viewModel.selectedBarcodes.size} barcode(s) selected",
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                        TextButton(onClick = { viewModel.clearBarcodeSelection() }) { Text("Clear") }
+            val state = viewModel.barcodes
+            Box(modifier = Modifier.weight(1f)) {
+                when {
+                    state.isLoading && state.data == null -> LoadingBox()
+                    state.error != null && state.data == null -> ErrorBox(state.error)
+                    state.data != null -> LazyColumn(state = listState) {
+                        itemsIndexed(state.data, key = { _, barcode -> barcode.code }) { index, barcode ->
+                            BarcodeCard(
+                                barcode = barcode,
+                                isSelected = barcode.code in viewModel.selectedBarcodes,
+                                onToggle = { viewModel.toggleBarcodeSelection(barcode.code, barcode) },
+                                onTap = { onOpenDetail(state.data, index) }
+                            )
+                        }
+                        if (viewModel.barcodesNextPage != null) {
+                            item { LoadingFooter() }
+                        }
                     }
                 }
             }
 
-            val state = viewModel.barcodes
-            when {
-                state.isLoading && state.data == null -> LoadingBox()
-                state.error != null && state.data == null -> ErrorBox(state.error)
-                state.data != null -> LazyColumn(state = listState) {
-                    itemsIndexed(state.data, key = { _, barcode -> barcode.code }) { index, barcode ->
-                        BarcodeCard(
-                            barcode = barcode,
-                            isSelected = barcode.code in viewModel.selectedBarcodes,
-                            onToggle = { viewModel.toggleBarcodeSelection(barcode.code) },
-                            onTap = { onOpenDetail(state.data, index) }
-                        )
-                    }
-                    if (viewModel.barcodesNextPage != null) {
-                        item { LoadingFooter() }
-                    }
-                }
-            }
         }
 
         PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
-
-        if (viewModel.selectedBarcodes.isNotEmpty() && viewModel.isAuthenticated) {
-            FloatingActionButton(
-                onClick = { showLoanDialog = true },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-            ) {
-                Icon(Icons.Default.ShoppingCart, contentDescription = "Create loan")
-            }
-        }
     }
 }
 
@@ -291,7 +252,8 @@ fun BarcodeCard(barcode: Barcode, isSelected: Boolean, onToggle: () -> Unit, onT
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Checkbox(checked = isSelected, onCheckedChange = { onToggle() })
+            val isOnLoan = barcode.apiLoanInfo?.loan == true
+            Checkbox(checked = isSelected, onCheckedChange = { onToggle() }, enabled = !isOnLoan || isSelected)
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -312,99 +274,6 @@ fun BarcodeCard(barcode: Barcode, isSelected: Boolean, onToggle: () -> Unit, onT
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun LoanDialog(viewModel: AppViewModel, onDismiss: () -> Unit) {
-    var returnDate by remember { mutableStateOf("") }
-    val state = viewModel.loanState
-    val success = state.data?.message?.contains("created", ignoreCase = true) == true
-
-    LaunchedEffect(success) {
-        if (success) onDismiss()
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Create Loan") },
-        text = {
-            Column {
-                Text(
-                    "Selected: ${viewModel.selectedBarcodes.joinToString(", ")}",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Spacer(Modifier.height(10.dp))
-
-                OutlinedTextField(
-                    value = returnDate,
-                    onValueChange = { returnDate = it },
-                    label = { Text("Return date (YYYY-MM-DD)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = lgrTextFieldColors()
-                )
-
-                if (state.isLoading) {
-                    Spacer(Modifier.height(12.dp))
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                }
-
-                state.data?.let { response ->
-                    Spacer(Modifier.height(12.dp))
-                    if (!response.blocked.isNullOrEmpty()) {
-                        Text("Blocked items:", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelMedium)
-                        response.blocked.forEach { BarcodeStatusRow(it, blocked = true) }
-                    }
-                    if (!response.items.isNullOrEmpty()) {
-                        Text("Available items:", style = MaterialTheme.typography.labelMedium)
-                        response.items.forEach { BarcodeStatusRow(it, blocked = false) }
-                    }
-                    response.message?.let {
-                        Spacer(Modifier.height(4.dp))
-                        Text(it, style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-
-                state.error?.let {
-                    Spacer(Modifier.height(8.dp))
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        },
-        confirmButton = {
-            val hasPreview = state.data != null
-            val hasBlocked = state.data?.blocked?.isNotEmpty() == true
-            when {
-                !hasPreview -> Button(
-                    onClick = { viewModel.previewLoan(returnDate.takeIf { it.isNotBlank() }) },
-                    enabled = !state.isLoading
-                ) { Text("Preview") }
-                !hasBlocked -> Button(
-                    onClick = { viewModel.confirmLoan(returnDate.takeIf { it.isNotBlank() }) },
-                    enabled = !state.isLoading
-                ) { Text("Confirm") }
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
-    )
-}
-
-@Composable
-private fun BarcodeStatusRow(status: BarcodeStatus, blocked: Boolean) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        val color = if (blocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-        Text("• ${status.code}", color = color, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-        if (blocked && status.person.isNotBlank()) {
-            Text("(${status.person})", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
