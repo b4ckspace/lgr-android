@@ -262,7 +262,7 @@ Form to register a new barcode in the system.
 | Field | Notes |
 |---|---|
 | **Location** | Optional parent barcode. Type-ahead barcode search (min. 2 characters, 300 ms debounce) — suggestions show item name and code. Or tap the scan icon to scan a barcode. |
-| **Barcode** * | The barcode string. Enter manually or scan. Only accepts codes not already in the system (burp if already known). |
+| **Barcode** * | The barcode string. Enter manually, scan (camera icon), or tap **+1** to auto-generate the next available numeric code. While the +1 search is running a spinner is shown and the field is read-only; it becomes editable again once a free code is found. Only accepts codes not already in the system (burp if already known). |
 | **Item** * | Type-ahead search against the item catalogue (min. 2 characters, 300 ms debounce). Selecting a suggestion fills in the item description. If the name does not exist yet, a new item is created on save. |
 | **Description** | Free-text description for this specific barcode instance. |
 | **Item description** | Pre-filled from the selected item (read-only). Editable when no item is selected. |

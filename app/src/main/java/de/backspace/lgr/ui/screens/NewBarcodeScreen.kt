@@ -419,6 +419,7 @@ fun NewBarcodeScreen(
                         .onFocusChanged { barcodeFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
                         .onGloballyPositioned { if (barcodeFocused) focusedBounds = it.boundsInRoot() },
                     singleLine = true,
+                    readOnly = viewModel.newBarcodeGenerating,
                     colors = lgrTextFieldColors()
                 )
                 IconButton(
