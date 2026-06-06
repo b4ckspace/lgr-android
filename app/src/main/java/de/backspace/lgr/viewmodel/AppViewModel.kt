@@ -1275,6 +1275,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         currentLoan = loan
         currentLoanIsMyLoan = fromMyLoans
         returnLoanState = UiState()
+        if (!fromMyLoans && loan.status.equals("taken", ignoreCase = true)) {
+            viewModelScope.launch {
+                val myIds = runCatching { repo.getMyLoans(status = "taken") }
+                    .getOrNull()?.results?.mapNotNull { it.id }?.toSet() ?: return@launch
+                if (loan.id != null && loan.id in myIds) currentLoanIsMyLoan = true
+            }
+        }
     }
 
     fun returnCurrentLoan() = viewModelScope.launch {
