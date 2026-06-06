@@ -119,25 +119,25 @@ fun LoanDetailScreen(
                 loan.description?.takeIf { it.isNotBlank() }?.let { desc ->
                     item {
                         Text("Description:", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
-                        Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(desc, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
                 item {
                     Column(modifier = Modifier.padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        loan.takenDate?.let { Text("Taken: ${it.take(10)}", style = MaterialTheme.typography.bodySmall) }
+                        loan.takenDate?.let { Text("Taken: ${it.take(10)}", style = MaterialTheme.typography.bodyMedium) }
                         loan.returnDate?.let {
                             val dateStr = it.take(10)
                             val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
                             val isOverdue = isTaken && dateStr < today
                             Text(
                                 "Return by: $dateStr",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodyMedium,
                                 color = if (isOverdue) LOAN_STATUS_TAKEN_COLOR else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         loan.returnedDate?.let {
-                            Text("Returned: ${it.take(10)}", style = MaterialTheme.typography.bodySmall)
+                            Text("Returned: ${it.take(10)}", style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
