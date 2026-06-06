@@ -2,21 +2,33 @@ package de.backspace.lgr.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import de.backspace.lgr.data.model.Loan
 import de.backspace.lgr.viewmodel.AppViewModel
 
 private val STATUS_OPTIONS = listOf("taken" to "Taken", "returned" to "Returned", "" to "All")
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoansScreen(viewModel: AppViewModel, onLoanClick: (Loan) -> Unit = {}) {
+fun LoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Unit = { _, _ -> }) {
     val listState = rememberLazyListState()
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    LaunchedEffect(pullToRefreshState.isRefreshing) {
+        if (pullToRefreshState.isRefreshing) viewModel.loadLoans()
+    }
+    LaunchedEffect(viewModel.loans.isLoading) {
+        if (!viewModel.loans.isLoading && pullToRefreshState.isRefreshing) pullToRefreshState.endRefresh()
+    }
 
     LaunchedEffect(Unit) { viewModel.loadLoans() }
 
@@ -31,31 +43,43 @@ fun LoansScreen(viewModel: AppViewModel, onLoanClick: (Loan) -> Unit = {}) {
         if (shouldLoadMore) viewModel.loadMoreLoans()
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        LoanStatusFilterRow(
-            selected = viewModel.loansStatusFilter,
-            onSelect = { viewModel.loadLoans(it) }
-        )
-        val state = viewModel.loans
-        when {
-            state.isLoading && state.data == null -> LoadingBox()
-            state.error != null && state.data == null -> ErrorBox(state.error)
-            state.data != null -> LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
-                items(state.data, key = { it.id ?: it.hashCode() }) { loan ->
-                    LoanCard(loan, onClick = { onLoanClick(loan) })
+    Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            LoanStatusFilterRow(
+                selected = viewModel.loansStatusFilter,
+                onSelect = { viewModel.loadLoans(it) }
+            )
+            val state = viewModel.loans
+            when {
+                state.isLoading && state.data == null -> LoadingBox()
+                state.error != null && state.data == null -> ErrorBox(state.error)
+                state.data != null -> LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
+                    itemsIndexed(state.data, key = { _, loan -> loan.id ?: loan.hashCode() }) { index, loan ->
+                        LoanCard(loan, onClick = { onOpenDetail(state.data, index) })
+                    }
+                    if (viewModel.loansNextPage != null) {
+                        item { LoadingFooter() }
+                    }
                 }
-                if (viewModel.loansNextPage != null) {
-                    item { LoadingFooter() }
-                }
+                else -> LoadingBox()
             }
-            else -> LoadingBox()
         }
+        PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyLoansScreen(viewModel: AppViewModel, onLoanClick: (Loan) -> Unit = {}) {
+fun MyLoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Unit = { _, _ -> }) {
     val listState = rememberLazyListState()
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    LaunchedEffect(pullToRefreshState.isRefreshing) {
+        if (pullToRefreshState.isRefreshing) viewModel.loadMyLoans()
+    }
+    LaunchedEffect(viewModel.myLoans.isLoading) {
+        if (!viewModel.myLoans.isLoading && pullToRefreshState.isRefreshing) pullToRefreshState.endRefresh()
+    }
 
     LaunchedEffect(Unit) { viewModel.loadMyLoans() }
 
@@ -70,33 +94,36 @@ fun MyLoansScreen(viewModel: AppViewModel, onLoanClick: (Loan) -> Unit = {}) {
         if (shouldLoadMore) viewModel.loadMoreMyLoans()
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        LoanStatusFilterRow(
-            selected = viewModel.myLoansStatusFilter,
-            onSelect = { viewModel.loadMyLoans(it) }
-        )
-        val state = viewModel.myLoans
-        when {
-            state.isLoading && state.data == null -> LoadingBox()
-            state.error != null && state.data == null -> ErrorBox(state.error)
-            state.data != null -> {
-                if (state.data.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No loans", style = MaterialTheme.typography.bodyLarge)
-                    }
-                } else {
-                    LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
-                        items(state.data, key = { it.id ?: it.hashCode() }) { loan ->
-                            LoanCard(loan, onClick = { onLoanClick(loan) })
+    Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            LoanStatusFilterRow(
+                selected = viewModel.myLoansStatusFilter,
+                onSelect = { viewModel.loadMyLoans(it) }
+            )
+            val state = viewModel.myLoans
+            when {
+                state.isLoading && state.data == null -> LoadingBox()
+                state.error != null && state.data == null -> ErrorBox(state.error)
+                state.data != null -> {
+                    if (state.data.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("No loans", style = MaterialTheme.typography.bodyLarge)
                         }
-                        if (viewModel.myLoansNextPage != null) {
-                            item { LoadingFooter() }
+                    } else {
+                        LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
+                            itemsIndexed(state.data, key = { _, loan -> loan.id ?: loan.hashCode() }) { index, loan ->
+                                LoanCard(loan, onClick = { onOpenDetail(state.data, index) })
+                            }
+                            if (viewModel.myLoansNextPage != null) {
+                                item { LoadingFooter() }
+                            }
                         }
                     }
                 }
+                else -> LoadingBox()
             }
-            else -> LoadingBox()
         }
+        PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
     }
 }
 

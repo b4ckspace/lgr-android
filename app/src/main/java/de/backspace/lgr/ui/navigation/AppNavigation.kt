@@ -224,14 +224,14 @@ fun AppNavigation(viewModel: AppViewModel) {
             }
             composable(Screen.Persons.route) { PersonsScreen(viewModel) }
             composable(Screen.Loans.route) {
-                LoansScreen(viewModel, onLoanClick = { loan ->
-                    viewModel.openLoan(loan, fromMyLoans = false)
+                LoansScreen(viewModel, onOpenDetail = { list, index ->
+                    viewModel.openLoanFromList(list, index, fromMyLoans = false)
                     navController.navigate("loan_detail")
                 })
             }
             composable(Screen.MyLoans.route) {
-                MyLoansScreen(viewModel, onLoanClick = { loan ->
-                    viewModel.openLoan(loan, fromMyLoans = true)
+                MyLoansScreen(viewModel, onOpenDetail = { list, index ->
+                    viewModel.openLoanFromList(list, index, fromMyLoans = true)
                     navController.navigate("loan_detail")
                 })
             }
@@ -425,7 +425,7 @@ fun AppNavigation(viewModel: AppViewModel) {
             composable("loan_detail") {
                 LoanDetailScreen(
                     viewModel = viewModel,
-                    onBack = { navController.popBackStack() },
+                    onBack = { viewModel.clearLoanListContext(); navController.popBackStack() },
                     onBarcodeClick = { code ->
                         viewModel.clearBarcodeListContext()
                         viewModel.loadBarcode(code)

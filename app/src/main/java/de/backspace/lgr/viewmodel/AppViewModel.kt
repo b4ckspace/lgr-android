@@ -77,6 +77,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var currentLoanIsMyLoan by mutableStateOf(false)
         private set
+    var loanListContext by mutableStateOf<List<Loan>?>(null)
+        private set
+    var loanListIndex by mutableStateOf(0)
+        private set
+    private var loanListFromMyLoans = false
     var returnLoanState by mutableStateOf(UiState<Loan>())
         private set
     var deleteBarcodeState by mutableStateOf(UiState<Unit>())
@@ -1270,6 +1275,22 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         loanState = UiState()
         loanConflictMessage = null
     }
+
+    fun openLoanFromList(list: List<Loan>, index: Int, fromMyLoans: Boolean) {
+        loanListContext = list
+        loanListIndex = index
+        loanListFromMyLoans = fromMyLoans
+        openLoan(list[index], fromMyLoans)
+    }
+
+    fun navigateToLoanInList(index: Int) {
+        val list = loanListContext ?: return
+        if (index !in list.indices) return
+        loanListIndex = index
+        openLoan(list[index], loanListFromMyLoans)
+    }
+
+    fun clearLoanListContext() { loanListContext = null }
 
     fun openLoan(loan: Loan, fromMyLoans: Boolean = false) {
         currentLoan = loan
