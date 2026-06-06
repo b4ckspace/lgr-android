@@ -90,13 +90,18 @@ Authentication uses Django session cookies. CSRF tokens are extracted from the c
 
 ### Home
 
-Three quick-action tiles:
+Quick-action tiles and tab shortcuts:
 
 | Tile | Action |
 |---|---|
 | **Details** | Scan a barcode and jump directly to its detail view |
 | **Verify** | Start a content-verification scan session |
 | **New** | Open the New Barcode form (authenticated users only) |
+| **Items** | Jump to the Items tab |
+| **Barcodes** | Jump to the Barcodes tab |
+| **Persons** | Jump to the Persons tab (requires login) |
+| **Loans** | Jump to the Loans tab (requires login) |
+| **My Loans** | Jump to the My Loans tab (requires login) |
 
 ---
 
@@ -268,16 +273,34 @@ Form to register a new barcode in the system.
 
 ---
 
-### Loans (work in progress)
+### Loans tab
 
-The Loans and My Loans tabs are present in the navigation bar but not yet implemented. Loan creation via the barcode selection + cart flow is functional.
+Paginated list of all loans (requires login). Tap any loan card to open the **Loan Detail** screen.
+
+**Loan card shows:** Loan ID, status badge (TAKEN / RETURNED), description, barcode codes preview, taken date, due date, returned date.
+
+### My Loans tab
+
+Paginated list of the current user's loans (requires login). Same UI as Loans. Tap any card to open **Loan Detail** with an additional **Return loan** button.
+
+### Loan Detail
+
+Shows all fields for a loan:
+- Status badge, description, taken/return/returned dates
+- Full list of barcodes — each is a tappable link to its Barcode Detail screen
+- **Return loan** button — visible in My Loans only when status is TAKEN. Opens a confirmation dialog; on confirm, marks the loan as returned and refreshes both loan lists.
+
+### Loan Cart
+
+When one or more barcodes have been added to the loan selection (via the shopping cart icon in Barcode Detail), a **🛒 N** badge appears in the top bar on all non-camera screens. Tapping it opens the Loan Cart screen.
 
 **Creating a loan:**
-1. Select one or more barcodes in the Barcodes tab (or via the cart icon in the detail view).
-2. Tap the cart FAB.
-3. Optionally enter a return date (`YYYY-MM-DD`).
-4. **Preview** — shows which barcodes are available and which are blocked (already on loan to someone else).
-5. **Confirm** — creates the loan.
+1. Add barcodes to the cart using the cart icon in Barcode Detail.
+2. Tap the cart badge in the top bar.
+3. Review the barcode list (each entry is a tappable link to its Barcode Detail). Remove items with ×.
+4. Optionally set a return date via the calendar picker or by typing `YYYY-MM-DD`.
+5. **Preview** — shows which barcodes are available (green) and which are blocked (red, already on loan to someone else).
+6. **Confirm** — creates the loan with the available barcodes. On success, the cart is cleared and you are navigated to the My Loans tab.
 
 ---
 
@@ -310,7 +333,6 @@ A compact icon-only bottom bar is always visible (except on camera/scanner scree
 
 ## Known Limitations
 
-- The Loans and My Loans tabs are placeholders (display nothing).
 - No offline support — all data is fetched live from the backend.
 - Session is not persisted across app restarts; you must log in again after closing the app.
 - The server URL must be reachable directly (no OAuth / proxy support).
