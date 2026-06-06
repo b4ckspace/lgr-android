@@ -292,7 +292,7 @@ fun VerifyBarcodeScreen(
                     .padding(horizontal = 24.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
             ) {
-                if (hasMismatches) {
+                if (hasMismatches && !viewModel.readonlyMode) {
                     OutlinedButton(onClick = onCancel) { Text("Cancel") }
                     Button(
                         onClick = { viewModel.saveVerifyChanges() },
