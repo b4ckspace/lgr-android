@@ -172,27 +172,27 @@ fun LoanCard(loan: Loan, onClick: (() -> Unit)? = null) {
 
             if (!loan.description.isNullOrBlank()) {
                 Spacer(Modifier.height(4.dp))
-                Text(loan.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(loan.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
             Spacer(Modifier.height(6.dp))
             Text(
                 "${loan.barcodes.size} barcode(s): ${loan.barcodes.take(3).joinToString(", ")}${if (loan.barcodes.size > 3) "…" else ""}",
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodyMedium
             )
 
             if (loan.takenDate != null) {
                 Spacer(Modifier.height(4.dp))
-                Text("Taken: ${loan.takenDate.take(10)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Taken: ${loan.takenDate.take(10)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (loan.returnDate != null) {
                 val dateStr = loan.returnDate.take(10)
                 val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
                 val isOverdue = isTaken && dateStr < today
-                Text("Due: $dateStr", style = MaterialTheme.typography.labelSmall, color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Due: $dateStr", style = MaterialTheme.typography.bodySmall, color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (loan.returnedDate != null) {
-                Text("Returned: ${loan.returnedDate.take(10)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Returned: ${loan.returnedDate.take(10)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
