@@ -279,16 +279,23 @@ Paginated list of all loans (requires login). Tap any loan card to open the **Lo
 
 **Loan card shows:** Loan ID, status badge (TAKEN / RETURNED), description, barcode codes preview, taken date, due date, returned date.
 
+- **Pull to refresh** — pull down on the list to force a reload.
+- **Arrow buttons and swipe left/right** navigate through the result set in Loan Detail (same as Barcodes and Items).
+
 ### My Loans tab
 
-Paginated list of the current user's loans (requires login). Same UI as Loans. Tap any card to open **Loan Detail** with an additional **Return loan** button.
+Paginated list of the current user's loans (requires login). Same UI as Loans.
+
+- **Pull to refresh** — pull down on the list to force a reload.
+- **Arrow buttons and swipe left/right** navigate through the result set in Loan Detail.
 
 ### Loan Detail
 
 Shows all fields for a loan:
-- Status badge, description, taken/return/returned dates
+- Status badge, person, description, taken/return/returned dates
 - Full list of barcodes — each is a tappable link to its Barcode Detail screen
-- **Return loan** button — visible in My Loans only when status is TAKEN. Opens a confirmation dialog; on confirm, marks the loan as returned and refreshes both loan lists.
+- **Arrow buttons** (and swipe left/right) to navigate to the previous/next loan in the list, pinned to the bottom of the screen.
+- **Return loan** button — visible when status is TAKEN and the loan belongs to the current user (regardless of whether it was opened from Loans or My Loans). Opens a confirmation dialog; on confirm, marks the loan as returned and refreshes both loan lists.
 
 ### Loan Cart
 
