@@ -88,7 +88,7 @@ fun LoginScreen(viewModel: AppViewModel) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Backend supports images", style = MaterialTheme.typography.bodyMedium)
+            Text("Backend supports item images", style = MaterialTheme.typography.bodyMedium)
             Switch(
                 checked = viewModel.supportsImages,
                 onCheckedChange = { viewModel.applySupportsImages(it) }
