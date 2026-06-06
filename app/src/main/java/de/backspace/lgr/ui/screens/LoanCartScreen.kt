@@ -199,7 +199,7 @@ fun LoanCartScreen(
                                 }
                                 withStyle(SpanStyle(color = GREY_CART)) { append("(${bs.code})") }
                             },
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
@@ -226,7 +226,7 @@ fun LoanCartScreen(
                                     }
                                     withStyle(SpanStyle(color = GREY_CART)) { append("(${bs.code})") }
                                 },
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodyMedium,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
