@@ -1322,21 +1322,21 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun resetReturnLoanState() { returnLoanState = UiState() }
 
-    fun previewLoan(returnDate: String?) = viewModelScope.launch {
+    fun previewLoan(returnDate: String?, description: String?) = viewModelScope.launch {
         loanConflictMessage = null
         loanState = UiState(isLoading = true)
-        runCatching { repo.loanBarcodes(selectedBarcodes.toList(), returnDate, preview = true) }
+        runCatching { repo.loanBarcodes(selectedBarcodes.toList(), returnDate, description, preview = true) }
             .onSuccess { loanState = UiState(data = it) }
             .onFailure { loanState = UiState(error = it.localizedMessage) }
     }
 
-    fun confirmLoan(returnDate: String?) = viewModelScope.launch {
+    fun confirmLoan(returnDate: String?, description: String?) = viewModelScope.launch {
         val codesToLoan = loanState.data?.items?.map { it.code }
             ?.takeIf { it.isNotEmpty() }
             ?: selectedBarcodes.toList()
         loanConflictMessage = null
         loanState = UiState(isLoading = true)
-        runCatching { repo.loanBarcodes(codesToLoan, returnDate, preview = false) }
+        runCatching { repo.loanBarcodes(codesToLoan, returnDate, description, preview = false) }
             .onSuccess {
                 loanState = UiState(data = it)
                 if (it.message?.contains("created") == true) {
@@ -1349,7 +1349,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             .onFailure { e ->
                 if (e is retrofit2.HttpException && e.code() == 400) {
                     loanConflictMessage = "Availability changed — preview has been updated."
-                    runCatching { repo.loanBarcodes(selectedBarcodes.toList(), returnDate, preview = true) }
+                    runCatching { repo.loanBarcodes(selectedBarcodes.toList(), returnDate, description, preview = true) }
                         .onSuccess { loanState = UiState(data = it) }
                         .onFailure { loanState = UiState(error = it.toUserMessage()) }
                 } else {

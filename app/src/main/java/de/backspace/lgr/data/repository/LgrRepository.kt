@@ -104,11 +104,13 @@ class LgrRepository {
     suspend fun loanBarcodes(
         codes: List<String>,
         returnDate: String?,
+        description: String?,
         preview: Boolean
     ) = api.postLoan(
         LoanRequest(
             items = codes.map { BarcodeCodeItem(it) },
             returnDate = returnDate,
+            description = description?.takeIf { it.isNotBlank() },
             preview = preview
         )
     )

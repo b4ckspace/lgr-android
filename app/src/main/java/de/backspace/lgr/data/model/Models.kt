@@ -74,6 +74,7 @@ data class Loan(
 data class LoanRequest(
     val items: List<BarcodeCodeItem>,
     @SerializedName("return_date") val returnDate: String?,
+    val description: String? = null,
     val preview: Boolean = false
 )
 

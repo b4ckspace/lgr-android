@@ -17,6 +17,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import de.backspace.lgr.viewmodel.AppViewModel
 import java.text.SimpleDateFormat
@@ -33,6 +34,8 @@ fun LoanCartScreen(
     onBarcodeClick: (String) -> Unit,
     onConfirmed: () -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
+    var description by remember { mutableStateOf("") }
     var returnDate by remember { mutableStateOf("") }
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
@@ -78,6 +81,17 @@ fun LoanCartScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item { Spacer(Modifier.height(4.dp)) }
+
+            // Description
+            item {
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description (optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
 
             // Return date picker
             item {
@@ -245,12 +259,12 @@ fun LoanCartScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     OutlinedButton(
-                        onClick = { viewModel.previewLoan(effectiveDate) },
+                        onClick = { focusManager.clearFocus(); viewModel.previewLoan(effectiveDate, description.takeIf { it.isNotBlank() }) },
                         enabled = viewModel.selectedBarcodes.isNotEmpty() && !loanState.isLoading,
                         modifier = Modifier.weight(1f)
                     ) { Text("Preview") }
                     Button(
-                        onClick = { viewModel.confirmLoan(effectiveDate) },
+                        onClick = { viewModel.confirmLoan(effectiveDate, description.takeIf { it.isNotBlank() }) },
                         enabled = hasPreview && availableItems.isNotEmpty() && !loanState.isLoading,
                         modifier = Modifier.weight(1f)
                     ) {
