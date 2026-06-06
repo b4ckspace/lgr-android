@@ -97,6 +97,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var itemListIndex by mutableStateOf(0)
         private set
     var scannedBarcode by mutableStateOf(UiState<Barcode>())
+    var barcodeJustCreated by mutableStateOf(false)
+        private set
     var scannedChildCodes by mutableStateOf<Set<String>>(emptySet())
         private set
     var newScannedBarcodes by mutableStateOf<List<Barcode>>(emptyList())
@@ -299,6 +301,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun applyEditItemDeleteImage(value: Boolean) { editItemDeleteImage = value }
 
     fun clearNewBarcodeState() {
+        barcodeJustCreated = false
         newBarcodeState = UiState()
         newBarcodeCode = ""
         newBarcodeGenerating = false
@@ -506,6 +509,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 runCatching { repo.uploadItemImage(itemUrl, pendingImageBytes) }.isSuccess
             val refreshed = if (imageUploaded) runCatching { repo.getBarcode(code) }.getOrNull() ?: barcode else barcode
             scannedBarcode = UiState(data = refreshed)
+            barcodeJustCreated = true
             barcodeHistory = emptyList()
             barcodeForwardHistory = emptyList()
             barcodeListContext = null
@@ -909,6 +913,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun loadBarcode(code: String) = viewModelScope.launch {
+        barcodeJustCreated = false
         pendingNewParent = null
         saveParentState = UiState()
         childLoanJob?.cancel()

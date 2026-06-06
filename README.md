@@ -139,7 +139,7 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 - **Pull to refresh** — pull down to reload the current barcode's data from the backend.
 
 **Actions (authenticated):**
-- **New** — create a new barcode (same as Home → New)
+- **New** — create another barcode immediately (only shown right after a barcode was just created, to support rapid sequential entry)
 - **Edit** — open the Edit Barcode screen (see below)
 - **Cart** — add the current barcode to the loan selection and return to the list
 - **Delete** — confirmation dialog, then permanently deletes the barcode and returns to the list

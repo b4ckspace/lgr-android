@@ -218,8 +218,10 @@ fun BarcodeDetailScreen(
             if (!viewModel.readonlyMode) {
                 state.data?.let { barcode ->
                     Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
-                        IconButton(onClick = onNewBarcode) {
-                            Icon(Icons.Default.NoteAdd, contentDescription = "New Barcode")
+                        if (viewModel.barcodeJustCreated) {
+                            IconButton(onClick = onNewBarcode) {
+                                Icon(Icons.Default.NoteAdd, contentDescription = "New Barcode")
+                            }
                         }
                         IconButton(onClick = onEditBarcode) {
                             Icon(Icons.Default.Edit, contentDescription = "Edit Barcode")
