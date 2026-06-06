@@ -61,12 +61,24 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var loans by mutableStateOf(UiState<List<Loan>>())
     var loansNextPage by mutableStateOf<String?>(null)
+    var loansStatusFilter by mutableStateOf("taken")
     var myLoans by mutableStateOf(UiState<List<Loan>>())
     var myLoansNextPage by mutableStateOf<String?>(null)
+    var myLoansStatusFilter by mutableStateOf("taken")
     var tags by mutableStateOf(UiState<List<Tag>>())
 
     var selectedBarcodes by mutableStateOf<Set<String>>(emptySet())
+    var selectedBarcodeDetails by mutableStateOf<Map<String, Barcode>>(emptyMap())
+        private set
     var loanState by mutableStateOf(UiState<LoanResponse>())
+    var loanConflictMessage by mutableStateOf<String?>(null)
+        private set
+    var currentLoan by mutableStateOf<Loan?>(null)
+        private set
+    var currentLoanIsMyLoan by mutableStateOf(false)
+        private set
+    var returnLoanState by mutableStateOf(UiState<Loan>())
+        private set
     var deleteBarcodeState by mutableStateOf(UiState<Unit>())
         private set
     var currentItem by mutableStateOf<Item?>(null)
@@ -211,6 +223,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private var searchJob: Job? = null
     private var childLoanJob: Job? = null
     private val ownerNameCache = mutableMapOf<String, String>()
+    private val barcodeNameCache = mutableMapOf<String, String>()
     private val barcodeScrollPositions = mutableMapOf<String, Pair<Int, Int>>()
 
     fun saveScrollPosition(code: String, index: Int, offset: Int) {
@@ -234,6 +247,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             }
             ?: url
         ownerNameCache[url] = name
+        return name
+    }
+
+    suspend fun resolveBarcodeName(code: String): String? {
+        barcodeNameCache[code]?.let { return it }
+        val name = runCatching { repo.getBarcode(code) }.getOrNull()?.itemName?.takeIf { it.isNotBlank() } ?: return null
+        barcodeNameCache[code] = name
         return name
     }
 
@@ -603,7 +623,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun resetLoanState() { loanState = UiState() }
+    fun resetLoanState() { loanState = UiState(); loanConflictMessage = null }
 
     fun checkAuth() = viewModelScope.launch {
         auth = UiState(isLoading = true)
@@ -746,9 +766,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         loadPersons()
     }
 
-    fun loadLoans() = viewModelScope.launch {
+    fun loadLoans(status: String? = loansStatusFilter) = viewModelScope.launch {
+        loansStatusFilter = status ?: ""
         loans = UiState(isLoading = true)
-        runCatching { repo.getLoans() }
+        runCatching { repo.getLoans(status.takeIf { !it.isNullOrBlank() }) }
             .onSuccess { loans = UiState(data = it.results); loansNextPage = it.next }
             .onFailure { loans = UiState(error = it.localizedMessage) }
     }
@@ -761,9 +782,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun loadMyLoans() = viewModelScope.launch {
+    fun loadMyLoans(status: String? = myLoansStatusFilter) = viewModelScope.launch {
+        myLoansStatusFilter = status ?: ""
         myLoans = UiState(isLoading = true)
-        runCatching { repo.getMyLoans() }
+        runCatching { repo.getMyLoans(status.takeIf { !it.isNullOrBlank() }) }
             .onSuccess { myLoans = UiState(data = it.results); myLoansNextPage = it.next }
             .onFailure { myLoans = UiState(error = it.localizedMessage) }
     }
@@ -1223,16 +1245,57 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun clearBarcodeListContext() { barcodeListContext = null }
 
-    fun toggleBarcodeSelection(code: String) {
-        selectedBarcodes = if (code in selectedBarcodes) selectedBarcodes - code else selectedBarcodes + code
+    fun toggleBarcodeSelection(code: String, knownBarcode: Barcode? = null) {
+        if (code in selectedBarcodes) {
+            selectedBarcodes = selectedBarcodes - code
+            selectedBarcodeDetails = selectedBarcodeDetails - code
+        } else {
+            selectedBarcodes = selectedBarcodes + code
+            val detail = knownBarcode ?: scannedBarcode.data?.takeIf { it.code == code }
+            detail?.let { selectedBarcodeDetails = selectedBarcodeDetails + (code to it) }
+        }
+        loanState = UiState()
     }
 
     fun clearBarcodeSelection() {
         selectedBarcodes = emptySet()
+        selectedBarcodeDetails = emptyMap()
         loanState = UiState()
+        loanConflictMessage = null
     }
 
+    fun expressLoan(barcode: Barcode) {
+        selectedBarcodes = setOf(barcode.code)
+        selectedBarcodeDetails = mapOf(barcode.code to barcode)
+        loanState = UiState()
+        loanConflictMessage = null
+    }
+
+    fun openLoan(loan: Loan, fromMyLoans: Boolean = false) {
+        currentLoan = loan
+        currentLoanIsMyLoan = fromMyLoans
+        returnLoanState = UiState()
+    }
+
+    fun returnCurrentLoan() = viewModelScope.launch {
+        val loan = currentLoan ?: return@launch
+        val id = loan.id ?: return@launch
+        val url = if (currentLoanIsMyLoan) ApiClient.getMyLoanUrl(id) else ApiClient.getLoanUrl(id)
+        returnLoanState = UiState(isLoading = true)
+        runCatching { repo.returnLoan(url) }
+            .onSuccess {
+                returnLoanState = UiState(data = it)
+                currentLoan = it
+                loadMyLoans()
+                loadLoans()
+            }
+            .onFailure { returnLoanState = UiState(error = it.toUserMessage()) }
+    }
+
+    fun resetReturnLoanState() { returnLoanState = UiState() }
+
     fun previewLoan(returnDate: String?) = viewModelScope.launch {
+        loanConflictMessage = null
         loanState = UiState(isLoading = true)
         runCatching { repo.loanBarcodes(selectedBarcodes.toList(), returnDate, preview = true) }
             .onSuccess { loanState = UiState(data = it) }
@@ -1240,17 +1303,31 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun confirmLoan(returnDate: String?) = viewModelScope.launch {
+        val codesToLoan = loanState.data?.items?.map { it.code }
+            ?.takeIf { it.isNotEmpty() }
+            ?: selectedBarcodes.toList()
+        loanConflictMessage = null
         loanState = UiState(isLoading = true)
-        runCatching { repo.loanBarcodes(selectedBarcodes.toList(), returnDate, preview = false) }
+        runCatching { repo.loanBarcodes(codesToLoan, returnDate, preview = false) }
             .onSuccess {
                 loanState = UiState(data = it)
                 if (it.message?.contains("created") == true) {
                     selectedBarcodes = emptySet()
+                    selectedBarcodeDetails = emptyMap()
                     loadBarcodes()
                     loadMyLoans()
                 }
             }
-            .onFailure { loanState = UiState(error = it.localizedMessage) }
+            .onFailure { e ->
+                if (e is retrofit2.HttpException && e.code() == 400) {
+                    loanConflictMessage = "Availability changed — preview has been updated."
+                    runCatching { repo.loanBarcodes(selectedBarcodes.toList(), returnDate, preview = true) }
+                        .onSuccess { loanState = UiState(data = it) }
+                        .onFailure { loanState = UiState(error = it.toUserMessage()) }
+                } else {
+                    loanState = UiState(error = e.toUserMessage())
+                }
+            }
     }
 }
 
