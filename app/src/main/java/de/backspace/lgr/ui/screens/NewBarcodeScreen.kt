@@ -163,18 +163,8 @@ fun NewBarcodeScreen(
         }
         delay(300)
         val results = viewModel.searchItemsWithCounts(query).sortedBy { (item, _) -> item.name.lowercase() }
-        val exactMatch = results.find { (item, _) -> item.name.equals(query.trim(), ignoreCase = true) }
-        if (exactMatch != null && results.size == 1) {
-            viewModel.newBarcodeNameQuery = exactMatch.first.name
-            viewModel.newBarcodeSelectedItem = exactMatch.first
-            viewModel.newBarcodeItemDescription = exactMatch.first.description
-            viewModel.setNewBarcodePendingImage(null)
-            itemSuggestions = emptyList()
-            showSuggestions = false
-        } else {
-            itemSuggestions = results
-            showSuggestions = results.isNotEmpty()
-        }
+        itemSuggestions = results
+        showSuggestions = results.isNotEmpty()
     }
 
     LaunchedEffect(viewModel.newBarcodeOwnerQuery) {
