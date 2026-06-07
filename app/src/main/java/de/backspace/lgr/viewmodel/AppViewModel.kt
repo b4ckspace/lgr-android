@@ -534,6 +534,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun generateNextAvailableBarcode() = viewModelScope.launch {
         if (newBarcodeGenerating) return@launch
+        newBarcodeState = UiState()
         newBarcodeGenerating = true
         var code = newBarcodeCode
         for (i in 0 until 100) {
@@ -585,6 +586,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         verifyContents = emptyList()
         verifyPhase = VerifyPhase.CONTENT
         verifyState = UiState()
+    }
+
+    fun refreshVerifyLocation(): Job = viewModelScope.launch {
+        val location = verifyLocation ?: return@launch
+        val refreshed = runCatching { repo.getBarcode(location.code) }.getOrNull() ?: return@launch
+        verifyLocation = refreshed
     }
 
     suspend fun onVerifyBarcodeScanned(code: String): ScanResult {
