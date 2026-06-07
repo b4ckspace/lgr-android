@@ -18,6 +18,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material.icons.filled.NoteAdd
+import androidx.compose.material.icons.outlined.FactCheck
+import androidx.compose.material.icons.outlined.NoteAdd
+import androidx.compose.material.icons.outlined.QrCodeScanner
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Clear
@@ -26,7 +30,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AddShoppingCart
-import androidx.compose.material.icons.filled.QrCodeScanner
+
 import androidx.compose.material.icons.filled.RemoveShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -460,7 +464,7 @@ private fun LocationSection(
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
-                        Icons.Default.QrCodeScanner,
+                        Icons.Outlined.QrCodeScanner,
                         contentDescription = "Scan new parent",
                         modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.primary
@@ -616,30 +620,7 @@ private fun ContentListSection(
             )
             if (!viewModel.readonlyMode) {
                 Row {
-                    IconButton(onClick = onReScan, modifier = Modifier.size(32.dp)) {
-                        Icon(
-                            Icons.Default.FactCheck,
-                            contentDescription = "Re-scan content",
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    IconButton(onClick = onAddContent, modifier = Modifier.size(32.dp)) {
-                        Icon(
-                            Icons.Default.QrCodeScanner,
-                            contentDescription = "Add contents",
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    IconButton(onClick = onNewBarcodeAsChild, modifier = Modifier.size(32.dp)) {
-                        Icon(
-                            Icons.Default.NoteAdd,
-                            contentDescription = "New barcode in this location",
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    // Search to add
                     IconButton(
                         onClick = {
                             showTextSearch = !showTextSearch
@@ -652,8 +633,36 @@ private fun ContentListSection(
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
-                            if (showTextSearch) Icons.Default.Close else Icons.Default.Search,
+                            if (showTextSearch) Icons.Default.Close else Icons.Outlined.Search,
                             contentDescription = if (showTextSearch) "Close search" else "Search to add",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    // Scan to add
+                    IconButton(onClick = onAddContent, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            Icons.Outlined.QrCodeScanner,
+                            contentDescription = "Scan to add",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    // New barcode as child
+                    IconButton(onClick = onNewBarcodeAsChild, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            Icons.Outlined.NoteAdd,
+                            contentDescription = "New barcode in this location",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    // Verify
+                    IconButton(onClick = onReScan, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            Icons.Outlined.FactCheck,
+                            contentDescription = "Re-scan content",
                             modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
