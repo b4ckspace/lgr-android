@@ -300,6 +300,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
     fun applyEditItemDeleteImage(value: Boolean) { editItemDeleteImage = value }
 
+    fun prepareNewBarcodeAsChild(parentCode: String) {
+        clearNewBarcodeState()
+        newBarcodeParentCode = parentCode
+    }
+
     fun clearNewBarcodeState() {
         barcodeJustCreated = false
         newBarcodeState = UiState()

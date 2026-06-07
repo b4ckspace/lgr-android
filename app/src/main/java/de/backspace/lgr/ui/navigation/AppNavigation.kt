@@ -262,6 +262,11 @@ fun AppNavigation(viewModel: AppViewModel) {
                         navController.navigate("edit_barcode")
                     },
                     onGoToCart = { navController.navigate("loan_cart") },
+                    onNewBarcodeAsChild = {
+                        val code = viewModel.scannedBarcode.data?.code ?: return@BarcodeDetailScreen
+                        viewModel.prepareNewBarcodeAsChild(code)
+                        navController.navigate("new_barcode")
+                    },
                     onItemClick = {
                         val barcode = viewModel.scannedBarcode.data ?: return@BarcodeDetailScreen
                         val item = de.backspace.lgr.data.model.Item(

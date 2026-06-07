@@ -72,6 +72,7 @@ fun BarcodeDetailScreen(
     onScanParent: () -> Unit,
     onAddContent: () -> Unit,
     onNewBarcode: () -> Unit = {},
+    onNewBarcodeAsChild: () -> Unit = {},
     onEditBarcode: () -> Unit = {},
     onGoToCart: () -> Unit = {},
     onItemClick: (() -> Unit)? = null
@@ -380,7 +381,8 @@ fun BarcodeDetailScreen(
                                     barcode = barcode,
                                     onBarcodeClick = onBarcodeClick,
                                     onAddContent = onAddContent,
-                                    onReScan = { viewModel.startContentScan(); onScanContent() }
+                                    onReScan = { viewModel.startContentScan(); onScanContent() },
+                                    onNewBarcodeAsChild = onNewBarcodeAsChild
                                 )
                             }
                         }
@@ -568,7 +570,8 @@ private fun ContentListSection(
     barcode: Barcode,
     onBarcodeClick: (String) -> Unit,
     onAddContent: () -> Unit,
-    onReScan: () -> Unit
+    onReScan: () -> Unit,
+    onNewBarcodeAsChild: () -> Unit = {}
 ) {
     val scanActive = viewModel.contentScanActive
     val existingChildren = barcode.apiChildNames ?: emptyList()
@@ -625,6 +628,14 @@ private fun ContentListSection(
                         Icon(
                             Icons.Default.QrCodeScanner,
                             contentDescription = "Add contents",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    IconButton(onClick = onNewBarcodeAsChild, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            Icons.Default.NoteAdd,
+                            contentDescription = "New barcode in this location",
                             modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
