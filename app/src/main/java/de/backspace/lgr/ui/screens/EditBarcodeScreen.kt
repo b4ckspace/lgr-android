@@ -295,7 +295,7 @@ fun EditBarcodeScreen(
                     label = { Text("Barcode") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    readOnly = true,
+                    enabled = false,
                     colors = lgrTextFieldColors()
                 )
             }
