@@ -242,6 +242,7 @@ The result screen shows a two-column table:
 - Tapping any barcode entry in either column navigates to its Barcode Detail. The Android back button returns to the verify result.
 - The location breadcrumb ancestors and the **Item** row are tappable links (shown in primary colour) — tapping navigates to the respective Barcode Detail or Item Detail.
 - A re-scan icon in the *Content* header lets you re-run the content scan.
+- **Pull to refresh** — pull down on the result screen to reload the location's current data from the backend; the list of already-scanned items in the current session is preserved.
 - The list auto-scrolls so the *Content* header is the first visible item when the screen opens.
 - The result screen highlights the **Barcodes** tab.
 
