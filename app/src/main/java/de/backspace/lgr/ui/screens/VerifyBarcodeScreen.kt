@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -181,7 +181,7 @@ fun VerifyBarcodeScreen(
                                 modifier = Modifier.size(32.dp)
                             ) {
                                 Icon(
-                                    Icons.Default.QrCodeScanner,
+                                    Icons.Outlined.QrCodeScanner,
                                     contentDescription = "Re-scan content",
                                     modifier = Modifier.size(18.dp),
                                     tint = MaterialTheme.colorScheme.primary
