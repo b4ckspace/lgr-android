@@ -694,7 +694,16 @@ fun NewBarcodeScreen(
         ) {
             OutlinedButton(onClick = onBack) { Text("Cancel") }
             Button(
-                onClick = { viewModel.createNewBarcode() },
+                onClick = {
+                    if (viewModel.newBarcodeOwnerUrl == null && viewModel.newBarcodeOwnerQuery.isNotBlank()) {
+                        val match = ownerSuggestions.find { it.displayName().equals(viewModel.newBarcodeOwnerQuery.trim(), ignoreCase = true) }
+                        if (match != null) {
+                            viewModel.newBarcodeSelectedPerson = match
+                            viewModel.newBarcodeOwnerUrl = match.url
+                        }
+                    }
+                    viewModel.createNewBarcode()
+                },
                 enabled = canSave
             ) {
                 if (newBarcodeState.isLoading) CircularProgressIndicator(
