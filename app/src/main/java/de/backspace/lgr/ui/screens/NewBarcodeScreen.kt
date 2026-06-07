@@ -176,18 +176,8 @@ fun NewBarcodeScreen(
         }
         delay(300)
         val results = viewModel.searchPersons(query).sortedBy { it.displayName().lowercase() }
-        val exactMatches = results.filter { it.displayName().equals(query.trim(), ignoreCase = true) }
-        if (exactMatches.size == 1) {
-            val person = exactMatches.first()
-            viewModel.newBarcodeOwnerQuery = person.displayName()
-            viewModel.newBarcodeSelectedPerson = person
-            viewModel.newBarcodeOwnerUrl = person.url
-            ownerSuggestions = emptyList()
-            showOwnerSuggestions = false
-        } else {
-            ownerSuggestions = results
-            showOwnerSuggestions = results.isNotEmpty()
-        }
+        ownerSuggestions = results
+        showOwnerSuggestions = results.isNotEmpty()
     }
 
     // Sync location field when scan updates newBarcodeParentCode externally
