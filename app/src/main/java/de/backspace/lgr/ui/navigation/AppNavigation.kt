@@ -253,7 +253,8 @@ fun AppNavigation(viewModel: AppViewModel) {
                         navController.navigate("add_content_scan")
                     },
                     onNewBarcode = {
-                        viewModel.clearNewBarcodeState()
+                        val locationCode = viewModel.scannedBarcode.data?.apiParentNames?.lastOrNull()?.code ?: ""
+                        viewModel.prepareNewBarcodeAsChild(locationCode)
                         navController.navigate("new_barcode")
                     },
                     onEditBarcode = {
