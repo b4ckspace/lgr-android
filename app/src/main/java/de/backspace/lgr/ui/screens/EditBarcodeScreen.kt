@@ -105,17 +105,8 @@ fun EditBarcodeScreen(
         }
         delay(300)
         val results = viewModel.searchItemsWithCounts(query).sortedBy { (item, _) -> item.name.lowercase() }
-        val exactMatch = results.find { (item, _) -> item.name.equals(query.trim(), ignoreCase = true) }
-        if (exactMatch != null && results.size == 1) {
-            viewModel.editBarcodeNameQuery = exactMatch.first.name
-            viewModel.editBarcodeSelectedItem = exactMatch.first
-            viewModel.editBarcodeItemDescription = exactMatch.first.description
-            itemSuggestions = emptyList()
-            showSuggestions = false
-        } else {
-            itemSuggestions = results
-            showSuggestions = results.isNotEmpty()
-        }
+        itemSuggestions = results
+        showSuggestions = results.isNotEmpty()
     }
 
     LaunchedEffect(viewModel.editBarcodeOwnerQuery) {
@@ -127,18 +118,8 @@ fun EditBarcodeScreen(
         }
         delay(300)
         val results = viewModel.searchPersons(query).sortedBy { it.displayName().lowercase() }
-        val exactMatches = results.filter { it.displayName().equals(query.trim(), ignoreCase = true) }
-        if (exactMatches.size == 1) {
-            val person = exactMatches.first()
-            viewModel.editBarcodeOwnerQuery = person.displayName()
-            viewModel.editBarcodeSelectedPerson = person
-            viewModel.editBarcodeOwnerUrl = person.url
-            ownerSuggestions = emptyList()
-            showOwnerSuggestions = false
-        } else {
-            ownerSuggestions = results
-            showOwnerSuggestions = results.isNotEmpty()
-        }
+        ownerSuggestions = results
+        showOwnerSuggestions = results.isNotEmpty()
     }
 
     LaunchedEffect(viewModel.editBarcodeLocationQuery) {
