@@ -107,7 +107,7 @@ fun ItemsScreen(viewModel: AppViewModel, onOpenDetail: ((List<Item>, Int) -> Uni
             state.isLoading && state.data == null -> LoadingBox()
             state.error != null && state.data == null -> ErrorBox(state.error)
             state.data != null -> {
-                LazyColumn(state = listState) {
+                LazyColumn(modifier = Modifier.fillMaxSize().verticalScrollbar(listState), state = listState) {
                     itemsIndexed(state.data, key = { _, item -> item.url }) { index, item ->
                         ItemCard(item, onClick = onOpenDetail?.let { cb -> { cb(state.data, index) } })
                     }

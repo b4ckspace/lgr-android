@@ -53,7 +53,7 @@ fun LoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Unit
             when {
                 state.isLoading && state.data == null -> LoadingBox()
                 state.error != null && state.data == null -> ErrorBox(state.error)
-                state.data != null -> LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
+                state.data != null -> LazyColumn(modifier = Modifier.fillMaxSize().verticalScrollbar(listState), state = listState) {
                     itemsIndexed(state.data, key = { _, loan -> loan.id ?: loan.hashCode() }) { index, loan ->
                         LoanCard(loan, onClick = { onOpenDetail(state.data, index) })
                     }
@@ -110,7 +110,7 @@ fun MyLoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Un
                             Text("No loans", style = MaterialTheme.typography.bodyLarge)
                         }
                     } else {
-                        LazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
+                        LazyColumn(modifier = Modifier.fillMaxSize().verticalScrollbar(listState), state = listState) {
                             itemsIndexed(state.data, key = { _, loan -> loan.id ?: loan.hashCode() }) { index, loan ->
                                 LoanCard(loan, onClick = { onOpenDetail(state.data, index) })
                             }

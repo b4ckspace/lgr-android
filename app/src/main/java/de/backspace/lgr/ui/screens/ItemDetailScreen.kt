@@ -10,6 +10,7 @@ import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -61,6 +62,7 @@ fun ItemDetailScreen(
     val deleteState = viewModel.deleteItemState
     val itemList = viewModel.itemListContext
     val currentIndex = viewModel.itemListIndex
+    val listState = rememberLazyListState()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showFullscreenImage by remember { mutableStateOf(false) }
     val hasBarcodes = barcodesState.data?.isNotEmpty() == true
@@ -210,7 +212,8 @@ fun ItemDetailScreen(
 
             Column(modifier = Modifier.fillMaxSize()) {
                 LazyColumn(
-                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    state = listState,
+                    modifier = Modifier.fillMaxWidth().weight(1f).verticalScrollbar(listState),
                     contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {

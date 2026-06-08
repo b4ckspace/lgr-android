@@ -326,7 +326,7 @@ fun BarcodeDetailScreen(
                     Column(modifier = Modifier.fillMaxSize().imePadding()) {
                         LazyColumn(
                             state = listState,
-                            modifier = Modifier.fillMaxWidth().weight(1f),
+                            modifier = Modifier.fillMaxWidth().weight(1f).verticalScrollbar(listState),
                             contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {

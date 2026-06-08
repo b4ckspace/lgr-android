@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
@@ -44,6 +45,7 @@ fun LoanDetailScreen(
     val swipeThresholdPx = with(LocalDensity.current) { 60.dp.toPx() }
     var dragTotal by remember(currentIndex) { mutableStateOf(0f) }
 
+    val listState = rememberLazyListState()
     var showReturnConfirm by remember { mutableStateOf(false) }
 
     if (showReturnConfirm) {
@@ -94,8 +96,10 @@ fun LoanDetailScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            Box(modifier = Modifier.weight(1f).fillMaxWidth().verticalScrollbar(listState)) {
             LazyColumn(
-                modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
+                state = listState,
+                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 item { Spacer(Modifier.height(4.dp)) }
@@ -193,6 +197,7 @@ fun LoanDetailScreen(
 
                 item { Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars)) }
             }
+            } // Box
 
             if (loanList != null) {
                 HorizontalDivider()
