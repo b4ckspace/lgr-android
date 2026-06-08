@@ -310,7 +310,7 @@ When one or more barcodes have been added to the loan selection (via the shoppin
 3. Review the barcode list (each entry is a tappable link to its Barcode Detail). Remove items with ×.
 4. Optionally enter a **Description** for the loan.
 5. Optionally set a **Return date** via the calendar picker or by typing `YYYY-MM-DD`.
-6. **Preview** — shows which barcodes are available (green) and which are blocked (red, already on loan to someone else).
+6. **Preview** — shows which barcodes are available (green) and which are blocked (red, already on loan to someone else). Each entry is a tappable link to its Barcode Detail.
 7. **Confirm** — creates the loan with the available barcodes. On success, the cart is cleared and you are navigated to the My Loans tab.
 
 ---

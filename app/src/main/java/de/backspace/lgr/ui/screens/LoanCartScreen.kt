@@ -204,7 +204,10 @@ fun LoanCartScreen(
                                 withStyle(SpanStyle(color = GREY_CART)) { append("(${bs.code})") }
                             },
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onBarcodeClick(bs.code) }
+                                .padding(vertical = 2.dp),
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -220,7 +223,12 @@ fun LoanCartScreen(
                         )
                     }
                     items(blockedItems) { bs ->
-                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onBarcodeClick(bs.code) }
+                                .padding(vertical = 2.dp)
+                        ) {
                             Text(
                                 text = buildAnnotatedString {
                                     append("• ")
