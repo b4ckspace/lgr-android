@@ -231,14 +231,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private var childLoanJob: Job? = null
     private val ownerNameCache = mutableMapOf<String, String>()
     private val barcodeNameCache = mutableMapOf<String, String>()
-    private val barcodeScrollPositions = mutableMapOf<String, Pair<Int, Int>>()
+    // Pixel scroll offset per barcode (Barcode Detail uses a non-lazy scrollable Column).
+    private val barcodeScrollPositions = mutableMapOf<String, Int>()
 
-    fun saveScrollPosition(code: String, index: Int, offset: Int) {
-        barcodeScrollPositions[code] = index to offset
+    fun saveScrollPosition(code: String, scroll: Int) {
+        barcodeScrollPositions[code] = scroll
     }
 
-    fun getScrollPosition(code: String): Pair<Int, Int> =
-        barcodeScrollPositions[code] ?: (0 to 0)
+    fun getScrollPosition(code: String): Int =
+        barcodeScrollPositions[code] ?: 0
 
     suspend fun resolveOwnerName(url: String): String {
         ownerNameCache[url]?.takeIf { it != url }?.let { return it }

@@ -9,8 +9,8 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -39,6 +39,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
@@ -117,19 +119,22 @@ fun BarcodeDetailScreen(
         if (!state.isLoading && pullToRefreshState.isRefreshing) pullToRefreshState.endRefresh()
     }
 
-    val listState = rememberLazyListState()
+    val scrollState = rememberScrollState()
     val currentBarcodeCode by rememberUpdatedState(state.data?.code)
+    // Root-relative tops of the scroll viewport and the Content section, used to scroll
+    // the Content header to the top after a save (replaces LazyColumn's scrollToItem).
+    var viewportTopY by remember { mutableStateOf(0f) }
+    var contentSectionY by remember { mutableStateOf(0f) }
 
     LaunchedEffect(state.data?.code) {
         val code = state.data?.code ?: return@LaunchedEffect
-        val (index, offset) = viewModel.getScrollPosition(code)
-        listState.scrollToItem(index, offset)
+        scrollState.scrollTo(viewModel.getScrollPosition(code))
     }
 
-    LaunchedEffect(listState) {
-        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
-            .collect { (index, offset) ->
-                currentBarcodeCode?.let { viewModel.saveScrollPosition(it, index, offset) }
+    LaunchedEffect(scrollState) {
+        snapshotFlow { scrollState.value }
+            .collect { value ->
+                currentBarcodeCode?.let { viewModel.saveScrollPosition(it, value) }
             }
     }
 
@@ -309,77 +314,67 @@ fun BarcodeDetailScreen(
                 state.data != null -> {
                     val barcode = state.data
 
-                    // content item index varies with optional rows above it
-                    val contentItemIndex = 3 +
-                        (if (barcode.itemImage != null) 1 else 0) +
-                        (if (barcode.description.isNotBlank()) 1 else 0) +
-                        (if (barcode.itemDescription.isNotBlank()) 1 else 0) +
-                        (if (barcode.owner != null) 1 else 0) +
-                        (if (barcode.apiLoanInfo != null) 1 else 0) +
-                        (if (barcode.code in viewModel.selectedBarcodes) 1 else 0)
-
                     LaunchedEffect(viewModel.saveContentState.data) {
-                        if (viewModel.saveContentState.data != null)
-                            listState.animateScrollToItem(contentItemIndex)
+                        if (viewModel.saveContentState.data != null) {
+                            val target = (scrollState.value + (contentSectionY - viewportTopY))
+                                .roundToInt().coerceAtLeast(0)
+                            scrollState.animateScrollTo(target)
+                        }
                     }
 
                     Column(modifier = Modifier.fillMaxSize().imePadding()) {
-                        LazyColumn(
-                            state = listState,
-                            modifier = Modifier.fillMaxWidth().weight(1f).verticalScrollbar(listState),
-                            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .onGloballyPositioned { viewportTopY = it.boundsInRoot().top }
+                                .verticalScrollbar(scrollState)
+                                .verticalScroll(scrollState)
+                                .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            item {
-                                LocationSection(
-                                    barcode = barcode,
-                                    viewModel = viewModel,
-                                    onBarcodeClick = onBarcodeClick,
-                                    onScanParent = onScanParent
-                                )
-                            }
+                            LocationSection(
+                                barcode = barcode,
+                                viewModel = viewModel,
+                                onBarcodeClick = onBarcodeClick,
+                                onScanParent = onScanParent
+                            )
 
-                            item { DetailRow("Barcode", barcode.code) }
-                            item { DetailRow("Item", barcode.itemName, valueColor = MaterialTheme.colorScheme.onSurface, onClick = onItemClick) }
+                            DetailRow("Barcode", barcode.code)
+                            DetailRow("Item", barcode.itemName, valueColor = MaterialTheme.colorScheme.onSurface, onClick = onItemClick)
                             if (barcode.itemImage != null)
-                                item {
-                                    AsyncImage(
-                                        model = barcode.itemImage,
-                                        contentDescription = "Item image",
-                                        imageLoader = viewModel.imageLoader,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(200.dp)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .clickable { showFullscreenImage = true },
-                                        contentScale = ContentScale.Crop
-                                    )
-                                }
+                                AsyncImage(
+                                    model = barcode.itemImage,
+                                    contentDescription = "Item image",
+                                    imageLoader = viewModel.imageLoader,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable { showFullscreenImage = true },
+                                    contentScale = ContentScale.Crop
+                                )
                             if (barcode.description.isNotBlank())
-                                item { DetailRow("Barcode description", barcode.description) }
+                                DetailRow("Barcode description", barcode.description)
                             if (barcode.itemDescription.isNotBlank())
-                                item { DetailRow("Item description", barcode.itemDescription) }
+                                DetailRow("Item description", barcode.itemDescription)
                             if (barcode.owner != null)
-                                item { DetailRow("Owner", ownerName ?: "…") }
+                                DetailRow("Owner", ownerName ?: "…")
                             barcode.apiLoanInfo?.let { loan ->
-                                item {
-                                    val text = if (loan.loan)
-                                        "On loan${loan.person?.let { " — $it" } ?: ""}"
-                                    else "Available"
-                                    val color = if (loan.loan) LOAN_BLUE else GREEN
-                                    DetailRow("Loan", text, valueColor = color)
-                                }
+                                val text = if (loan.loan)
+                                    "On loan${loan.person?.let { " — $it" } ?: ""}"
+                                else "Available"
+                                val color = if (loan.loan) LOAN_BLUE else GREEN
+                                DetailRow("Loan", text, valueColor = color)
                             }
                             if (barcode.code in viewModel.selectedBarcodes)
-                                item {
-                                    Text(
-                                        "Already in loan selection",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
+                                Text(
+                                    "Already in loan selection",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
 
-                            item {
+                            Box(modifier = Modifier.onGloballyPositioned { contentSectionY = it.boundsInRoot().top }) {
                                 ContentListSection(
                                     viewModel = viewModel,
                                     barcode = barcode,
