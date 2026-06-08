@@ -94,6 +94,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var itemBarcodes by mutableStateOf(UiState<List<Barcode>>())
         private set
+    // Barcodes already fetched per item name, so swiping between items in Item Detail
+    // does not re-fetch. Pull-to-refresh forces a reload and refreshes this entry.
+    private val itemBarcodesCache = mutableMapOf<String, List<Barcode>>()
     var deleteItemState by mutableStateOf(UiState<Unit>())
         private set
     var itemListContext by mutableStateOf<List<Item>?>(null)
@@ -398,6 +401,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             saveBarcodeEditState = UiState(data = refreshed)
             barcodesNeedRefresh = true
             itemsNeedRefresh = true
+            // Item assignment may have moved from the old item to a new one.
+            invalidateItemBarcodesCache(barcode.itemName, itemName)
             refreshItemDetail()
         }.onFailure {
             saveBarcodeEditState = UiState(error = it.toUserMessage())
@@ -531,6 +536,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             saveParentState = UiState()
             barcodesNeedRefresh = true
             itemsNeedRefresh = true
+            // A new barcode now belongs to this item.
+            invalidateItemBarcodesCache(itemName)
             newBarcodeState = UiState(data = barcode)
         }.onFailure {
             newBarcodeState = UiState(error = it.toUserMessage())
@@ -826,11 +833,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun deleteBarcode(code: String) = viewModelScope.launch {
         deleteBarcodeState = UiState(isLoading = true)
+        val deletedItemName = scannedBarcode.data?.takeIf { it.code == code }?.itemName
         runCatching { repo.deleteBarcode(code) }
             .onSuccess {
                 deleteBarcodeState = UiState(data = Unit)
                 barcodesReturnFromDetail = false
                 barcodesNeedRefresh = true
+                // The deleted barcode no longer belongs to its item.
+                invalidateItemBarcodesCache(deletedItemName)
                 refreshItemDetail()
             }
             .onFailure { deleteBarcodeState = UiState(error = it.toUserMessage()) }
@@ -838,16 +848,31 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun resetDeleteBarcodeState() { deleteBarcodeState = UiState() }
 
+    // Drop cached barcode lists for the given item names (the barcode set of those items
+    // has changed), so a later visit re-fetches. Blank/null names are ignored.
+    private fun invalidateItemBarcodesCache(vararg itemNames: String?) {
+        itemNames.forEach { name -> name?.takeIf { it.isNotBlank() }?.let { itemBarcodesCache.remove(it) } }
+    }
+
+    private fun loadItemBarcodes(item: Item, forceRefresh: Boolean = false) {
+        val cached = itemBarcodesCache[item.name]
+        if (cached != null && !forceRefresh) {
+            itemBarcodes = UiState(data = cached)
+            return
+        }
+        itemBarcodes = UiState(isLoading = true)
+        viewModelScope.launch {
+            runCatching { repo.getBarcodesByItem(item.name) }
+                .onSuccess { itemBarcodesCache[item.name] = it; itemBarcodes = UiState(data = it) }
+                .onFailure { itemBarcodes = UiState(error = it.localizedMessage) }
+        }
+    }
+
     fun openItemDetail(item: Item) {
         currentItem = item
         deleteItemState = UiState()
         itemListContext = null
-        itemBarcodes = UiState(isLoading = true)
-        viewModelScope.launch {
-            runCatching { repo.getBarcodesByItem(item.name) }
-                .onSuccess { itemBarcodes = UiState(data = it) }
-                .onFailure { itemBarcodes = UiState(error = it.localizedMessage) }
-        }
+        loadItemBarcodes(item)
     }
 
     fun openItemFromList(list: List<Item>, index: Int) {
@@ -863,12 +888,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         currentItem = item
         deleteItemState = UiState()
         itemListIndex = index
-        itemBarcodes = UiState(isLoading = true)
-        viewModelScope.launch {
-            runCatching { repo.getBarcodesByItem(item.name) }
-                .onSuccess { itemBarcodes = UiState(data = it) }
-                .onFailure { itemBarcodes = UiState(error = it.localizedMessage) }
-        }
+        loadItemBarcodes(item)
     }
 
     fun deleteItem() = viewModelScope.launch {
@@ -1244,12 +1264,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refreshItemDetail() {
         val item = currentItem ?: return
-        itemBarcodes = UiState(isLoading = true)
-        viewModelScope.launch {
-            runCatching { repo.getBarcodesByItem(item.name) }
-                .onSuccess { itemBarcodes = UiState(data = it) }
-                .onFailure { itemBarcodes = UiState(error = it.localizedMessage) }
-        }
+        loadItemBarcodes(item, forceRefresh = true)
     }
 
     fun openBarcodeFromList(list: List<Barcode>, index: Int) {

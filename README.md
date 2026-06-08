@@ -182,7 +182,7 @@ Searchable, paginated list of item types (the catalogue, not individual barcoded
 - **Pull to refresh** — pull down on the list to force a reload (respects the active search and filter).
 - **Cached on tab switch** — the result set and active search string are preserved when switching away and back.
 - Tap any item to open its **Item Detail** page.
-- **Arrow buttons and swipe left/right** navigate through the result set (same as Barcodes).
+- **Arrow buttons and swipe left/right** navigate through the result set (same as Barcodes). Each item's barcodes are cached once loaded, so swiping back to an already-visited item shows them instantly without re-fetching (pull to refresh forces a reload).
 
 ---
 
