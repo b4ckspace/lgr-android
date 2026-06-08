@@ -3,6 +3,7 @@ package de.backspace.lgr.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.FactCheck
@@ -32,8 +33,11 @@ fun HomeScreen(
     showNew: Boolean = true,
     isAuthenticated: Boolean = false
 ) {
+    val gridState = rememberLazyGridState()
+    Box(modifier = Modifier.fillMaxSize().verticalScrollbar(gridState)) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
+        state = gridState,
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -47,6 +51,7 @@ fun HomeScreen(
         item { HomeTile(icon = Icons.Default.List, label = "Loans", onClick = onLoans, enabled = isAuthenticated) }
         item { HomeTile(icon = Icons.Default.AccountCircle, label = "My Loans", onClick = onMyLoans, enabled = isAuthenticated) }
     }
+    } // Box
 }
 
 @Composable
