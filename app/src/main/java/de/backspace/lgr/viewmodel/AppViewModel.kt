@@ -61,9 +61,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var loans by mutableStateOf(UiState<List<Loan>>())
     var loansNextPage by mutableStateOf<String?>(null)
+    var loansCount by mutableStateOf<Int?>(null)
+        private set
     var loansStatusFilter by mutableStateOf("taken")
     var myLoans by mutableStateOf(UiState<List<Loan>>())
     var myLoansNextPage by mutableStateOf<String?>(null)
+    var myLoansCount by mutableStateOf<Int?>(null)
+        private set
     var myLoansStatusFilter by mutableStateOf("taken")
     var tags by mutableStateOf(UiState<List<Tag>>())
 
@@ -792,7 +796,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         loansStatusFilter = status ?: ""
         loans = UiState(isLoading = true)
         runCatching { repo.getLoans(status.takeIf { !it.isNullOrBlank() }) }
-            .onSuccess { loans = UiState(data = it.results); loansNextPage = it.next }
+            .onSuccess { loans = UiState(data = it.results); loansNextPage = it.next; loansCount = it.count }
             .onFailure { loans = UiState(error = it.localizedMessage) }
     }
 
@@ -808,7 +812,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         myLoansStatusFilter = status ?: ""
         myLoans = UiState(isLoading = true)
         runCatching { repo.getMyLoans(status.takeIf { !it.isNullOrBlank() }) }
-            .onSuccess { myLoans = UiState(data = it.results); myLoansNextPage = it.next }
+            .onSuccess { myLoans = UiState(data = it.results); myLoansNextPage = it.next; myLoansCount = it.count }
             .onFailure { myLoans = UiState(error = it.localizedMessage) }
     }
 

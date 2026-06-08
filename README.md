@@ -280,6 +280,7 @@ Paginated list of all loans (requires login). Tap any loan card to open the **Lo
 
 **Loan card shows:** Loan ID, status badge (TAKEN / RETURNED), description, barcode codes preview, taken date, due date, returned date.
 
+- **Result count** — a row below the status filter shows the number of loans matching the current filter.
 - **Pull to refresh** — pull down on the list to force a reload.
 - **Arrow buttons and swipe left/right** navigate through the result set in Loan Detail (same as Barcodes and Items).
 
@@ -287,6 +288,7 @@ Paginated list of all loans (requires login). Tap any loan card to open the **Lo
 
 Paginated list of the current user's loans (requires login). Same UI as Loans.
 
+- **Result count** — a row below the status filter shows the number of loans matching the current filter.
 - **Pull to refresh** — pull down on the list to force a reload.
 - **Arrow buttons and swipe left/right** navigate through the result set in Loan Detail.
 

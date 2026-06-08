@@ -49,6 +49,7 @@ fun LoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Unit
                 selected = viewModel.loansStatusFilter,
                 onSelect = { viewModel.loadLoans(it) }
             )
+            LoanCountRow(viewModel.loansCount)
             val state = viewModel.loans
             when {
                 state.isLoading && state.data == null -> LoadingBox()
@@ -100,6 +101,7 @@ fun MyLoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Un
                 selected = viewModel.myLoansStatusFilter,
                 onSelect = { viewModel.loadMyLoans(it) }
             )
+            LoanCountRow(viewModel.myLoansCount)
             val state = viewModel.myLoans
             when {
                 state.isLoading && state.data == null -> LoadingBox()
@@ -124,6 +126,23 @@ fun MyLoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Un
             }
         }
         PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
+    }
+}
+
+@Composable
+private fun LoanCountRow(count: Int?) {
+    Row(
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp).fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Spacer(modifier = Modifier.weight(1f))
+        count?.let {
+            Text(
+                text = "$it ${if (it == 1) "result" else "results"}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
