@@ -177,6 +177,7 @@ fun EditBarcodeScreen(
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).imePadding()
         ) {
+        HorizontalDivider()
         Box(
             modifier = Modifier
                 .weight(1f)

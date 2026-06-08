@@ -118,6 +118,7 @@ fun VerifyBarcodeScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            HorizontalDivider()
             Box(modifier = Modifier.weight(1f).fillMaxWidth().nestedScroll(pullRefreshState.nestedScrollConnection)) {
             LazyColumn(
                 state = listState,

@@ -323,6 +323,7 @@ fun BarcodeDetailScreen(
                     }
 
                     Column(modifier = Modifier.fillMaxSize().imePadding()) {
+                        HorizontalDivider()
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()

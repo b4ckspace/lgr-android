@@ -161,6 +161,7 @@ fun EditItemScreen(
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).imePadding()
         ) {
+            HorizontalDivider()
             Column(
                 modifier = Modifier
                     .weight(1f)

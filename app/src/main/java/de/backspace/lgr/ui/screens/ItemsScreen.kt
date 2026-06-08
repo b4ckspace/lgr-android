@@ -102,6 +102,8 @@ fun ItemsScreen(viewModel: AppViewModel, onOpenDetail: ((List<Item>, Int) -> Uni
             }
         }
 
+        HorizontalDivider()
+
         val state = viewModel.items
         when {
             state.isLoading && state.data == null -> LoadingBox()

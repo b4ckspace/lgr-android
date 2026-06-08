@@ -207,6 +207,8 @@ fun BarcodesScreen(
                 }
             }
 
+            HorizontalDivider()
+
             val state = viewModel.barcodes
             Box(modifier = Modifier.weight(1f)) {
                 when {

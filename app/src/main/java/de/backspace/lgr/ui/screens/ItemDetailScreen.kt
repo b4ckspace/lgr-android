@@ -211,6 +211,7 @@ fun ItemDetailScreen(
             }
 
             Column(modifier = Modifier.fillMaxSize()) {
+                HorizontalDivider()
                 LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxWidth().weight(1f).verticalScrollbar(listState),

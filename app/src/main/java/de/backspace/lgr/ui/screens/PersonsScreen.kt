@@ -86,6 +86,8 @@ fun PersonsScreen(viewModel: AppViewModel) {
                 }
             }
 
+            HorizontalDivider()
+
             val state = viewModel.persons
             when {
                 state.isLoading && state.data == null -> LoadingBox()

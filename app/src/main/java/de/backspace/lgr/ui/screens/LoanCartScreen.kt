@@ -78,7 +78,9 @@ fun LoanCartScreen(
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding).verticalScrollbar(listState)) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        HorizontalDivider()
+        Box(modifier = Modifier.weight(1f).fillMaxWidth().verticalScrollbar(listState)) {
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
@@ -289,5 +291,6 @@ fun LoanCartScreen(
             item { Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars)) }
         }
         } // Box
+        } // Column
     }
 }

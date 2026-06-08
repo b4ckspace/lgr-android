@@ -96,6 +96,7 @@ fun LoanDetailScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            HorizontalDivider()
             Box(modifier = Modifier.weight(1f).fillMaxWidth().verticalScrollbar(listState)) {
             LazyColumn(
                 state = listState,

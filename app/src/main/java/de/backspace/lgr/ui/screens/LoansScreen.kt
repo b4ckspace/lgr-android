@@ -50,6 +50,7 @@ fun LoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Unit
                 onSelect = { viewModel.loadLoans(it) }
             )
             LoanCountRow(viewModel.loansCount)
+            HorizontalDivider()
             val state = viewModel.loans
             when {
                 state.isLoading && state.data == null -> LoadingBox()
@@ -102,6 +103,7 @@ fun MyLoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Un
                 onSelect = { viewModel.loadMyLoans(it) }
             )
             LoanCountRow(viewModel.myLoansCount)
+            HorizontalDivider()
             val state = viewModel.myLoans
             when {
                 state.isLoading && state.data == null -> LoadingBox()
