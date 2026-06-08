@@ -277,6 +277,7 @@ fun NewBarcodeScreen(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
+                .verticalScrollbar(scrollState)
                 .onGloballyPositioned {
                     val bounds = it.boundsInRoot()
                     viewportTop = bounds.top

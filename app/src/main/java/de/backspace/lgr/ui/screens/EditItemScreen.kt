@@ -70,6 +70,7 @@ fun EditItemScreen(
     onSaved: () -> Unit
 ) {
     val saveState = viewModel.saveItemEditState
+    val scrollState = rememberScrollState()
 
     LaunchedEffect(saveState.data) {
         if (saveState.data != null) onSaved()
@@ -164,7 +165,8 @@ fun EditItemScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScrollbar(scrollState)
+                    .verticalScroll(scrollState)
                     .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
