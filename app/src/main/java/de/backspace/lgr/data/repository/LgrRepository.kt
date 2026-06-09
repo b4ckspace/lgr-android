@@ -47,6 +47,21 @@ class LgrRepository {
     suspend fun getPersonsPage(url: String) = api.getPersonsPage(url)
     suspend fun getPersonByUrl(url: String) = api.getPersonByUrl(url)
 
+    suspend fun createPerson(nickname: String, firstname: String, lastname: String, email: String) =
+        api.createPerson(CreatePersonRequest(nickname, firstname, lastname, email))
+
+    suspend fun updatePerson(url: String, nickname: String, firstname: String, lastname: String, email: String): Person {
+        val map: Map<String, Any?> = mapOf("nickname" to nickname, "firstname" to firstname, "lastname" to lastname, "email" to email)
+        val json = com.google.gson.Gson().toJson(map)
+        val body = json.toRequestBody("application/json; charset=utf-8".toMediaType())
+        return api.patchPerson(url, body)
+    }
+
+    suspend fun deletePerson(url: String) {
+        val response = api.deletePerson(url)
+        if (!response.isSuccessful) throw retrofit2.HttpException(response)
+    }
+
     suspend fun getItems(search: String? = null, limit: Int = 50, offset: Int = 0, noBarcodes: Boolean = false) =
         api.getItems(search.takeIf { !it.isNullOrBlank() }, limit, offset, noBarcodes.takeIf { it })
 

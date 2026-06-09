@@ -57,6 +57,15 @@ interface ApiService {
     @GET
     suspend fun getPersonByUrl(@Url url: String): Person
 
+    @POST("api/persons/")
+    suspend fun createPerson(@Body request: CreatePersonRequest): Person
+
+    @PATCH
+    suspend fun patchPerson(@Url url: String, @Body body: okhttp3.RequestBody): Person
+
+    @DELETE
+    suspend fun deletePerson(@Url url: String): retrofit2.Response<Void>
+
     @GET("api/items/")
     suspend fun getItems(
         @Query("search") search: String? = null,

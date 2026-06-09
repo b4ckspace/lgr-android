@@ -211,10 +211,35 @@ Searchable, paginated list of persons (requires login).
 
 - Text search by name/nickname.
 - Displays full name (primary), nickname (if different), and email per person.
+- Result count shown on the right of the row above the list.
+- **New person** (person-add icon, left of the count row) — opens the New Person screen. Hidden in read-only mode.
 - Infinite scroll.
 - **Pull to refresh** — pull down to force a reload.
 - **Cached on tab switch** — the result set and active search string are preserved when switching away and back.
+- Tap any person to open its **Person Detail** page.
+- **Arrow buttons and swipe left/right** navigate through the result set (same as Items and Barcodes).
 - The tab is disabled when not logged in.
+
+---
+
+### Person Detail
+
+Reachable by tapping a person in the Persons tab.
+
+**Displayed fields:** Nickname, First name, Last name, Email (each shown only when set; nickname is always shown). Long-press a field to copy its value.
+
+- **Pull to refresh** — pull down to reload the person from the backend.
+- **Arrow buttons and swipe left/right** navigate through the result set (same as Items and Barcodes).
+
+**Actions (authenticated, hidden in read-only mode):**
+- **Edit** (pencil icon) — opens the Edit Person screen. Editable fields: Nickname (required), First name, Last name, Email. **Cancel** and **Save** buttons are at the bottom of the screen.
+- **Delete** (trashcan icon) — opens a confirmation dialog and permanently deletes the person.
+
+---
+
+### New Person
+
+Reachable via the person-add icon in the Persons tab. Same form as Edit Person: Nickname (required), First name, Last name, Email, with **Cancel** and **Save** at the bottom. On success, the new person's **Person Detail** page opens.
 
 ---
 

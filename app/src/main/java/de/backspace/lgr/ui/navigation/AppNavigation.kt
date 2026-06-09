@@ -33,7 +33,7 @@ private sealed class Screen(val route: String, val title: String, val icon: Imag
 }
 
 // Routes where the shared top bar is hidden (screens have their own TopAppBar or are camera-only)
-private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search", "item_detail", "edit_barcode", "edit_item", "edit_barcode_scan_parent", "loan_cart", "loan_detail")
+private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search", "item_detail", "edit_barcode", "edit_item", "edit_barcode_scan_parent", "loan_cart", "loan_detail", "person_detail", "edit_person", "new_person")
 
 // Camera/scanner screens where even the bottom bar is hidden (need full screen for viewfinder)
 private val cameraRoutes = setOf("scan", "content_scan", "scan_parent", "add_content_scan", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "barcodes_scan_search", "edit_barcode_scan_parent")
@@ -222,7 +222,19 @@ fun AppNavigation(viewModel: AppViewModel) {
                     onScanSearch = { navController.navigate("barcodes_scan_search") }
                 )
             }
-            composable(Screen.Persons.route) { PersonsScreen(viewModel) }
+            composable(Screen.Persons.route) {
+                PersonsScreen(
+                    viewModel = viewModel,
+                    onOpenDetail = { list, index ->
+                        viewModel.openPersonFromList(list, index)
+                        navController.navigate("person_detail")
+                    },
+                    onNew = {
+                        viewModel.prepareNewPerson()
+                        navController.navigate("new_person")
+                    }
+                )
+            }
             composable(Screen.Loans.route) {
                 LoansScreen(viewModel, onOpenDetail = { list, index ->
                     viewModel.openLoanFromList(list, index, fromMyLoans = false)
@@ -307,6 +319,44 @@ fun AppNavigation(viewModel: AppViewModel) {
                     onSaved = {
                         viewModel.clearItemEditState()
                         navController.popBackStack()
+                    }
+                )
+            }
+            composable("person_detail") {
+                PersonDetailScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() },
+                    onEditPerson = {
+                        val person = viewModel.currentPerson ?: return@PersonDetailScreen
+                        viewModel.enterPersonEditMode(person)
+                        navController.navigate("edit_person")
+                    }
+                )
+            }
+            composable("edit_person") {
+                EditPersonScreen(
+                    viewModel = viewModel,
+                    onBack = {
+                        viewModel.clearPersonEditState()
+                        navController.popBackStack()
+                    },
+                    onSaved = {
+                        viewModel.clearPersonEditState()
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable("new_person") {
+                NewPersonScreen(
+                    viewModel = viewModel,
+                    onBack = {
+                        viewModel.clearNewPersonState()
+                        navController.popBackStack()
+                    },
+                    onCreated = {
+                        viewModel.clearNewPersonState()
+                        navController.popBackStack()
+                        navController.navigate("person_detail")
                     }
                 )
             }

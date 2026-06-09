@@ -1,11 +1,13 @@
 package de.backspace.lgr.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
@@ -21,7 +23,11 @@ import de.backspace.lgr.viewmodel.AppViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PersonsScreen(viewModel: AppViewModel) {
+fun PersonsScreen(
+    viewModel: AppViewModel,
+    onOpenDetail: ((List<Person>, Int) -> Unit)? = null,
+    onNew: (() -> Unit)? = null
+) {
     var search by remember { mutableStateOf(viewModel.personsSearch) }
     val listState = rememberLazyListState()
     val pullToRefreshState = rememberPullToRefreshState()
@@ -73,9 +79,14 @@ fun PersonsScreen(viewModel: AppViewModel) {
             )
 
             Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp).fillMaxWidth(),
+                modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                if (onNew != null && !viewModel.readonlyMode) {
+                    IconButton(onClick = onNew) {
+                        Icon(Icons.Default.PersonAdd, contentDescription = "New person", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
                 Spacer(modifier = Modifier.weight(1f))
                 viewModel.personsCount?.let { count ->
                     Text(
@@ -93,8 +104,8 @@ fun PersonsScreen(viewModel: AppViewModel) {
                 state.isLoading && state.data == null -> LoadingBox()
                 state.error != null && state.data == null -> ErrorBox(state.error)
                 state.data != null -> LazyColumn(modifier = Modifier.fillMaxSize().verticalScrollbar(listState), state = listState) {
-                    itemsIndexed(state.data, key = { _, person -> person.url }) { _, person ->
-                        PersonCard(person)
+                    itemsIndexed(state.data, key = { _, person -> person.url }) { index, person ->
+                        PersonCard(person, onClick = onOpenDetail?.let { cb -> { cb(state.data, index) } })
                     }
                     if (viewModel.personsNextPage != null) {
                         item { LoadingFooter() }
@@ -108,11 +119,12 @@ fun PersonsScreen(viewModel: AppViewModel) {
 }
 
 @Composable
-fun PersonCard(person: Person) {
+fun PersonCard(person: Person, onClick: (() -> Unit)? = null) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {

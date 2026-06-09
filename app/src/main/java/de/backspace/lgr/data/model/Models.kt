@@ -106,3 +106,10 @@ data class CreateItemRequest(
     val name: String,
     val description: String = ""
 )
+
+data class CreatePersonRequest(
+    val nickname: String,
+    val firstname: String = "",
+    val lastname: String = "",
+    val email: String = ""
+)

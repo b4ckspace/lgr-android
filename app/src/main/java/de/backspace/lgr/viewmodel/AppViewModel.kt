@@ -220,6 +220,26 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var saveItemEditState by mutableStateOf(UiState<Item>())
         private set
 
+    // Person detail / edit / create
+    var currentPerson by mutableStateOf<Person?>(null)
+        private set
+    var personListContext by mutableStateOf<List<Person>?>(null)
+    var personListIndex by mutableStateOf(0)
+    var deletePersonState by mutableStateOf(UiState<Unit>())
+        private set
+    var editPersonNickname by mutableStateOf("")
+    var editPersonFirstname by mutableStateOf("")
+    var editPersonLastname by mutableStateOf("")
+    var editPersonEmail by mutableStateOf("")
+    var savePersonEditState by mutableStateOf(UiState<Person>())
+        private set
+    var newPersonNickname by mutableStateOf("")
+    var newPersonFirstname by mutableStateOf("")
+    var newPersonLastname by mutableStateOf("")
+    var newPersonEmail by mutableStateOf("")
+    var newPersonState by mutableStateOf(UiState<Person>())
+        private set
+
     var editBarcodeNameQuery by mutableStateOf("")
     var editBarcodeSelectedItem by mutableStateOf<Item?>(null)
     var editBarcodeItemDescription by mutableStateOf("")
@@ -947,6 +967,122 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         editItemDescription = ""
         editItemPendingImageBytes = null
         editItemDeleteImage = false
+    }
+
+    fun openPersonDetail(person: Person) {
+        currentPerson = person
+        deletePersonState = UiState()
+        personListContext = null
+    }
+
+    fun openPersonFromList(list: List<Person>, index: Int) {
+        openPersonDetail(list[index])
+        personListContext = list
+        personListIndex = index
+    }
+
+    fun navigateToPersonInList(index: Int) {
+        val list = personListContext ?: return
+        if (index !in list.indices) return
+        currentPerson = list[index]
+        deletePersonState = UiState()
+        personListIndex = index
+    }
+
+    private fun replacePersonInList(person: Person) {
+        personListContext?.let { list ->
+            val idx = list.indexOfFirst { it.url == person.url }
+            if (idx >= 0) personListContext = list.toMutableList().also { it[idx] = person }
+        }
+    }
+
+    fun refreshPersonDetail() = viewModelScope.launch {
+        val person = currentPerson ?: return@launch
+        val refreshed = runCatching { repo.getPersonByUrl(person.url) }.getOrNull() ?: return@launch
+        currentPerson = refreshed
+        replacePersonInList(refreshed)
+    }
+
+    fun deletePerson() = viewModelScope.launch {
+        val person = currentPerson ?: return@launch
+        deletePersonState = UiState(isLoading = true)
+        runCatching { repo.deletePerson(person.url) }
+            .onSuccess { deletePersonState = UiState(data = Unit); personsNeedRefresh = true }
+            .onFailure { deletePersonState = UiState(error = it.toUserMessage()) }
+    }
+
+    fun resetDeletePersonState() { deletePersonState = UiState() }
+
+    fun enterPersonEditMode(person: Person) {
+        savePersonEditState = UiState()
+        editPersonNickname = person.nickname
+        editPersonFirstname = person.firstname
+        editPersonLastname = person.lastname
+        editPersonEmail = person.email
+    }
+
+    fun savePersonEdit() = viewModelScope.launch {
+        val person = currentPerson ?: return@launch
+        savePersonEditState = UiState(isLoading = true)
+        runCatching {
+            repo.updatePerson(
+                person.url,
+                editPersonNickname.trim(),
+                editPersonFirstname.trim(),
+                editPersonLastname.trim(),
+                editPersonEmail.trim()
+            )
+        }.onSuccess { updated ->
+            currentPerson = updated
+            savePersonEditState = UiState(data = updated)
+            personsNeedRefresh = true
+            replacePersonInList(updated)
+        }.onFailure {
+            savePersonEditState = UiState(error = it.toUserMessage())
+        }
+    }
+
+    fun clearPersonEditState() {
+        savePersonEditState = UiState()
+        editPersonNickname = ""
+        editPersonFirstname = ""
+        editPersonLastname = ""
+        editPersonEmail = ""
+    }
+
+    fun prepareNewPerson() {
+        newPersonState = UiState()
+        newPersonNickname = ""
+        newPersonFirstname = ""
+        newPersonLastname = ""
+        newPersonEmail = ""
+    }
+
+    fun createNewPerson() = viewModelScope.launch {
+        newPersonState = UiState(isLoading = true)
+        runCatching {
+            repo.createPerson(
+                newPersonNickname.trim(),
+                newPersonFirstname.trim(),
+                newPersonLastname.trim(),
+                newPersonEmail.trim()
+            )
+        }.onSuccess { person ->
+            currentPerson = person
+            personListContext = null
+            newPersonState = UiState(data = person)
+            personsNeedRefresh = true
+        }.onFailure {
+            newPersonState = UiState(error = it.toUserMessage())
+        }
+    }
+
+    fun clearNewPersonState() {
+        newPersonState = UiState()
+        newPersonNickname = ""
+        newPersonFirstname = ""
+        newPersonLastname = ""
+        newPersonEmail = ""
     }
 
     fun loadBarcode(code: String) = viewModelScope.launch {
