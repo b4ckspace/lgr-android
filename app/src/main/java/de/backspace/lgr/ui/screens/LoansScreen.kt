@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -30,13 +31,18 @@ fun LoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Unit
     val pullToRefreshState = rememberPullToRefreshState()
 
     LaunchedEffect(pullToRefreshState.isRefreshing) {
-        if (pullToRefreshState.isRefreshing) viewModel.loadLoans()
+        if (pullToRefreshState.isRefreshing) viewModel.refreshLoans()
     }
     LaunchedEffect(viewModel.loans.isLoading) {
         if (!viewModel.loans.isLoading && pullToRefreshState.isRefreshing) pullToRefreshState.endRefresh()
     }
 
     LaunchedEffect(Unit) { viewModel.loadLoans() }
+    var lastGeneration by rememberSaveable { mutableStateOf(viewModel.loansGeneration) }
+    LaunchedEffect(viewModel.loansGeneration) {
+        if (viewModel.loansGeneration != lastGeneration) listState.scrollToItem(0)
+        lastGeneration = viewModel.loansGeneration
+    }
 
     val shouldLoadMore by remember {
         derivedStateOf {
@@ -89,13 +95,18 @@ fun MyLoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Un
     val pullToRefreshState = rememberPullToRefreshState()
 
     LaunchedEffect(pullToRefreshState.isRefreshing) {
-        if (pullToRefreshState.isRefreshing) viewModel.loadMyLoans()
+        if (pullToRefreshState.isRefreshing) viewModel.refreshMyLoans()
     }
     LaunchedEffect(viewModel.myLoans.isLoading) {
         if (!viewModel.myLoans.isLoading && pullToRefreshState.isRefreshing) pullToRefreshState.endRefresh()
     }
 
     LaunchedEffect(Unit) { viewModel.loadMyLoans() }
+    var lastGeneration by rememberSaveable { mutableStateOf(viewModel.myLoansGeneration) }
+    LaunchedEffect(viewModel.myLoansGeneration) {
+        if (viewModel.myLoansGeneration != lastGeneration) listState.scrollToItem(0)
+        lastGeneration = viewModel.myLoansGeneration
+    }
 
     val shouldLoadMore by remember {
         derivedStateOf {

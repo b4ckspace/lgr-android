@@ -69,6 +69,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var myLoansCount by mutableStateOf<Int?>(null)
         private set
     var myLoansStatusFilter by mutableStateOf("taken")
+    private var loansNeedRefresh = true
+    private var myLoansNeedRefresh = true
+    var loansGeneration by mutableStateOf(0)
+        private set
+    var myLoansGeneration by mutableStateOf(0)
+        private set
 
     // Saved list scroll positions (first visible item index + pixel offset) so each list
     // keeps its position when the user switches tabs via the footer.
@@ -956,12 +962,23 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         loadPersons()
     }
 
-    fun loadLoans(status: String? = loansStatusFilter) = viewModelScope.launch {
-        loansStatusFilter = status ?: ""
+    fun loadLoans(status: String? = null) = viewModelScope.launch {
+        if (status != null && status != loansStatusFilter) {
+            loansStatusFilter = status
+            loansNeedRefresh = true
+            loansGeneration++
+        }
+        if (!loansNeedRefresh && loans.data != null) return@launch
+        loansNeedRefresh = false
         loans = UiState(isLoading = true)
-        runCatching { repo.getLoans(status.takeIf { !it.isNullOrBlank() }) }
+        runCatching { repo.getLoans(loansStatusFilter.takeIf { it.isNotBlank() }) }
             .onSuccess { loans = UiState(data = it.results); loansNextPage = it.next; loansCount = it.count }
             .onFailure { loans = UiState(error = it.localizedMessage) }
+    }
+
+    fun refreshLoans() {
+        loansNeedRefresh = true
+        loadLoans()
     }
 
     fun loadMoreLoans() {
@@ -972,12 +989,23 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun loadMyLoans(status: String? = myLoansStatusFilter) = viewModelScope.launch {
-        myLoansStatusFilter = status ?: ""
+    fun loadMyLoans(status: String? = null) = viewModelScope.launch {
+        if (status != null && status != myLoansStatusFilter) {
+            myLoansStatusFilter = status
+            myLoansNeedRefresh = true
+            myLoansGeneration++
+        }
+        if (!myLoansNeedRefresh && myLoans.data != null) return@launch
+        myLoansNeedRefresh = false
         myLoans = UiState(isLoading = true)
-        runCatching { repo.getMyLoans(status.takeIf { !it.isNullOrBlank() }) }
+        runCatching { repo.getMyLoans(myLoansStatusFilter.takeIf { it.isNotBlank() }) }
             .onSuccess { myLoans = UiState(data = it.results); myLoansNextPage = it.next; myLoansCount = it.count }
             .onFailure { myLoans = UiState(error = it.localizedMessage) }
+    }
+
+    fun refreshMyLoans() {
+        myLoansNeedRefresh = true
+        loadMyLoans()
     }
 
     fun loadMoreMyLoans() {
@@ -1624,8 +1652,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             .onSuccess {
                 returnLoanState = UiState(data = it)
                 currentLoan = it
-                loadMyLoans()
-                loadLoans()
+                refreshMyLoans()
+                refreshLoans()
             }
             .onFailure { returnLoanState = UiState(error = it.toUserMessage()) }
     }
@@ -1653,7 +1681,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     selectedBarcodes = emptySet()
                     selectedBarcodeDetails = emptyMap()
                     loadBarcodes()
-                    loadMyLoans()
+                    refreshMyLoans()
                 }
             }
             .onFailure { e ->

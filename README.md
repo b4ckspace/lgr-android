@@ -316,6 +316,7 @@ Paginated list of all loans (requires login). Tap any loan card to open the **Lo
 
 - **Result count** — a row below the status filter shows the number of loans matching the current filter.
 - **Pull to refresh** — pull down on the list to force a reload.
+- **Cached on tab switch** — switching away and back reuses the loaded result set and restores the scroll position; a new network request is only made when the status filter changes, on pull to refresh, or after a loan is created or returned.
 - **Arrow buttons and swipe left/right** navigate through the result set in Loan Detail (same as Barcodes and Items).
 
 ### My Loans tab
@@ -324,6 +325,7 @@ Paginated list of the current user's loans (requires login). Same UI as Loans.
 
 - **Result count** — a row below the status filter shows the number of loans matching the current filter.
 - **Pull to refresh** — pull down on the list to force a reload.
+- **Cached on tab switch** — same caching behaviour as the Loans tab.
 - **Arrow buttons and swipe left/right** navigate through the result set in Loan Detail.
 
 ### Loan Detail
