@@ -20,7 +20,13 @@ private val STATUS_OPTIONS = listOf("taken" to "Taken", "returned" to "Returned"
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Unit = { _, _ -> }) {
-    val listState = rememberLazyListState()
+    val listState = rememberLazyListState(viewModel.loansScrollIndex, viewModel.loansScrollOffset)
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.loansScrollIndex = listState.firstVisibleItemIndex
+            viewModel.loansScrollOffset = listState.firstVisibleItemScrollOffset
+        }
+    }
     val pullToRefreshState = rememberPullToRefreshState()
 
     LaunchedEffect(pullToRefreshState.isRefreshing) {
@@ -73,7 +79,13 @@ fun LoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Unit
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyLoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Unit = { _, _ -> }) {
-    val listState = rememberLazyListState()
+    val listState = rememberLazyListState(viewModel.myLoansScrollIndex, viewModel.myLoansScrollOffset)
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.myLoansScrollIndex = listState.firstVisibleItemIndex
+            viewModel.myLoansScrollOffset = listState.firstVisibleItemScrollOffset
+        }
+    }
     val pullToRefreshState = rememberPullToRefreshState()
 
     LaunchedEffect(pullToRefreshState.isRefreshing) {

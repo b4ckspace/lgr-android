@@ -117,7 +117,7 @@ Searchable, paginated list of all barcodes.
   - **Owner** — type-ahead person search (min. 2 characters). Tap a person's name to filter by that person only; tap the checkbox to add/remove from a multi-owner selection. Selected owners appear as removable chips. Filters by the barcode's *Owner* field (not loan person).
 - **Infinite scroll** — next pages load automatically as you scroll.
 - **Pull to refresh** — pull down on the list to force a reload (respects the active search and filter).
-- **Cached on tab switch** — switching away and back reuses the loaded result set; a new network request is only made when the search or filter changes.
+- **Cached on tab switch** — switching away and back reuses the loaded result set and restores the scroll position; a new network request is only made when the search or filter changes.
 - **Barcode selection** — check the checkbox on any barcode card to add it to a loan selection. A banner shows the current count; the cart FAB appears when items are selected.
 
 #### Barcode detail
@@ -188,7 +188,7 @@ Searchable, paginated list of item types (the catalogue, not individual barcoded
 - Displays name, description, and tag count per item.
 - Infinite scroll.
 - **Pull to refresh** — pull down on the list to force a reload (respects the active search and filter).
-- **Cached on tab switch** — the result set and active search string are preserved when switching away and back.
+- **Cached on tab switch** — the result set, active search string and scroll position are preserved when switching away and back.
 - Tap any item to open its **Item Detail** page.
 - **Arrow buttons and swipe left/right** navigate through the result set (same as Barcodes). Each item's barcodes are cached once loaded, so swiping back to an already-visited item shows them instantly without re-fetching (pull to refresh forces a reload).
 
@@ -223,7 +223,7 @@ Searchable, paginated list of persons (requires login).
 - **New person** (person-add icon, left of the count row) — opens the New Person screen. Hidden in read-only mode.
 - Infinite scroll.
 - **Pull to refresh** — pull down to force a reload.
-- **Cached on tab switch** — the result set and active search string are preserved when switching away and back.
+- **Cached on tab switch** — the result set, active search string and scroll position are preserved when switching away and back.
 - Tap any person to open its **Person Detail** page.
 - **Arrow buttons and swipe left/right** navigate through the result set (same as Items and Barcodes).
 - The tab is disabled when not logged in.

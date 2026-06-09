@@ -69,6 +69,19 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var myLoansCount by mutableStateOf<Int?>(null)
         private set
     var myLoansStatusFilter by mutableStateOf("taken")
+
+    // Saved list scroll positions (first visible item index + pixel offset) so each list
+    // keeps its position when the user switches tabs via the footer.
+    var itemsScrollIndex = 0
+    var itemsScrollOffset = 0
+    var barcodesScrollIndex = 0
+    var barcodesScrollOffset = 0
+    var personsScrollIndex = 0
+    var personsScrollOffset = 0
+    var loansScrollIndex = 0
+    var loansScrollOffset = 0
+    var myLoansScrollIndex = 0
+    var myLoansScrollOffset = 0
     var tags by mutableStateOf(UiState<List<Tag>>())
 
     var selectedBarcodes by mutableStateOf<Set<String>>(emptySet())

@@ -29,7 +29,13 @@ fun PersonsScreen(
     onNew: (() -> Unit)? = null
 ) {
     var search by remember { mutableStateOf(viewModel.personsSearch) }
-    val listState = rememberLazyListState()
+    val listState = rememberLazyListState(viewModel.personsScrollIndex, viewModel.personsScrollOffset)
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.personsScrollIndex = listState.firstVisibleItemIndex
+            viewModel.personsScrollOffset = listState.firstVisibleItemScrollOffset
+        }
+    }
     val pullToRefreshState = rememberPullToRefreshState()
 
     LaunchedEffect(pullToRefreshState.isRefreshing) {

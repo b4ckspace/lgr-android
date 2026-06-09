@@ -45,7 +45,13 @@ fun BarcodesScreen(
     onScanSearch: () -> Unit = {}
 ) {
     var search by remember { mutableStateOf(viewModel.barcodesSearch) }
-    val listState = rememberLazyListState()
+    val listState = rememberLazyListState(viewModel.barcodesScrollIndex, viewModel.barcodesScrollOffset)
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.barcodesScrollIndex = listState.firstVisibleItemIndex
+            viewModel.barcodesScrollOffset = listState.firstVisibleItemScrollOffset
+        }
+    }
     val pullToRefreshState = rememberPullToRefreshState()
 
     LaunchedEffect(pullToRefreshState.isRefreshing) {
