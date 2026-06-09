@@ -145,7 +145,7 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 - **Delete** — confirmation dialog, then permanently deletes the barcode and returns to the list
 
 **Editing a barcode:**
-Tap the Edit icon (pencil) in the top bar to open the edit screen. The barcode code is shown read-only and cannot be changed. The loan status is not editable. Editable fields:
+Tap the Edit icon (pencil) in the top bar to open the edit screen. The loan status is not editable. Editable fields:
 - **Location** — type-ahead barcode search (min. 2 characters, 300 ms debounce). Suggestions show the item name and barcode code; selecting one sets the parent barcode. Pre-filled with the current parent (if any).
 - **Item** — type-ahead search; selecting a suggestion fills in the item description. If the typed name does not exist yet, a new item is created on save.
 - **Barcode description** — per-barcode description.
@@ -153,6 +153,14 @@ Tap the Edit icon (pencil) in the top bar to open the edit screen. The barcode c
 - **Owner** — type-ahead person search; tap the person icon to set to the current user.
 
 > Item photo editing is not available here — use Edit Item to change a photo.
+
+**Changing the barcode code:**
+The code is the barcode's identifier and cannot be edited in place, so changing it is done by recreating the entry under the new code:
+- The *Barcode* field is read-only with a **pencil icon** beside it. The pencil is only available as the very first action after opening the screen — once you change any other field it is disabled (so a code change is always done on its own). It is also disabled while the barcode is on loan (return it first).
+- Tap the pencil to make the code editable. A **scan icon** lets you scan the new code, and an **× icon** undoes the change and restores the original code.
+- As soon as the code actually differs from the original, **all other fields are locked** — you can only **Cancel** or **Save**.
+- Tapping **Save** shows a confirmation dialog. On confirm, a new barcode is created under the new code (copying item, owner, location and description), any contained child barcodes are moved to it, and the old entry is deleted. The scan history is not carried over.
+- The new code must not already exist.
 
 **Cancel** and **Save** buttons sit at the bottom of the screen (above the keyboard). Tap **Save** to write the changes; tap **Cancel** or the back arrow to discard.
 

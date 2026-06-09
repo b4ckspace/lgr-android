@@ -33,16 +33,16 @@ private sealed class Screen(val route: String, val title: String, val icon: Imag
 }
 
 // Routes where the shared top bar is hidden (screens have their own TopAppBar or are camera-only)
-private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search", "item_detail", "edit_barcode", "edit_item", "edit_barcode_scan_parent", "loan_cart", "loan_detail", "person_detail", "edit_person", "new_person")
+private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search", "item_detail", "edit_barcode", "edit_item", "edit_barcode_scan_parent", "edit_barcode_scan_code", "loan_cart", "loan_detail", "person_detail", "edit_person", "new_person")
 
 // Camera/scanner screens where even the bottom bar is hidden (need full screen for viewfinder)
-private val cameraRoutes = setOf("scan", "content_scan", "scan_parent", "add_content_scan", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "barcodes_scan_search", "edit_barcode_scan_parent")
+private val cameraRoutes = setOf("scan", "content_scan", "scan_parent", "add_content_scan", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "barcodes_scan_search", "edit_barcode_scan_parent", "edit_barcode_scan_code")
 
 // Maps every route to its logical parent tab so the tab stays highlighted on sub-pages
 private fun activeTabFor(route: String?): Screen? = when (route) {
     "home", "scan", "verify_scan" -> Screen.Home
     "items", "item_detail", "edit_item" -> Screen.Items
-    "barcodes", "barcode_detail", "edit_barcode", "edit_barcode_scan_parent",
+    "barcodes", "barcode_detail", "edit_barcode", "edit_barcode_scan_parent", "edit_barcode_scan_code",
     "content_scan", "scan_parent", "add_content_scan",
     "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code",
     "barcodes_scan_search", "verify_detail" -> Screen.Barcodes
@@ -371,7 +371,18 @@ fun AppNavigation(viewModel: AppViewModel) {
                         viewModel.clearBarcodeEditState()
                         navController.popBackStack()
                     },
-                    onScanParent = { navController.navigate("edit_barcode_scan_parent") }
+                    onScanParent = { navController.navigate("edit_barcode_scan_parent") },
+                    onScanNewCode = { navController.navigate("edit_barcode_scan_code") }
+                )
+            }
+            composable("edit_barcode_scan_code") {
+                ScanNewBarcodeScreen(
+                    viewModel = viewModel,
+                    onScanned = { code ->
+                        viewModel.onEditBarcodeNewCodeScanned(code)
+                        navController.popBackStack()
+                    },
+                    onBack = { navController.popBackStack() }
                 )
             }
             composable("edit_barcode_scan_parent") {

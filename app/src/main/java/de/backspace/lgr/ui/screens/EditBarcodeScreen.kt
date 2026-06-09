@@ -7,6 +7,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
@@ -41,7 +43,8 @@ fun EditBarcodeScreen(
     viewModel: AppViewModel,
     onBack: () -> Unit,
     onSaved: () -> Unit,
-    onScanParent: () -> Unit = {}
+    onScanParent: () -> Unit = {},
+    onScanNewCode: () -> Unit = {}
 ) {
     val barcode = viewModel.scannedBarcode.data
     var itemSuggestions by remember { mutableStateOf<List<Pair<Item, Int>>>(emptyList()) }
@@ -75,9 +78,17 @@ fun EditBarcodeScreen(
     var ownerQueryTfv by remember { mutableStateOf(TextFieldValue(viewModel.editBarcodeOwnerQuery)) }
 
     val saveState = viewModel.saveBarcodeEditState
+    val renameState = viewModel.renameBarcodeState
+    val codeChanged = viewModel.editBarcodeCodeChanged
+    // While renaming, every other field is locked so the rename is the only pending change.
+    val otherFieldsEnabled = !viewModel.editBarcodeRenameMode
+    var showRenameConfirm by remember { mutableStateOf(false) }
 
     LaunchedEffect(saveState.data) {
         if (saveState.data != null) onSaved()
+    }
+    LaunchedEffect(renameState.data) {
+        if (renameState.data != null) onSaved()
     }
 
     LaunchedEffect(viewModel.editBarcodeNameQuery) {
@@ -142,7 +153,9 @@ fun EditBarcodeScreen(
         showLocationSuggestions = results.isNotEmpty()
     }
 
-    val canSave = viewModel.editBarcodeNameQuery.isNotBlank() && !saveState.isLoading
+    val isBusy = saveState.isLoading || renameState.isLoading
+    val canSave = if (viewModel.editBarcodeRenameMode) codeChanged && !isBusy
+        else viewModel.editBarcodeNameQuery.isNotBlank() && !isBusy
 
     Scaffold(
         topBar = {
@@ -196,12 +209,13 @@ fun EditBarcodeScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (saveState.error != null) {
+            val errorText = saveState.error ?: renameState.error
+            if (errorText != null) {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
                 ) {
                     Text(
-                        text = saveState.error.replaceFirstChar { it.uppercaseChar() },
+                        text = errorText.replaceFirstChar { it.uppercaseChar() },
                         color = MaterialTheme.colorScheme.onErrorContainer,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.fillMaxWidth().padding(12.dp)
@@ -224,13 +238,14 @@ fun EditBarcodeScreen(
                             locationSelected = false
                         },
                         label = { Text("Location") },
+                        enabled = otherFieldsEnabled,
                         modifier = Modifier.weight(1f)
                             .onFocusChanged { locationFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
                             .onGloballyPositioned { if (locationFocused) focusedBounds = it.boundsInRoot() },
                         singleLine = true,
                         colors = lgrTextFieldColors(),
                         trailingIcon = {
-                            if (viewModel.editBarcodeLocationQuery.isNotEmpty()) {
+                            if (otherFieldsEnabled && viewModel.editBarcodeLocationQuery.isNotEmpty()) {
                                 IconButton(onClick = {
                                     viewModel.editBarcodeLocationQuery = ""
                                     lastTypedLocation = ""
@@ -243,11 +258,11 @@ fun EditBarcodeScreen(
                             }
                         }
                     )
-                    IconButton(onClick = onScanParent) {
+                    IconButton(onClick = onScanParent, enabled = otherFieldsEnabled) {
                         Icon(
                             Icons.Default.QrCodeScanner,
                             contentDescription = "Scan location",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = if (otherFieldsEnabled) MaterialTheme.colorScheme.primary else GREY
                         )
                     }
                 }
@@ -291,15 +306,67 @@ fun EditBarcodeScreen(
             }
 
             barcode?.let {
-                OutlinedTextField(
-                    value = it.code,
-                    onValueChange = {},
-                    label = { Text("Barcode") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    enabled = false,
-                    colors = lgrTextFieldColors()
-                )
+                if (viewModel.editBarcodeRenameMode) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = viewModel.editBarcodeNewCode,
+                            onValueChange = { viewModel.editBarcodeNewCode = it },
+                            label = { Text("New barcode") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            isError = renameState.error != null,
+                            colors = lgrTextFieldColors()
+                        )
+                        IconButton(onClick = onScanNewCode, enabled = !isBusy) {
+                            Icon(
+                                Icons.Default.QrCodeScanner,
+                                contentDescription = "Scan new barcode",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        IconButton(onClick = { viewModel.cancelBarcodeRename() }, enabled = !isBusy) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Undo barcode change",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = it.code,
+                            onValueChange = {},
+                            label = { Text("Barcode") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            enabled = false,
+                            colors = lgrTextFieldColors()
+                        )
+                        // Renaming recreates the entry, which would drop it from an active
+                        // loan, so it is not offered while the barcode is on loan.
+                        val onLoan = it.apiLoanInfo?.loan == true
+                        val canRename = !viewModel.editBarcodeOtherFieldsDirty && !onLoan
+                        IconButton(
+                            onClick = { viewModel.startBarcodeRename() },
+                            enabled = canRename
+                        ) {
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = "Change barcode",
+                                tint = if (canRename) MaterialTheme.colorScheme.primary else GREY
+                            )
+                        }
+                    }
+                }
             }
 
             Column {
@@ -317,13 +384,14 @@ fun EditBarcodeScreen(
                         itemNameTfv = tfv
                     },
                     label = { Text("Item *") },
+                    enabled = otherFieldsEnabled,
                     modifier = Modifier.fillMaxWidth().focusRequester(itemFocusRequester)
                         .onFocusChanged { itemFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
                         .onGloballyPositioned { if (itemFocused) focusedBounds = it.boundsInRoot() },
                     singleLine = true,
                     colors = lgrTextFieldColors(),
                     trailingIcon = {
-                        if (itemNameTfv.text.isNotEmpty()) {
+                        if (otherFieldsEnabled && itemNameTfv.text.isNotEmpty()) {
                             IconButton(onClick = {
                                 if (viewModel.editBarcodeSelectedItem != null) {
                                     viewModel.editBarcodeItemDescription = ""
@@ -384,6 +452,7 @@ fun EditBarcodeScreen(
                 value = viewModel.editBarcodeDescription,
                 onValueChange = { viewModel.editBarcodeDescription = it },
                 label = { Text("Barcode description") },
+                enabled = otherFieldsEnabled,
                 modifier = Modifier.fillMaxWidth()
                     .onFocusChanged { descFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
                     .onGloballyPositioned { if (descFocused) focusedBounds = it.boundsInRoot() },
@@ -403,7 +472,7 @@ fun EditBarcodeScreen(
                     .onGloballyPositioned { if (itemDescFocused) focusedBounds = it.boundsInRoot() },
                 minLines = 2,
                 maxLines = 4,
-                enabled = !itemSelected,
+                enabled = !itemSelected && otherFieldsEnabled,
                 colors = lgrTextFieldColors()
             )
 
@@ -423,13 +492,14 @@ fun EditBarcodeScreen(
                             viewModel.editBarcodeOwnerUrl = null
                         },
                         label = { Text("Owner") },
+                        enabled = otherFieldsEnabled,
                         modifier = Modifier.weight(1f).focusRequester(ownerFocusRequester)
                             .onFocusChanged { ownerFieldFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
                             .onGloballyPositioned { if (ownerFieldFocused) focusedBounds = it.boundsInRoot() },
                         singleLine = true,
                         colors = lgrTextFieldColors(),
                         trailingIcon = {
-                            if (ownerQueryTfv.text.isNotEmpty()) {
+                            if (otherFieldsEnabled && ownerQueryTfv.text.isNotEmpty()) {
                                 IconButton(onClick = {
                                     ownerQueryTfv = TextFieldValue("")
                                     viewModel.editBarcodeOwnerQuery = ""
@@ -444,11 +514,11 @@ fun EditBarcodeScreen(
                             }
                         }
                     )
-                    IconButton(onClick = { viewModel.fillEditOwnerWithCurrentUser() }) {
+                    IconButton(onClick = { viewModel.fillEditOwnerWithCurrentUser() }, enabled = otherFieldsEnabled) {
                         Icon(
                             Icons.Default.Person,
                             contentDescription = "Set to current user",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = if (otherFieldsEnabled) MaterialTheme.colorScheme.primary else GREY
                         )
                     }
                 }
@@ -493,18 +563,22 @@ fun EditBarcodeScreen(
             OutlinedButton(onClick = onBack) { Text("Cancel") }
             Button(
                 onClick = {
-                    if (viewModel.editBarcodeOwnerUrl == null && viewModel.editBarcodeOwnerQuery.isNotBlank()) {
-                        val match = ownerSuggestions.find { it.displayName().equals(viewModel.editBarcodeOwnerQuery.trim(), ignoreCase = true) }
-                        if (match != null) {
-                            viewModel.editBarcodeSelectedPerson = match
-                            viewModel.editBarcodeOwnerUrl = match.url
+                    if (codeChanged) {
+                        showRenameConfirm = true
+                    } else {
+                        if (viewModel.editBarcodeOwnerUrl == null && viewModel.editBarcodeOwnerQuery.isNotBlank()) {
+                            val match = ownerSuggestions.find { it.displayName().equals(viewModel.editBarcodeOwnerQuery.trim(), ignoreCase = true) }
+                            if (match != null) {
+                                viewModel.editBarcodeSelectedPerson = match
+                                viewModel.editBarcodeOwnerUrl = match.url
+                            }
                         }
+                        viewModel.saveBarcodeEdit()
                     }
-                    viewModel.saveBarcodeEdit()
                 },
                 enabled = canSave
             ) {
-                if (saveState.isLoading) CircularProgressIndicator(
+                if (isBusy) CircularProgressIndicator(
                     modifier = Modifier.size(18.dp),
                     strokeWidth = 2.dp,
                     color = MaterialTheme.colorScheme.onPrimary
@@ -513,5 +587,29 @@ fun EditBarcodeScreen(
             }
         }
         } // outer Column
+    }
+
+    if (showRenameConfirm) {
+        val newCode = viewModel.editBarcodeNewCode.lowercase().trim()
+        AlertDialog(
+            onDismissRequest = { showRenameConfirm = false },
+            title = { Text("Change barcode?") },
+            text = {
+                Text(
+                    "Change the code from “${barcode?.code}” to “$newCode”?\n\n" +
+                        "The old entry is deleted and recreated under the new code. Any contained " +
+                        "barcodes are moved along, but the scan history is not carried over."
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    showRenameConfirm = false
+                    viewModel.renameBarcode()
+                }) { Text("Change") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showRenameConfirm = false }) { Text("Cancel") }
+            }
+        )
     }
 }

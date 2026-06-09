@@ -251,6 +251,35 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var saveBarcodeEditState by mutableStateOf(UiState<Barcode>())
         private set
 
+    // Barcode rename (delete-and-recreate, because the code is the primary key).
+    var editBarcodeRenameMode by mutableStateOf(false)
+        private set
+    var editBarcodeNewCode by mutableStateOf("")
+    var renameBarcodeState by mutableStateOf(UiState<Barcode>())
+        private set
+
+    // Snapshot of the editable fields captured on entry, used to detect whether the user
+    // has touched anything other than the code (the rename pencil is only offered as the
+    // very first action, while every other field is still untouched).
+    private var origEditNameQuery = ""
+    private var origEditItemDescription = ""
+    private var origEditDescription = ""
+    private var origEditOwnerUrl: String? = null
+    private var origEditLocation = ""
+    val editBarcodeOtherFieldsDirty: Boolean
+        get() = editBarcodeNameQuery != origEditNameQuery ||
+            editBarcodeItemDescription != origEditItemDescription ||
+            editBarcodeDescription != origEditDescription ||
+            editBarcodeOwnerUrl != origEditOwnerUrl ||
+            editBarcodeLocationQuery != origEditLocation ||
+            editBarcodePendingImageBytes != null ||
+            editBarcodeDeleteImage
+
+    // True once the user has actually entered a new, different code while in rename mode.
+    val editBarcodeCodeChanged: Boolean
+        get() = editBarcodeRenameMode &&
+            editBarcodeNewCode.lowercase().trim().let { it.isNotBlank() && it != scannedBarcode.data?.code }
+
     val isAuthenticated get() = auth.data?.authenticated == true
     val username get() = auth.data?.username
 
@@ -380,11 +409,99 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         editBarcodeSelectedPerson = null
         editBarcodeOwnerQuery = ""
         editBarcodeLocationQuery = barcode.apiParentNames?.lastOrNull()?.code ?: ""
+        editBarcodeRenameMode = false
+        editBarcodeNewCode = barcode.code
+        renameBarcodeState = UiState()
+        editBarcodePendingImageBytes = null
+        editBarcodeDeleteImage = false
+        origEditNameQuery = barcode.itemName
+        origEditItemDescription = barcode.itemDescription
+        origEditDescription = barcode.description
+        origEditOwnerUrl = barcode.owner
+        origEditLocation = barcode.apiParentNames?.lastOrNull()?.code ?: ""
         if (barcode.owner != null) {
             viewModelScope.launch {
                 editBarcodeOwnerQuery = resolveOwnerName(barcode.owner)
             }
         }
+    }
+
+    fun startBarcodeRename() {
+        editBarcodeRenameMode = true
+        editBarcodeNewCode = scannedBarcode.data?.code ?: ""
+        renameBarcodeState = UiState()
+    }
+
+    fun cancelBarcodeRename() {
+        editBarcodeRenameMode = false
+        editBarcodeNewCode = scannedBarcode.data?.code ?: ""
+        renameBarcodeState = UiState()
+    }
+
+    fun onEditBarcodeNewCodeScanned(code: String) {
+        editBarcodeNewCode = code
+    }
+
+    // Change a barcode's code (the primary key) by recreating the entry under the new code
+    // and re-pointing everything that referenced the old one, then deleting the original.
+    // This is not atomic, so the original is only removed once the replacement is fully in place.
+    fun renameBarcode() = viewModelScope.launch {
+        val old = scannedBarcode.data ?: return@launch
+        val newCode = editBarcodeNewCode.lowercase().trim()
+        if (newCode.isBlank() || newCode == old.code) return@launch
+        renameBarcodeState = UiState(isLoading = true)
+
+        // The new code must be free.
+        if (runCatching { repo.getBarcode(newCode) }.getOrNull() != null) {
+            renameBarcodeState = UiState(error = "A barcode with code “$newCode” already exists.")
+            return@launch
+        }
+        // Renaming an item that is currently on loan would silently drop it from the loan.
+        if (old.apiLoanInfo?.loan == true) {
+            renameBarcodeState = UiState(error = "This item is currently on loan. Return it before changing its code.")
+            return@launch
+        }
+
+        // 1. Create the replacement, copying item, owner, parent and description.
+        val created = runCatching {
+            repo.createBarcode(
+                CreateBarcodeRequest(
+                    code = newCode,
+                    item = old.item,
+                    description = old.description,
+                    owner = old.owner,
+                    parent = old.parent
+                )
+            )
+        }.getOrElse { renameBarcodeState = UiState(error = it.toUserMessage()); return@launch }
+
+        // 2. Re-point children (their parent still points at the old code).
+        val newUrl = ApiClient.getBarcodeUrl(newCode)
+        val childRepointFailed = old.apiChildNames.orEmpty().any { child ->
+            runCatching { repo.patchBarcodeParent(ApiClient.getBarcodeUrl(child.code), newUrl) }.isFailure
+        }
+        if (childRepointFailed) {
+            runCatching { repo.deleteBarcode(newCode) } // roll back the replacement
+            renameBarcodeState = UiState(error = "Could not move the contained barcodes. Nothing was changed.")
+            return@launch
+        }
+
+        // 3. Delete the original.
+        if (runCatching { repo.deleteBarcode(old.code) }.isFailure) {
+            renameBarcodeState = UiState(
+                error = "New barcode “$newCode” was created, but the old one (${old.code}) could not be removed. Please delete it manually."
+            )
+            return@launch
+        }
+
+        // 4. Settle on the renamed barcode.
+        val refreshed = runCatching { repo.getBarcode(newCode) }.getOrNull() ?: created
+        scannedBarcode = UiState(data = refreshed)
+        barcodesNeedRefresh = true
+        itemsNeedRefresh = true
+        invalidateItemBarcodesCache(old.itemName)
+        editBarcodeRenameMode = false
+        renameBarcodeState = UiState(data = refreshed)
     }
 
     fun saveBarcodeEdit() = viewModelScope.launch {
@@ -441,6 +558,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         editBarcodeLocationQuery = ""
         editBarcodePendingImageBytes = null
         editBarcodeDeleteImage = false
+        editBarcodeRenameMode = false
+        editBarcodeNewCode = ""
+        renameBarcodeState = UiState()
     }
 
     fun fillOwnerWithCurrentUser() = viewModelScope.launch {
