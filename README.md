@@ -335,6 +335,8 @@ Shows all fields for a loan:
 - Full list of barcodes — each is a tappable link to its Barcode Detail screen. Resolved item names are cached, so revisiting a loan or swiping between loans shows them instantly without re-fetching.
 - **Arrow buttons** (and swipe left/right) to navigate to the previous/next loan in the list, pinned to the bottom of the screen.
 - **Return loan** button — visible when status is TAKEN and the loan belongs to the current user (regardless of whether it was opened from Loans or My Loans). Opens a confirmation dialog; on confirm, marks the loan as returned and refreshes both loan lists.
+- The footer keeps the tab the loan was opened from highlighted — **My Loans** when opened from My Loans, otherwise **Loans**.
+- A loan detail can be open on the Loans tab and the My Loans tab at the same time; tapping the footer icons switches directly between the two open loan details (and to a tab's list when it has no loan open).
 
 ### Loan Cart
 

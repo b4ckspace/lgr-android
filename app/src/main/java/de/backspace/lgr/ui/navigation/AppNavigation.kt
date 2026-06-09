@@ -38,8 +38,9 @@ private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "
 // Camera/scanner screens where even the bottom bar is hidden (need full screen for viewfinder)
 private val cameraRoutes = setOf("scan", "content_scan", "scan_parent", "add_content_scan", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "barcodes_scan_search", "edit_barcode_scan_parent", "edit_barcode_scan_code")
 
-// Maps every route to its logical parent tab so the tab stays highlighted on sub-pages
-private fun activeTabFor(route: String?): Screen? = when (route) {
+// Maps every route to its logical parent tab so the tab stays highlighted on sub-pages.
+// A loan detail keeps the tab it was opened from (Loans vs My Loans).
+private fun activeTabFor(route: String?, loanIsMyLoan: Boolean = false): Screen? = when (route) {
     "home", "scan", "verify_scan" -> Screen.Home
     "items", "item_detail", "edit_item" -> Screen.Items
     "barcodes", "barcode_detail", "edit_barcode", "edit_barcode_scan_parent", "edit_barcode_scan_code",
@@ -47,7 +48,8 @@ private fun activeTabFor(route: String?): Screen? = when (route) {
     "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code",
     "barcodes_scan_search", "verify_detail" -> Screen.Barcodes
     "persons", "person_detail", "edit_person", "new_person" -> Screen.Persons
-    "loans", "loan_detail" -> Screen.Loans
+    "loan_detail" -> if (loanIsMyLoan) Screen.MyLoans else Screen.Loans
+    "loans" -> Screen.Loans
     "my_loans" -> Screen.MyLoans
     else -> null
 }
@@ -61,7 +63,7 @@ fun AppNavigation(viewModel: AppViewModel) {
 
     val showChrome = fullScreenRoutes.none { currentRoute?.startsWith(it) == true }
     val showBottomBar = cameraRoutes.none { currentRoute?.startsWith(it) == true }
-    val activeTab = activeTabFor(currentRoute)
+    val activeTab = activeTabFor(currentRoute, viewModel.currentLoanOriginMyLoans)
 
     // Track the last non-root, non-camera route visited per tab so that
     // switching away from a deeper screen and back restores it.
@@ -69,7 +71,7 @@ fun AppNavigation(viewModel: AppViewModel) {
     LaunchedEffect(currentRoute) {
         val route = currentRoute ?: return@LaunchedEffect
         if (cameraRoutes.any { route.startsWith(it) }) return@LaunchedEffect
-        val tab = activeTabFor(route) ?: return@LaunchedEffect
+        val tab = activeTabFor(route, viewModel.currentLoanOriginMyLoans) ?: return@LaunchedEffect
         if (route == tab.route) tabLastRoutes.remove(tab) else tabLastRoutes[tab] = route
     }
 
@@ -121,10 +123,14 @@ fun AppNavigation(viewModel: AppViewModel) {
                             selected = screen == activeTab,
                             enabled = isEnabled,
                             onClick = {
-                                val targetRoute = if (screen != activeTab) {
-                                    tabLastRoutes[screen] ?: screen.route
-                                } else {
-                                    screen.route
+                                val restored = if (screen != activeTab) tabLastRoutes[screen] else null
+                                var targetRoute = restored ?: screen.route
+                                // loan_detail is shared between the Loans and My Loans tabs; swap in
+                                // that tab's own open loan before showing it, or fall back to the list
+                                // if that tab no longer has a loan open.
+                                if (targetRoute == "loan_detail") {
+                                    val ok = viewModel.restoreLoanTab(fromMyLoans = screen == Screen.MyLoans)
+                                    if (!ok) targetRoute = screen.route
                                 }
                                 if (targetRoute != screen.route) {
                                     // Restore a sub-screen: put the tab root in the back stack
@@ -492,7 +498,7 @@ fun AppNavigation(viewModel: AppViewModel) {
             composable("loan_detail") {
                 LoanDetailScreen(
                     viewModel = viewModel,
-                    onBack = { viewModel.clearLoanListContext(); navController.popBackStack() },
+                    onBack = { viewModel.closeLoanDetail(); navController.popBackStack() },
                     onBarcodeClick = { code ->
                         viewModel.clearBarcodeListContext()
                         viewModel.loadBarcode(code)

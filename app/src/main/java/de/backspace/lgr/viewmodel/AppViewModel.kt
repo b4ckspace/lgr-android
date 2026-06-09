@@ -105,6 +105,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var loanListIndex by mutableStateOf(0)
         private set
     private var loanListFromMyLoans = false
+    // Which list (Loans vs My Loans) the current loan detail was opened from. Drives the
+    // footer highlight and per-tab loan-detail restoration.
+    var currentLoanOriginMyLoans by mutableStateOf(false)
+        private set
+    // Per-tab snapshots of the open loan detail, so switching tabs returns to each tab's
+    // own loan detail instead of the list.
+    private var loansTabLoan: Loan? = null
+    private var loansTabContext: List<Loan>? = null
+    private var loansTabIndex = 0
+    private var myLoansTabLoan: Loan? = null
+    private var myLoansTabContext: List<Loan>? = null
+    private var myLoansTabIndex = 0
     var returnLoanState by mutableStateOf(UiState<Loan>())
         private set
     var deleteBarcodeState by mutableStateOf(UiState<Unit>())
@@ -1619,6 +1631,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         loanListIndex = index
         loanListFromMyLoans = fromMyLoans
         openLoan(list[index], fromMyLoans)
+        saveCurrentLoanToTab()
     }
 
     fun navigateToLoanInList(index: Int) {
@@ -1626,12 +1639,47 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (index !in list.indices) return
         loanListIndex = index
         openLoan(list[index], loanListFromMyLoans)
+        saveCurrentLoanToTab()
+    }
+
+    private fun saveCurrentLoanToTab() {
+        if (loanListFromMyLoans) {
+            myLoansTabLoan = currentLoan
+            myLoansTabContext = loanListContext
+            myLoansTabIndex = loanListIndex
+        } else {
+            loansTabLoan = currentLoan
+            loansTabContext = loanListContext
+            loansTabIndex = loanListIndex
+        }
+    }
+
+    // Restore the loan detail the given tab was last showing. Returns false if that tab
+    // has no open loan detail (the caller should then show the list instead).
+    fun restoreLoanTab(fromMyLoans: Boolean): Boolean {
+        val loan = (if (fromMyLoans) myLoansTabLoan else loansTabLoan) ?: return false
+        loanListContext = if (fromMyLoans) myLoansTabContext else loansTabContext
+        loanListIndex = if (fromMyLoans) myLoansTabIndex else loansTabIndex
+        loanListFromMyLoans = fromMyLoans
+        openLoan(loan, fromMyLoans)
+        return true
     }
 
     fun clearLoanListContext() { loanListContext = null }
 
+    // Leaving a loan detail (back): forget that tab's open loan.
+    fun closeLoanDetail() {
+        if (currentLoanOriginMyLoans) {
+            myLoansTabLoan = null; myLoansTabContext = null; myLoansTabIndex = 0
+        } else {
+            loansTabLoan = null; loansTabContext = null; loansTabIndex = 0
+        }
+        loanListContext = null
+    }
+
     fun openLoan(loan: Loan, fromMyLoans: Boolean = false) {
         currentLoan = loan
+        currentLoanOriginMyLoans = fromMyLoans
         currentLoanIsMyLoan = fromMyLoans
         returnLoanState = UiState()
         if (!fromMyLoans && loan.status.equals("taken", ignoreCase = true)) {
@@ -1652,6 +1700,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             .onSuccess {
                 returnLoanState = UiState(data = it)
                 currentLoan = it
+                // Keep the per-tab snapshot in sync with the returned loan.
+                if (currentLoanOriginMyLoans) myLoansTabLoan = it else loansTabLoan = it
                 refreshMyLoans()
                 refreshLoans()
             }
