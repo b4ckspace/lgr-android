@@ -153,7 +153,7 @@ fun LoanDetailScreen(
                 }
 
                 items(loan.barcodes) { code ->
-                    val itemName by produceState<String?>(null, code) {
+                    val itemName by produceState(viewModel.cachedBarcodeName(code), code) {
                         value = viewModel.resolveBarcodeName(code)
                     }
                     Text(

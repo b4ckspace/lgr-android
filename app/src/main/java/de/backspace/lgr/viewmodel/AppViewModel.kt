@@ -321,6 +321,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         return name
     }
 
+    // Synchronous cache lookup so already-resolved barcode names (e.g. on the Loan Detail
+    // page) show instantly when revisiting or swiping, without the produceState null flash.
+    fun cachedBarcodeName(code: String): String? = barcodeNameCache[code]
+
     init {
         if (serverUrl.isNotEmpty()) {
             ApiClient.configure(serverUrl)
