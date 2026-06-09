@@ -46,7 +46,7 @@ private fun activeTabFor(route: String?): Screen? = when (route) {
     "content_scan", "scan_parent", "add_content_scan",
     "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code",
     "barcodes_scan_search", "verify_detail" -> Screen.Barcodes
-    "persons" -> Screen.Persons
+    "persons", "person_detail", "edit_person", "new_person" -> Screen.Persons
     "loans", "loan_detail" -> Screen.Loans
     "my_loans" -> Screen.MyLoans
     else -> null

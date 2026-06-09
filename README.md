@@ -238,6 +238,7 @@ Reachable by tapping a person in the Persons tab.
 
 - **Pull to refresh** — pull down to reload the person from the backend.
 - **Arrow buttons and swipe left/right** navigate through the result set (same as Items and Barcodes).
+- The footer keeps the **Persons** tab highlighted, and tapping the Persons icon from another tab returns to this Person Detail page (same as the other tabs' detail pages).
 
 **Actions (authenticated, hidden in read-only mode):**
 - **Edit** (pencil icon) — opens the Edit Person screen. Editable fields: Nickname (required), First name, Last name, Email. **Cancel** and **Save** buttons are at the bottom of the screen.
