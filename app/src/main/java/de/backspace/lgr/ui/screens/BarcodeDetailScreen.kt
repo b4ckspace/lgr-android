@@ -334,15 +334,8 @@ fun BarcodeDetailScreen(
                                 .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            LocationSection(
-                                barcode = barcode,
-                                viewModel = viewModel,
-                                onBarcodeClick = onBarcodeClick,
-                                onScanParent = onScanParent
-                            )
-
-                            DetailRow("Barcode", barcode.code)
                             DetailRow("Item", barcode.itemName, valueColor = MaterialTheme.colorScheme.onSurface, onClick = onItemClick)
+                            DetailRow("Barcode", barcode.code)
                             if (barcode.itemImage != null)
                                 AsyncImage(
                                     model = barcode.itemImage,
@@ -355,6 +348,13 @@ fun BarcodeDetailScreen(
                                         .clickable { showFullscreenImage = true },
                                     contentScale = ContentScale.Crop
                                 )
+
+                            LocationSection(
+                                barcode = barcode,
+                                viewModel = viewModel,
+                                onBarcodeClick = onBarcodeClick,
+                                onScanParent = onScanParent
+                            )
                             if (barcode.description.isNotBlank())
                                 DetailRow("Barcode description", barcode.description)
                             if (barcode.itemDescription.isNotBlank())
@@ -726,34 +726,38 @@ private fun ContentListSection(
             }
         }
 
-        existingChildren.forEach { child ->
-            val color = when {
-                !scanActive -> MaterialTheme.colorScheme.onSurface
-                child.code in viewModel.scannedChildCodes -> MaterialTheme.colorScheme.onSurface
-                viewModel.childLoanInfos[child.code]?.loan == true -> GREY
-                else -> RED
+        if (scanActive) {
+            // Verify mode: identical two-column "Current | Scanned" view as the Verify screen.
+            VerifyContentColumns(
+                dbChildren = existingChildren,
+                scannedCodes = viewModel.scannedChildCodes,
+                extraScanned = viewModel.newScannedBarcodes,
+                onBarcodeClick = onBarcodeClick
+            )
+        } else {
+            existingChildren.forEach { child ->
+                ChildRow(
+                    itemName = child.name.removeSuffix(" (${child.code})"),
+                    code = child.code,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    loanInfo = viewModel.childLoanInfos[child.code],
+                    onClick = { onBarcodeClick(child.code) }
+                )
             }
-            ChildRow(
-                itemName = child.name.removeSuffix(" (${child.code})"),
-                code = child.code,
-                color = color,
-                loanInfo = viewModel.childLoanInfos[child.code],
-                onClick = { onBarcodeClick(child.code) }
-            )
-        }
 
-        viewModel.newScannedBarcodes.forEach { child ->
-            ChildRow(
-                itemName = child.itemName,
-                code = child.code,
-                color = GREEN,
-                loanInfo = child.apiLoanInfo,
-                onClick = { onBarcodeClick(child.code) }
-            )
-        }
+            viewModel.newScannedBarcodes.forEach { child ->
+                ChildRow(
+                    itemName = child.itemName,
+                    code = child.code,
+                    color = GREEN,
+                    loanInfo = child.apiLoanInfo,
+                    onClick = { onBarcodeClick(child.code) }
+                )
+            }
 
-        if (existingChildren.isEmpty() && viewModel.newScannedBarcodes.isEmpty()) {
-            Text("—", style = MaterialTheme.typography.bodyLarge)
+            if (existingChildren.isEmpty() && viewModel.newScannedBarcodes.isEmpty()) {
+                Text("—", style = MaterialTheme.typography.bodyLarge)
+            }
         }
     }
 }
@@ -836,21 +840,3 @@ private fun ChildRow(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun DetailRow(label: String, value: String, valueColor: Color = Color.Unspecified, onClick: (() -> Unit)? = null) {
-    val clipboardManager = LocalClipboardManager.current
-    Column(modifier = Modifier.combinedClickable(
-        onClick = onClick ?: {},
-        onLongClick = { clipboardManager.setText(AnnotatedString(value)) }
-    )) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(2.dp))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge,
-            color = if (onClick != null && valueColor == Color.Unspecified) MaterialTheme.colorScheme.primary else valueColor
-        )
-        HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
-    }
-}

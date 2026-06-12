@@ -145,6 +145,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var addContentScanActive by mutableStateOf(false)
         private set
+    // True when a content verify continues on top of an already-scanned list, so the camera
+    // can show "Scan additional content" instead of "Scan all content".
+    var contentScanAdditive by mutableStateOf(false)
+        private set
     var saveContentState by mutableStateOf(UiState<Unit>())
         private set
     var contentScanDoneTrigger by mutableStateOf(0)
@@ -228,7 +232,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var verifyContents by mutableStateOf<List<Barcode>>(emptyList())
         private set
+    // Loan status of the verify location's existing children, so a save does not detach a
+    // child that is currently out on loan (mirrors the content-verify guard).
+    var verifyChildLoanInfos by mutableStateOf<Map<String, LoanInfo>>(emptyMap())
+        private set
     var verifyPhase by mutableStateOf(VerifyPhase.LOCATION)
+        private set
+    // True while re-entering the content scanner from the Verify screen to add more
+    // barcodes to the already-scanned list (vs. the initial full content scan).
+    var verifyAdditive by mutableStateOf(false)
         private set
     var verifyState by mutableStateOf(UiState<Unit>())
         private set
@@ -765,13 +777,30 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun clearVerifyState() {
         verifyLocation = null
         verifyContents = emptyList()
+        verifyChildLoanInfos = emptyMap()
         verifyPhase = VerifyPhase.LOCATION
+        verifyAdditive = false
         verifyState = UiState()
     }
 
-    fun startVerifyContentRescan() {
-        verifyContents = emptyList()
+    // Fetch the loan status of the verify location's existing children so saveVerifyChanges
+    // can leave on-loan children attached even when they are not physically present.
+    private fun loadVerifyChildLoanInfos(children: List<ChildInfo>) {
+        verifyChildLoanInfos = emptyMap()
+        if (children.isEmpty()) return
+        viewModelScope.launch {
+            val pairs = children.map { child ->
+                async { child.code to runCatching { repo.getBarcode(child.code) }.getOrNull()?.apiLoanInfo }
+            }.awaitAll()
+            verifyChildLoanInfos = pairs.mapNotNull { (code, info) -> info?.let { code to it } }.toMap()
+        }
+    }
+
+    // Re-open the content scanner from the Verify screen to ADD more barcodes to the
+    // already-scanned list (the list is kept and only reset when leaving the Verify screen).
+    fun addMoreVerifyContent() {
         verifyPhase = VerifyPhase.CONTENT
+        verifyAdditive = true
         verifyState = UiState()
     }
 
@@ -779,6 +808,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val location = verifyLocation ?: return@launch
         val refreshed = runCatching { repo.getBarcode(location.code) }.getOrNull() ?: return@launch
         verifyLocation = refreshed
+        loadVerifyChildLoanInfos(refreshed.apiChildNames ?: emptyList())
     }
 
     suspend fun onVerifyBarcodeScanned(code: String): ScanResult {
@@ -788,6 +818,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     ?: return ScanResult.NOT_FOUND
                 verifyLocation = barcode
                 verifyPhase = VerifyPhase.CONTENT
+                loadVerifyChildLoanInfos(barcode.apiChildNames ?: emptyList())
                 ScanResult.FOUND_NEW
             }
             VerifyPhase.CONTENT -> {
@@ -807,7 +838,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val dbChildren = location.apiChildNames ?: emptyList()
         val scannedCodes = verifyContents.map { it.code }.toSet()
         val dbCodes = dbChildren.map { it.code }.toSet()
-        val redCodes = dbCodes - scannedCodes
+        // Children physically missing, but on-loan children are kept attached.
+        val redCodes = (dbCodes - scannedCodes).filter { verifyChildLoanInfos[it]?.loan != true }
         val greenBarcodes = verifyContents.filter { it.code !in dbCodes }
         val errors = mutableListOf<String>()
 
@@ -822,7 +854,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         if (errors.isEmpty()) {
-            val keptChildren = dbChildren.filter { it.code in scannedCodes }
+            val keptChildren = dbChildren.filter { it.code in scannedCodes || verifyChildLoanInfos[it.code]?.loan == true }
             val addedChildren = greenBarcodes.map { b -> ChildInfo(name = "${b.itemName} (${b.code})", code = b.code) }
             verifyLocation = location.copy(apiChildNames = keptChildren + addedChildren)
             verifyState = UiState(data = Unit)
@@ -1360,11 +1392,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     // --- Content scanning ---
 
     fun startContentScan() {
-        if (!contentScanActive && !addContentScanActive) {
-            scannedChildCodes = emptySet()
-            newScannedBarcodes = emptyList()
-            saveContentState = UiState()
+        contentScanAdditive = scannedChildCodes.isNotEmpty() || newScannedBarcodes.isNotEmpty()
+        if (contentScanActive || addContentScanActive) {
+            contentScanActive = true
+            addContentScanActive = false
+            return
         }
+        saveContentState = UiState()
         contentScanActive = true
         addContentScanActive = false
     }
