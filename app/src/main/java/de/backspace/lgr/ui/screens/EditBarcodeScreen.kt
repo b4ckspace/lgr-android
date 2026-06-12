@@ -224,6 +224,148 @@ fun EditBarcodeScreen(
             }
 
             Column {
+                var itemFocused by remember { mutableStateOf(false) }
+                OutlinedTextField(
+                    value = itemNameTfv,
+                    onValueChange = { tfv ->
+                        if (tfv.text != itemNameTfv.text) {
+                            if (viewModel.editBarcodeSelectedItem != null) {
+                                viewModel.editBarcodeItemDescription = ""
+                            }
+                            viewModel.editBarcodeNameQuery = tfv.text
+                            viewModel.editBarcodeSelectedItem = null
+                        }
+                        itemNameTfv = tfv
+                    },
+                    label = { Text("Item *") },
+                    enabled = otherFieldsEnabled,
+                    modifier = Modifier.fillMaxWidth().focusRequester(itemFocusRequester)
+                        .onFocusChanged { itemFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
+                        .onGloballyPositioned { if (itemFocused) focusedBounds = it.boundsInRoot() },
+                    singleLine = true,
+                    colors = lgrTextFieldColors(),
+                    trailingIcon = {
+                        if (otherFieldsEnabled && itemNameTfv.text.isNotEmpty()) {
+                            IconButton(onClick = {
+                                if (viewModel.editBarcodeSelectedItem != null) {
+                                    viewModel.editBarcodeItemDescription = ""
+                                }
+                                itemNameTfv = TextFieldValue("")
+                                viewModel.editBarcodeNameQuery = ""
+                                viewModel.editBarcodeSelectedItem = null
+                                itemSuggestions = emptyList()
+                                showSuggestions = false
+                                itemFocusRequester.requestFocus()
+                            }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            }
+                        }
+                    }
+                )
+                if (showSuggestions) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column {
+                            itemSuggestions.forEach { (item, count) ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            itemNameTfv = TextFieldValue(item.name, TextRange(item.name.length))
+                                            viewModel.editBarcodeNameQuery = item.name
+                                            viewModel.editBarcodeSelectedItem = item
+                                            viewModel.editBarcodeItemDescription = item.description
+                                            showSuggestions = false
+                                        }
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = item.name,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Text(
+                                        text = "($count)",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = GREY
+                                    )
+                                }
+                                HorizontalDivider()
+                            }
+                        }
+                    }
+                }
+            }
+
+            barcode?.let {
+                if (viewModel.editBarcodeRenameMode) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = viewModel.editBarcodeNewCode,
+                            onValueChange = { viewModel.editBarcodeNewCode = it },
+                            label = { Text("New barcode") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            isError = renameState.error != null,
+                            colors = lgrTextFieldColors()
+                        )
+                        IconButton(onClick = onScanNewCode, enabled = !isBusy) {
+                            Icon(
+                                Icons.Default.QrCodeScanner,
+                                contentDescription = "Scan new barcode",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        IconButton(onClick = { viewModel.cancelBarcodeRename() }, enabled = !isBusy) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Undo barcode change",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = it.code,
+                            onValueChange = {},
+                            label = { Text("Barcode") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            enabled = false,
+                            colors = lgrTextFieldColors()
+                        )
+                        // Renaming recreates the entry, which would drop it from an active
+                        // loan, so it is not offered while the barcode is on loan.
+                        val onLoan = it.apiLoanInfo?.loan == true
+                        val canRename = !viewModel.editBarcodeOtherFieldsDirty && !onLoan
+                        IconButton(
+                            onClick = { viewModel.startBarcodeRename() },
+                            enabled = canRename
+                        ) {
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = "Change barcode",
+                                tint = if (canRename) MaterialTheme.colorScheme.primary else GREY
+                            )
+                        }
+                    }
+                }
+            }
+
+            Column {
                 var locationFocused by remember { mutableStateOf(false) }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -305,175 +447,27 @@ fun EditBarcodeScreen(
                 }
             }
 
-            barcode?.let {
-                if (viewModel.editBarcodeRenameMode) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = viewModel.editBarcodeNewCode,
-                            onValueChange = { viewModel.editBarcodeNewCode = it },
-                            label = { Text("New barcode") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            isError = renameState.error != null,
-                            colors = lgrTextFieldColors()
-                        )
-                        IconButton(onClick = onScanNewCode, enabled = !isBusy) {
-                            Icon(
-                                Icons.Default.QrCodeScanner,
-                                contentDescription = "Scan new barcode",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        IconButton(onClick = { viewModel.cancelBarcodeRename() }, enabled = !isBusy) {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = "Undo barcode change",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = it.code,
-                            onValueChange = {},
-                            label = { Text("Barcode") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            enabled = false,
-                            colors = lgrTextFieldColors()
-                        )
-                        // Renaming recreates the entry, which would drop it from an active
-                        // loan, so it is not offered while the barcode is on loan.
-                        val onLoan = it.apiLoanInfo?.loan == true
-                        val canRename = !viewModel.editBarcodeOtherFieldsDirty && !onLoan
-                        IconButton(
-                            onClick = { viewModel.startBarcodeRename() },
-                            enabled = canRename
-                        ) {
-                            Icon(
-                                Icons.Default.Edit,
-                                contentDescription = "Change barcode",
-                                tint = if (canRename) MaterialTheme.colorScheme.primary else GREY
-                            )
-                        }
-                    }
-                }
-            }
-
-            Column {
-                var itemFocused by remember { mutableStateOf(false) }
-                OutlinedTextField(
-                    value = itemNameTfv,
-                    onValueChange = { tfv ->
-                        if (tfv.text != itemNameTfv.text) {
-                            if (viewModel.editBarcodeSelectedItem != null) {
-                                viewModel.editBarcodeItemDescription = ""
-                            }
-                            viewModel.editBarcodeNameQuery = tfv.text
-                            viewModel.editBarcodeSelectedItem = null
-                        }
-                        itemNameTfv = tfv
-                    },
-                    label = { Text("Item *") },
-                    enabled = otherFieldsEnabled,
-                    modifier = Modifier.fillMaxWidth().focusRequester(itemFocusRequester)
-                        .onFocusChanged { itemFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
-                        .onGloballyPositioned { if (itemFocused) focusedBounds = it.boundsInRoot() },
-                    singleLine = true,
-                    colors = lgrTextFieldColors(),
-                    trailingIcon = {
-                        if (otherFieldsEnabled && itemNameTfv.text.isNotEmpty()) {
-                            IconButton(onClick = {
-                                if (viewModel.editBarcodeSelectedItem != null) {
-                                    viewModel.editBarcodeItemDescription = ""
-                                }
-                                itemNameTfv = TextFieldValue("")
-                                viewModel.editBarcodeNameQuery = ""
-                                viewModel.editBarcodeSelectedItem = null
-                                itemSuggestions = emptyList()
-                                showSuggestions = false
-                                itemFocusRequester.requestFocus()
-                            }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear")
-                            }
-                        }
-                    }
-                )
-                if (showSuggestions) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                    ) {
-                        Column {
-                            itemSuggestions.forEach { (item, count) ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            itemNameTfv = TextFieldValue(item.name, TextRange(item.name.length))
-                                            viewModel.editBarcodeNameQuery = item.name
-                                            viewModel.editBarcodeSelectedItem = item
-                                            viewModel.editBarcodeItemDescription = item.description
-                                            showSuggestions = false
-                                        }
-                                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = item.name,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    Text(
-                                        text = "($count)",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = GREY
-                                    )
-                                }
-                                HorizontalDivider()
-                            }
-                        }
-                    }
-                }
-            }
-
             var descFocused by remember { mutableStateOf(false) }
-            OutlinedTextField(
+            ScrollableMultilineTextField(
                 value = viewModel.editBarcodeDescription,
                 onValueChange = { viewModel.editBarcodeDescription = it },
-                label = { Text("Barcode description") },
+                label = "Barcode description",
                 enabled = otherFieldsEnabled,
                 modifier = Modifier.fillMaxWidth()
                     .onFocusChanged { descFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
-                    .onGloballyPositioned { if (descFocused) focusedBounds = it.boundsInRoot() },
-                minLines = 2,
-                maxLines = 4,
-                colors = lgrTextFieldColors()
+                    .onGloballyPositioned { if (descFocused) focusedBounds = it.boundsInRoot() }
             )
 
             val itemSelected = viewModel.editBarcodeSelectedItem != null
             var itemDescFocused by remember { mutableStateOf(false) }
-            OutlinedTextField(
+            ScrollableMultilineTextField(
                 value = viewModel.editBarcodeItemDescription,
                 onValueChange = { viewModel.editBarcodeItemDescription = it },
-                label = { Text("Item description") },
+                label = "Item description",
+                enabled = !itemSelected && otherFieldsEnabled,
                 modifier = Modifier.fillMaxWidth()
                     .onFocusChanged { itemDescFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
-                    .onGloballyPositioned { if (itemDescFocused) focusedBounds = it.boundsInRoot() },
-                minLines = 2,
-                maxLines = 4,
-                enabled = !itemSelected && otherFieldsEnabled,
-                colors = lgrTextFieldColors()
+                    .onGloballyPositioned { if (itemDescFocused) focusedBounds = it.boundsInRoot() }
             )
 
             Column {

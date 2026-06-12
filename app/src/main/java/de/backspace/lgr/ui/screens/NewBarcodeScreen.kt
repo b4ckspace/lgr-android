@@ -308,6 +308,128 @@ fun NewBarcodeScreen(
             }
 
             Column {
+                var itemFocused by remember { mutableStateOf(false) }
+                OutlinedTextField(
+                        value = itemNameTfv,
+                        onValueChange = { tfv ->
+                            if (tfv.text != itemNameTfv.text) {
+                                if (viewModel.newBarcodeSelectedItem != null) {
+                                    viewModel.newBarcodeItemDescription = ""
+                                }
+                                viewModel.newBarcodeNameQuery = tfv.text
+                                viewModel.newBarcodeSelectedItem = null
+                            }
+                            itemNameTfv = tfv
+                        },
+                        label = { Text("Item *") },
+                        modifier = Modifier.fillMaxWidth().focusRequester(itemFocusRequester)
+                            .onFocusChanged { itemFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
+                            .onGloballyPositioned { if (itemFocused) focusedBounds = it.boundsInRoot() },
+                        singleLine = true,
+                        colors = lgrTextFieldColors(),
+                        trailingIcon = {
+                            if (itemNameTfv.text.isNotEmpty()) {
+                                IconButton(onClick = {
+                                    if (viewModel.newBarcodeSelectedItem != null) {
+                                        viewModel.newBarcodeItemDescription = ""
+                                    }
+                                    itemNameTfv = TextFieldValue("")
+                                    viewModel.newBarcodeNameQuery = ""
+                                    viewModel.newBarcodeSelectedItem = null
+                                    itemSuggestions = emptyList()
+                                    showSuggestions = false
+                                    itemFocusRequester.requestFocus()
+                                }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                }
+                            }
+                        }
+                    )
+                    if (showSuggestions) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        ) {
+                            Column {
+                                itemSuggestions.forEach { (item, count) ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                itemNameTfv = TextFieldValue(item.name, TextRange(item.name.length))
+                                                viewModel.newBarcodeNameQuery = item.name
+                                                viewModel.newBarcodeSelectedItem = item
+                                                viewModel.newBarcodeItemDescription = item.description
+                                                viewModel.setNewBarcodePendingImage(null)
+                                                showSuggestions = false
+                                            }
+                                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = item.name,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Text(
+                                            text = "($count)",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = GREY
+                                        )
+                                    }
+                                    HorizontalDivider()
+                                }
+                            }
+                        }
+                    }
+                }
+
+            var barcodeFocused by remember { mutableStateOf(false) }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = viewModel.newBarcodeCode,
+                    onValueChange = { viewModel.newBarcodeCode = it },
+                    label = { Text("Barcode *") },
+                    modifier = Modifier.weight(1f)
+                        .onFocusChanged { barcodeFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
+                        .onGloballyPositioned { if (barcodeFocused) focusedBounds = it.boundsInRoot() },
+                    singleLine = true,
+                    readOnly = viewModel.newBarcodeGenerating,
+                    colors = lgrTextFieldColors()
+                )
+                IconButton(
+                    onClick = { viewModel.generateNextAvailableBarcode() },
+                    enabled = !viewModel.newBarcodeGenerating
+                ) {
+                    if (viewModel.newBarcodeGenerating) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.PlusOne,
+                            contentDescription = "Generate next available barcode",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                IconButton(onClick = onScanCode) {
+                    Icon(
+                        Icons.Default.QrCodeScanner,
+                        contentDescription = "Scan barcode",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            Column {
                 var locationFocused by remember { mutableStateOf(false) }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -387,154 +509,26 @@ fun NewBarcodeScreen(
                 }
             }
 
-            var barcodeFocused by remember { mutableStateOf(false) }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = viewModel.newBarcodeCode,
-                    onValueChange = { viewModel.newBarcodeCode = it },
-                    label = { Text("Barcode *") },
-                    modifier = Modifier.weight(1f)
-                        .onFocusChanged { barcodeFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
-                        .onGloballyPositioned { if (barcodeFocused) focusedBounds = it.boundsInRoot() },
-                    singleLine = true,
-                    readOnly = viewModel.newBarcodeGenerating,
-                    colors = lgrTextFieldColors()
-                )
-                IconButton(
-                    onClick = { viewModel.generateNextAvailableBarcode() },
-                    enabled = !viewModel.newBarcodeGenerating
-                ) {
-                    if (viewModel.newBarcodeGenerating) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    } else {
-                        Icon(
-                            Icons.Default.PlusOne,
-                            contentDescription = "Generate next available barcode",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                IconButton(onClick = onScanCode) {
-                    Icon(
-                        Icons.Default.QrCodeScanner,
-                        contentDescription = "Scan barcode",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            Column {
-                var itemFocused by remember { mutableStateOf(false) }
-                OutlinedTextField(
-                        value = itemNameTfv,
-                        onValueChange = { tfv ->
-                            if (tfv.text != itemNameTfv.text) {
-                                if (viewModel.newBarcodeSelectedItem != null) {
-                                    viewModel.newBarcodeItemDescription = ""
-                                }
-                                viewModel.newBarcodeNameQuery = tfv.text
-                                viewModel.newBarcodeSelectedItem = null
-                            }
-                            itemNameTfv = tfv
-                        },
-                        label = { Text("Item *") },
-                        modifier = Modifier.fillMaxWidth().focusRequester(itemFocusRequester)
-                            .onFocusChanged { itemFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
-                            .onGloballyPositioned { if (itemFocused) focusedBounds = it.boundsInRoot() },
-                        singleLine = true,
-                        colors = lgrTextFieldColors(),
-                        trailingIcon = {
-                            if (itemNameTfv.text.isNotEmpty()) {
-                                IconButton(onClick = {
-                                    if (viewModel.newBarcodeSelectedItem != null) {
-                                        viewModel.newBarcodeItemDescription = ""
-                                    }
-                                    itemNameTfv = TextFieldValue("")
-                                    viewModel.newBarcodeNameQuery = ""
-                                    viewModel.newBarcodeSelectedItem = null
-                                    itemSuggestions = emptyList()
-                                    showSuggestions = false
-                                    itemFocusRequester.requestFocus()
-                                }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "Clear")
-                                }
-                            }
-                        }
-                    )
-                    if (showSuggestions) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                        ) {
-                            Column {
-                                itemSuggestions.forEach { (item, count) ->
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable {
-                                                itemNameTfv = TextFieldValue(item.name, TextRange(item.name.length))
-                                                viewModel.newBarcodeNameQuery = item.name
-                                                viewModel.newBarcodeSelectedItem = item
-                                                viewModel.newBarcodeItemDescription = item.description
-                                                viewModel.setNewBarcodePendingImage(null)
-                                                showSuggestions = false
-                                            }
-                                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = item.name,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                        Text(
-                                            text = "($count)",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = GREY
-                                        )
-                                    }
-                                    HorizontalDivider()
-                                }
-                            }
-                        }
-                    }
-                }
-
             var descFocused by remember { mutableStateOf(false) }
-            OutlinedTextField(
+            ScrollableMultilineTextField(
                 value = viewModel.newBarcodeDescription,
                 onValueChange = { viewModel.newBarcodeDescription = it },
-                label = { Text("Barcode description") },
+                label = "Barcode description",
                 modifier = Modifier.fillMaxWidth()
                     .onFocusChanged { descFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
-                    .onGloballyPositioned { if (descFocused) focusedBounds = it.boundsInRoot() },
-                minLines = 2,
-                maxLines = 4,
-                colors = lgrTextFieldColors()
+                    .onGloballyPositioned { if (descFocused) focusedBounds = it.boundsInRoot() }
             )
 
             val itemSelected = viewModel.newBarcodeSelectedItem != null
             var itemDescFocused by remember { mutableStateOf(false) }
-            OutlinedTextField(
+            ScrollableMultilineTextField(
                 value = viewModel.newBarcodeItemDescription,
                 onValueChange = { viewModel.newBarcodeItemDescription = it },
-                label = { Text("Item description") },
+                label = "Item description",
+                enabled = !itemSelected,
                 modifier = Modifier.fillMaxWidth()
                     .onFocusChanged { itemDescFocused = it.isFocused; if (!it.isFocused) focusedBounds = Rect.Zero }
-                    .onGloballyPositioned { if (itemDescFocused) focusedBounds = it.boundsInRoot() },
-                minLines = 2,
-                maxLines = 4,
-                enabled = !itemSelected,
-                colors = lgrTextFieldColors()
+                    .onGloballyPositioned { if (itemDescFocused) focusedBounds = it.boundsInRoot() }
             )
 
             Column {
