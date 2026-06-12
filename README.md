@@ -124,11 +124,11 @@ Searchable, paginated list of all barcodes.
 
 Tap any barcode in the list (or scan from Home → Details) to open the detail view.
 
-**Displayed fields:**
-- Location (breadcrumb of parent chain, tappable to navigate)
-- Barcode code
+**Displayed fields** (top to bottom — Item, Barcode, Location):
 - Item name and description
-- **Item image** — shown below the item name when the backend supports images and an image has been set. Tap to view the image fullscreen; tap the fullscreen image to dismiss it.
+- Barcode code
+- **Item image** — shown below the barcode when the backend supports images and an image has been set. Tap to view the image fullscreen; tap the fullscreen image to dismiss it.
+- Location (breadcrumb of parent chain, tappable to navigate)
 - Per-barcode description (labelled *Barcode description*)
 - Owner (resolved to display name)
 - Loan status — *Available* (green) or *On loan — Person* (blue)
@@ -145,10 +145,11 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 - **Delete** — confirmation dialog, then permanently deletes the barcode and returns to the list
 
 **Editing a barcode:**
-Tap the Edit icon (pencil) in the top bar to open the edit screen. The loan status is not editable. Editable fields:
-- **Location** — type-ahead barcode search (min. 2 characters, 300 ms debounce). Suggestions show the item name and barcode code; selecting one sets the parent barcode. Pre-filled with the current parent (if any).
+Tap the Edit icon (pencil) in the top bar to open the edit screen. The loan status is not editable. Fields are ordered Item, Barcode, Location:
 - **Item** — type-ahead search; selecting a suggestion fills in the item description. If the typed name does not exist yet, a new item is created on save.
-- **Barcode description** — per-barcode description.
+- **Barcode** — the existing code, read-only here (change it via *Changing the barcode code* below).
+- **Location** — type-ahead barcode search (min. 2 characters, 300 ms debounce). Suggestions show the item name and barcode code; selecting one sets the parent barcode. Pre-filled with the current parent (if any).
+- **Barcode description** — per-barcode description. Multi-line; when the text exceeds the field height, only the text scrolls inside the fixed outline and a thin scrollbar appears on the right; the field keeps the line you are typing on in view (same for the New Barcode and Edit Item description fields).
 - **Item description** — editable when no item is selected from suggestions; read-only once an item is chosen.
 - **Owner** — type-ahead person search; tap the person icon to set to the current user.
 
@@ -170,12 +171,13 @@ The code is the barcode's identifier and cannot be edited in place, so changing 
 **Content list:**
 - Shows all child barcodes with their item names. Tappable for navigation.
 - Loan status shown per child (blue label if on loan).
-- Three icon buttons in the *Content* header (authenticated):
-  - **Verify icon** — opens *Scan all content* scanner; scan every physical item in the container. Items in the database but not yet scanned are shown in red; newly scanned items in green. A **Cancel** button (and the back arrow) abort the scan without changing content.
-  - **Scan icon** — opens *Add content* scanner; adds newly scanned items to the existing content without removing anything.
+- Four icon buttons in the *Content* header (authenticated):
   - **Search icon** — shows a text search field inline below the header. Type a barcode code or item name (min. 2 characters, 300 ms debounce); tap any suggestion to add it immediately. Already-present and already-added barcodes are shown in grey and cannot be selected. Tap the search icon again (now shown as ×) to close the field. The field is also closed automatically when Save or Cancel is tapped.
-- All three add modes share the same list of added barcodes and can be combined freely within a session.
-- Once any content has been added or scanned, **Save** and **Cancel** buttons appear at the bottom. Cancel discards all changes; Save writes them to the backend. The scan state resets when navigating to a different barcode.
+  - **Scan icon** — opens *Add content* scanner; adds newly scanned items to the existing content without removing anything.
+  - **New-barcode icon** — opens the New Barcode form with this container pre-filled as the location, to register a brand-new barcode directly inside it.
+  - **Verify icon** — opens the content scanner; scan every physical item in the container. While verifying, the *Content* section switches to the same two-column **Current | Scanned** table used by the standalone Verify workflow (expected-but-missing items in red on the left, unexpected scans in green on the right). Tapping the icon again while a verify is already in progress *adds* to the already-scanned list rather than replacing it, and the camera shows *Scan additional content* (a fresh verify shows *Scan all content*). A **Cancel** button (and the back arrow) abort the scan without changing content.
+- The search, scan and add modes share the same list of added barcodes and can be combined freely within a session.
+- Once any content has been added or scanned, **Save** and **Cancel** buttons appear at the bottom. Cancel discards all changes; Save writes them to the backend. Children that are out on loan are never detached, even when they were not re-scanned during a verify. The scan state resets when navigating to a different barcode.
 
 ---
 
@@ -274,15 +276,15 @@ The result screen shows a two-column table:
 - Items only in *Current* (missing physically) are shown in red.
 - Items only in *Scanned* (unexpected extras) are shown in green.
 - Tapping any barcode entry in either column navigates to its Barcode Detail. The Android back button returns to the verify result.
-- The location breadcrumb ancestors and the **Item** row are tappable links (shown in primary colour) — tapping navigates to the respective Barcode Detail or Item Detail.
-- A re-scan icon in the *Content* header lets you re-run the content scan.
+- Above the table the screen shows the location's details using the same rows, order and colours as the Barcode Detail page — **Item**, **Barcode**, **Location**, optional **Barcode description**, **Item description**, **Owner** and **Loan**, all in the normal text colour. The **Item** row is still tappable (navigates to Item Detail) but no longer highlighted. The breadcrumb ancestors remain tappable to their Barcode Detail.
+- A verify icon in the *Content* header re-opens the scanner in **Scan additional content** mode: scanned barcodes are *added* to the already-scanned list. It can be used repeatedly, each time appending to the list. The scanned list is only reset when you leave the result screen (back arrow, **Cancel**, or **Save**).
 - **Pull to refresh** — pull down on the result screen to reload the location's current data from the backend; the list of already-scanned items in the current session is preserved.
 - The list auto-scrolls so the *Content* header is the first visible item when the screen opens.
 - The result screen highlights the **Barcodes** tab.
 
 **If there are mismatches:**
 - **Cancel** — discards changes and navigates to the location barcode's detail page.
-- **Save** — writes the scanned reality to the backend (updates parent references), then navigates to the location barcode's detail page.
+- **Save** — writes the scanned reality to the backend (updates parent references), then navigates to the location barcode's detail page. Children that are currently out on loan are kept attached even if they were not physically scanned (same guard as the in-place content verify).
 
 **If everything matches:**
 - **Verify next** — resets the scan state and returns to the location scanner to verify another container.
@@ -294,11 +296,13 @@ The result screen shows a two-column table:
 
 Form to register a new barcode in the system.
 
+Fields are ordered Item, Barcode, Location:
+
 | Field | Notes |
 |---|---|
-| **Location** | Optional parent barcode. Type-ahead barcode search (min. 2 characters, 300 ms debounce) — suggestions show item name and code. Or tap the scan icon to scan a barcode. |
-| **Barcode** * | The barcode string. Enter manually, scan (camera icon), or tap **+1** to auto-generate the next available numeric code. While the +1 search is running a spinner is shown and the field is read-only; it becomes editable again once a free code is found. Only accepts codes not already in the system (burp if already known). |
 | **Item** * | Type-ahead search against the item catalogue (min. 2 characters, 300 ms debounce). Selecting a suggestion fills in the item description. If the name does not exist yet, a new item is created on save. |
+| **Barcode** * | The barcode string. Enter manually, scan (camera icon), or tap **+1** to auto-generate the next available numeric code. While the +1 search is running a spinner is shown and the field is read-only; it becomes editable again once a free code is found. Only accepts codes not already in the system (burp if already known). |
+| **Location** | Optional parent barcode. Type-ahead barcode search (min. 2 characters, 300 ms debounce) — suggestions show item name and code. Or tap the scan icon to scan a barcode. |
 | **Description** | Free-text description for this specific barcode instance. |
 | **Item description** | Pre-filled from the selected item (read-only). Editable when no item is selected. |
 | **Owner** | Optional. Type-ahead person search or tap the person icon to assign yourself. |
@@ -377,6 +381,8 @@ When launched via *Read-only without login*, the app operates in read-only mode:
 ## Navigation
 
 A compact icon-only bottom bar is always visible (except on camera/scanner screens). The top bar title reflects the active tab name (Home, Items, Barcodes, Persons, Loans, My Loans). On sub-pages (detail, edit, scan) the tab icon corresponding to the parent tab stays subtly highlighted.
+
+The top bar shows a global **New barcode** (note-add) action on all non-camera screens (hidden in read-only mode), so a new barcode can be created from anywhere — not just the Barcodes tab. The loan-cart badge appears next to it when the loan selection is non-empty.
 
 ---
 
