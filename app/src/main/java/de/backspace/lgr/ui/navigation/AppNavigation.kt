@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.NoteAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -90,6 +91,14 @@ fun AppNavigation(viewModel: AppViewModel) {
                 TopAppBar(
                     title = { Text(activeTab?.title ?: "LGR") },
                     actions = {
+                        if (!viewModel.readonlyMode) {
+                            IconButton(onClick = {
+                                viewModel.clearNewBarcodeState()
+                                navController.navigate("new_barcode")
+                            }) {
+                                Icon(Icons.Outlined.NoteAdd, contentDescription = "New barcode")
+                            }
+                        }
                         if (viewModel.selectedBarcodes.isNotEmpty()) {
                             BadgedBox(
                                 badge = { Badge { Text(viewModel.selectedBarcodes.size.toString()) } }
@@ -522,7 +531,7 @@ fun AppNavigation(viewModel: AppViewModel) {
                 }
                 VerifyBarcodeScreen(
                     viewModel = viewModel,
-                    onBack = { navController.popBackStack() },
+                    onBack = { viewModel.clearVerifyState(); navController.popBackStack() },
                     onRescan = { navController.popBackStack() },
                     onCancel = navigateToBarcodeDetail,
                     onSaved = navigateToBarcodeDetail,
