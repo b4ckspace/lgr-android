@@ -17,6 +17,7 @@ import androidx.lifecycle.viewModelScope
 import de.backspace.lgr.data.api.ApiClient
 import de.backspace.lgr.data.model.*
 import de.backspace.lgr.data.repository.LgrRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -920,7 +921,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             items = UiState(isLoading = true)
             runCatching { repo.getItems(effectiveSearch, noBarcodes = noBarcodes) }
                 .onSuccess { items = UiState(data = it.results); itemsNextPage = it.next; itemsCount = it.count }
-                .onFailure { items = UiState(error = it.localizedMessage) }
+                .onFailure { if (it is CancellationException) throw it; items = UiState(error = it.localizedMessage) }
         }
     }
 
@@ -957,7 +958,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             if (ownerIds.size <= 1) {
                 runCatching { repo.getBarcodes(textSearch, noParent = noParent, owner = ownerIds.firstOrNull()) }
                     .onSuccess { barcodes = UiState(data = it.results); barcodesNextPage = it.next; barcodesCount = it.count }
-                    .onFailure { barcodes = UiState(error = it.localizedMessage) }
+                    .onFailure { if (it is CancellationException) throw it; barcodes = UiState(error = it.localizedMessage) }
             } else {
                 try {
                     coroutineScope {
@@ -970,6 +971,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                         barcodesNextPage = null
                         barcodesCount = results.sumOf { it.count }
                     }
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     barcodes = UiState(error = e.localizedMessage)
                 }
@@ -999,7 +1002,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             persons = UiState(isLoading = true)
             runCatching { repo.getPersons(effectiveSearch) }
                 .onSuccess { persons = UiState(data = it.results); personsNextPage = it.next; personsCount = it.count }
-                .onFailure { persons = UiState(error = it.localizedMessage) }
+                .onFailure { if (it is CancellationException) throw it; persons = UiState(error = it.localizedMessage) }
         }
     }
 
