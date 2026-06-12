@@ -106,7 +106,7 @@ fun BarcodeDetailScreen(
 
     BackHandler(enabled = viewModel.barcodeHistory.isNotEmpty()) {
         val prevCode = viewModel.popBarcodeHistory() ?: return@BackHandler
-        viewModel.loadBarcode(prevCode)
+        viewModel.loadBarcode(prevCode, restoreContentSession = true)
     }
 
     val onBarcodeClick: (String) -> Unit = { code -> viewModel.navigateToBarcode(code) }

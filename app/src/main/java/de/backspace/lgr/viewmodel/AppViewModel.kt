@@ -192,6 +192,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var barcodeForwardHistory by mutableStateOf<List<String>>(emptyList())
         private set
+    // Snapshot of an in-progress content/verify scan, kept per barcode code so following a
+    // barcode link and coming back via history does not lose the scan session.
+    private data class ContentSession(
+        val contentActive: Boolean,
+        val addActive: Boolean,
+        val additive: Boolean,
+        val scannedChildCodes: Set<String>,
+        val newScannedBarcodes: List<Barcode>
+    )
+    private val contentSessions = HashMap<String, ContentSession>()
     var pendingNewParent by mutableStateOf<Barcode?>(null)
         private set
     var saveParentState by mutableStateOf(UiState<Unit>())
@@ -1294,7 +1304,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         newPersonEmail = ""
     }
 
-    fun loadBarcode(code: String) = viewModelScope.launch {
+    fun loadBarcode(code: String, restoreContentSession: Boolean = false) = viewModelScope.launch {
         barcodeJustCreated = false
         pendingNewParent = null
         saveParentState = UiState()
@@ -1305,7 +1315,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         newScannedBarcodes = emptyList()
         contentScanActive = false
         addContentScanActive = false
+        contentScanAdditive = false
         saveContentState = UiState()
+        if (restoreContentSession) contentSessions[code]?.let { s ->
+            scannedChildCodes = s.scannedChildCodes
+            newScannedBarcodes = s.newScannedBarcodes
+            contentScanActive = s.contentActive
+            addContentScanActive = s.addActive
+            contentScanAdditive = s.additive
+        }
         runCatching { repo.getBarcode(code) }
             .onSuccess { barcode ->
                 scannedBarcode = UiState(data = barcode)
@@ -1328,6 +1346,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         scannedBarcode = UiState()
         barcodeHistory = emptyList()
         barcodeForwardHistory = emptyList()
+        contentSessions.clear()
         pendingNewParent = null
         saveParentState = UiState()
         addContentScanActive = false
@@ -1335,17 +1354,37 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     // --- Barcode link navigation with back/forward history ---
 
+    // Remember (or forget) the current barcode's in-progress content/verify scan so it can be
+    // restored when the user navigates back/forward to it through the barcode-link history.
+    private fun snapshotContentSession(code: String) {
+        if (contentScanActive || addContentScanActive ||
+            scannedChildCodes.isNotEmpty() || newScannedBarcodes.isNotEmpty()) {
+            contentSessions[code] = ContentSession(
+                contentActive = contentScanActive,
+                addActive = addContentScanActive,
+                additive = contentScanAdditive,
+                scannedChildCodes = scannedChildCodes,
+                newScannedBarcodes = newScannedBarcodes
+            )
+        } else {
+            contentSessions.remove(code)
+        }
+    }
+
     fun navigateToBarcode(code: String) {
         val currentCode = scannedBarcode.data?.code ?: return
+        snapshotContentSession(currentCode)
         barcodeHistory = (barcodeHistory + currentCode).takeLast(20)
         barcodeForwardHistory = emptyList()
         barcodeListContext = null
+        // Following a link loads the target fresh; the back/forward steps restore sessions.
         loadBarcode(code)
     }
 
     fun popBarcodeHistory(): String? {
         if (barcodeHistory.isEmpty()) return null
         val currentCode = scannedBarcode.data?.code
+        if (currentCode != null) snapshotContentSession(currentCode)
         val prev = barcodeHistory.last()
         barcodeHistory = barcodeHistory.dropLast(1)
         if (currentCode != null) barcodeForwardHistory = (barcodeForwardHistory + currentCode).takeLast(20)
@@ -1355,10 +1394,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun navigateForward() {
         if (barcodeForwardHistory.isEmpty()) return
         val currentCode = scannedBarcode.data?.code
+        if (currentCode != null) snapshotContentSession(currentCode)
         val next = barcodeForwardHistory.last()
         barcodeForwardHistory = barcodeForwardHistory.dropLast(1)
         if (currentCode != null) barcodeHistory = (barcodeHistory + currentCode).takeLast(20)
-        loadBarcode(next)
+        loadBarcode(next, restoreContentSession = true)
     }
 
     // --- New parent scanning ---
@@ -1618,6 +1658,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         barcodesReturnFromDetail = true
         barcodeHistory = emptyList()
         barcodeForwardHistory = emptyList()
+        contentSessions.clear()
         barcodeListContext = list
         barcodeListIndex = index
         loadBarcode(list[index].code)
@@ -1628,6 +1669,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         if (index !in list.indices) return
         barcodeHistory = emptyList()
         barcodeForwardHistory = emptyList()
+        contentSessions.clear()
         barcodeListIndex = index
         loadBarcode(list[index].code)
     }
