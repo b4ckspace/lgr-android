@@ -72,6 +72,9 @@ fun AppNavigation(viewModel: AppViewModel) {
     LaunchedEffect(currentRoute) {
         val route = currentRoute ?: return@LaunchedEffect
         if (cameraRoutes.any { route.startsWith(it) }) return@LaunchedEffect
+        // verify_detail is a transient flow tied to verify state that gets cleared on exit;
+        // never remember it as the Barcodes tab's restorable sub-screen.
+        if (route == "verify_detail") return@LaunchedEffect
         val tab = activeTabFor(route, viewModel.currentLoanOriginMyLoans) ?: return@LaunchedEffect
         if (route == tab.route) tabLastRoutes.remove(tab) else tabLastRoutes[tab] = route
     }
