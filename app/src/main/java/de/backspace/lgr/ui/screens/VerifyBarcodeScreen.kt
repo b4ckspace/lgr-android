@@ -38,8 +38,18 @@ fun VerifyBarcodeScreen(
     onBarcodeClick: ((String) -> Unit)? = null,
     onItemClick: (() -> Unit)? = null
 ) {
-    val location = viewModel.verifyLocation
-    val scanned = viewModel.verifyContents
+    // Keep rendering the last scanned location/contents while the screen animates away after
+    // Cancel/Save/OK/Verify-next clear the verify state, so it doesn't briefly flash
+    // "No location scanned." during the exit transition.
+    val liveLocation = viewModel.verifyLocation
+    val locationState = remember { mutableStateOf(liveLocation) }
+    val scannedState = remember { mutableStateOf(viewModel.verifyContents) }
+    if (liveLocation != null) {
+        locationState.value = liveLocation
+        scannedState.value = viewModel.verifyContents
+    }
+    val location = locationState.value
+    val scanned = scannedState.value
     val saveState = viewModel.verifyState
 
     LaunchedEffect(saveState.data) {
