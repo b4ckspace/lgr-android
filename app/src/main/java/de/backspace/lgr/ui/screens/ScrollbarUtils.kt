@@ -156,7 +156,7 @@ fun Modifier.verticalScrollbar(state: LazyGridState, width: Dp = SCROLLBAR_WIDTH
     }
 }
 
-fun Modifier.verticalScrollbar(state: ScrollState, width: Dp = SCROLLBAR_WIDTH): Modifier = composed {
+fun Modifier.verticalScrollbar(state: ScrollState, width: Dp = SCROLLBAR_WIDTH, endPadding: Dp = 2.dp): Modifier = composed {
     val color       = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
 
     // Read at composition time — ScrollState.value and maxValue are MutableState-backed.
@@ -171,6 +171,6 @@ fun Modifier.verticalScrollbar(state: ScrollState, width: Dp = SCROLLBAR_WIDTH):
         val thumbH = (vpH * vpH / (vpH + maxScroll)).coerceAtLeast(40.dp.toPx())
         val thumbY = (scrollValue / maxScroll) * (vpH - thumbH)
         val w = width.toPx()
-        drawRoundRect(color, Offset(size.width - w - 2.dp.toPx(), thumbY), Size(w, thumbH), CornerRadius(w / 2))
+        drawRoundRect(color, Offset(size.width - w - endPadding.toPx(), thumbY), Size(w, thumbH), CornerRadius(w / 2))
     }
 }

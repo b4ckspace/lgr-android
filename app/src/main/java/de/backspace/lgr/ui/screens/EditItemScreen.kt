@@ -193,14 +193,11 @@ fun EditItemScreen(
                     colors = lgrTextFieldColors()
                 )
 
-                OutlinedTextField(
+                ScrollableMultilineTextField(
                     value = viewModel.editItemDescription,
                     onValueChange = { viewModel.editItemDescription = it },
-                    label = { Text("Item description") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
-                    maxLines = 4,
-                    colors = lgrTextFieldColors()
+                    label = "Item description",
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 if (viewModel.supportsImages && !viewModel.readonlyMode) {
