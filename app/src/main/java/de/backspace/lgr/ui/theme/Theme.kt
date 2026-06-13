@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Andreas Uhsemann
+// SPDX-License-Identifier: Apache-2.0
+
 package de.backspace.lgr.ui.theme
 
 import androidx.compose.material3.MaterialTheme

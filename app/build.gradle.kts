@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Andreas Uhsemann
+// SPDX-License-Identifier: Apache-2.0
+
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Properties
