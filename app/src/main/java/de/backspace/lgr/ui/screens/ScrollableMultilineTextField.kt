@@ -66,10 +66,15 @@ fun ScrollableMultilineTextField(
     // it to expose the caret). We only adopt the hoisted String when it changes for an external
     // reason (programmatic clear/prefill); echoes of the user's own edits are ignored via
     // lastEmitted, which is what prevents the caret from jumping to the end during fast typing.
-    var tfv by remember { mutableStateOf(TextFieldValue(value, TextRange(value.length))) }
+    //
+    // The caret starts at offset 0 (not the end): the field opens scrolled to the top, and when
+    // it is first focused the text field brings the caret into view — anchoring it at the top
+    // avoids a jump-to-bottom on focus that would otherwise scroll the line the user tapped out
+    // of sight.
+    var tfv by remember { mutableStateOf(TextFieldValue(value, TextRange(0))) }
     var lastEmitted by remember { mutableStateOf(value) }
     if (value != lastEmitted && value != tfv.text) {
-        tfv = TextFieldValue(value, TextRange(value.length))
+        tfv = TextFieldValue(value, TextRange(0))
         lastEmitted = value
     }
 
