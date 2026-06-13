@@ -170,7 +170,10 @@ fun LoginScreen(viewModel: AppViewModel) {
         style = MaterialTheme.typography.bodySmall,
         modifier = Modifier
             .align(Alignment.BottomEnd)
-            .padding(12.dp)
+            // Sit above the system navigation bar, matching the footer's bottom padding on
+            // the regular (Scaffold) screens.
+            .navigationBarsPadding()
+            .padding(horizontal = 12.dp)
     )
 
     Text(
@@ -179,7 +182,8 @@ fun LoginScreen(viewModel: AppViewModel) {
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier
             .align(Alignment.BottomStart)
-            .padding(12.dp)
+            .navigationBarsPadding()
+            .padding(horizontal = 12.dp)
             .clickable { showLicenses = true }
     )
     } // Box
