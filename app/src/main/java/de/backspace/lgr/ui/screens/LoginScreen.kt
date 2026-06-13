@@ -160,20 +160,18 @@ fun LoginScreen(viewModel: AppViewModel) {
         }
     }
 
-    if (!BuildConfig.DEBUG) {
-        Text(
-            text = buildAnnotatedString {
-                append("Version: ${BuildConfig.VERSION_NAME}")
-                withStyle(SpanStyle(color = MID_GREY)) {
-                    append(" (${BuildConfig.BUILD_DATE})")
-                }
-            },
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(12.dp)
-        )
-    }
+    Text(
+        text = buildAnnotatedString {
+            append("Version: ${BuildConfig.VERSION_NAME}")
+            withStyle(SpanStyle(color = MID_GREY)) {
+                append(" (${BuildConfig.BUILD_DATE})")
+            }
+        },
+        style = MaterialTheme.typography.bodySmall,
+        modifier = Modifier
+            .align(Alignment.BottomEnd)
+            .padding(12.dp)
+    )
 
     Text(
         text = "Open-source licenses",
