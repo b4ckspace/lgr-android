@@ -67,7 +67,10 @@ fun ItemsScreen(viewModel: AppViewModel, onOpenDetail: ((List<Item>, Int) -> Uni
         if (shouldLoadMore) viewModel.loadMoreItems()
     }
 
-    Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
+    // Edge-to-edge means the window does not resize for the keyboard (manifest adjustResize is a
+    // no-op), so shrink the content above the IME ourselves; otherwise the list keeps full height
+    // behind the keyboard and cannot be scrolled.
+    Box(modifier = Modifier.fillMaxSize().imePadding().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
     Column(modifier = Modifier.fillMaxSize()) {
         OutlinedTextField(
             value = search,
