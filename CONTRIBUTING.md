@@ -20,7 +20,7 @@ signing is optional and read from a local, untracked `keystore.properties`.
 
 ## Making changes
 
-1. Fork the repository and create a branch off `master`.
+1. Fork the repository and create a branch off `main`.
 2. Keep each change focused; prefer one logical change per commit.
 3. Make sure the project builds (`./gradlew assembleDebug`) before opening a pull request.
 4. If your change is user-visible or alters documented behaviour, **update `README.md`** in the
@@ -30,7 +30,7 @@ signing is optional and read from a local, untracked `keystore.properties`.
    // SPDX-FileCopyrightText: <year> <your name>
    // SPDX-License-Identifier: Apache-2.0
    ```
-6. Open a pull request against `master` describing what changed and why.
+6. Open a pull request against `main` describing what changed and why.
 
 ## Code style
 
