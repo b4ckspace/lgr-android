@@ -397,3 +397,13 @@ The top bar shows a global **New barcode** (note-add) action on all non-camera s
 ## License
 
 Copyright 2026 Andreas Uhsemann. Licensed under the [Apache License, Version 2.0](LICENSE).
+
+### Third-party open-source licenses
+
+The app bundles a number of open-source components (AndroidX/Jetpack Compose, CameraX,
+Retrofit/OkHttp, Coil, Google ML Kit, and others). Their licenses are listed in-app on an
+**Open-source licenses** screen, reachable from the bottom-left link on the login screen. The
+list is generated at build time by the [AboutLibraries](https://github.com/mikepenz/AboutLibraries)
+Gradle plugin from the project's dependency metadata, so it stays in sync as dependencies change.
+Google ML Kit additionally carries Google's ML Kit terms and bundles its own third-party
+components, which are noted on that screen.

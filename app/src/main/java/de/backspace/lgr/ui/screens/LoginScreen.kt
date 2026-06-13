@@ -1,5 +1,6 @@
 package de.backspace.lgr.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -35,6 +36,12 @@ fun LoginScreen(viewModel: AppViewModel) {
     var loginAttempted by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val authState = viewModel.auth
+    var showLicenses by remember { mutableStateOf(false) }
+
+    if (showLicenses) {
+        LicensesScreen(onBack = { showLicenses = false })
+        return
+    }
 
     fun doLogin() {
         if (serverUrl.isNotBlank()) viewModel.applyServerUrl(serverUrl)
@@ -164,5 +171,15 @@ fun LoginScreen(viewModel: AppViewModel) {
                 .padding(12.dp)
         )
     }
+
+    Text(
+        text = "Open-source licenses",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier
+            .align(Alignment.BottomStart)
+            .padding(12.dp)
+            .clickable { showLicenses = true }
+    )
     } // Box
 }
