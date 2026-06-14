@@ -127,6 +127,15 @@ fun PersonsScreen(
         }
 
         PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
+
+        if (onNew != null && !viewModel.readonlyMode) {
+            FloatingActionButton(
+                onClick = onNew,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+            ) {
+                Icon(Icons.Default.PersonAdd, contentDescription = "Add new person")
+            }
+        }
     }
 }
 

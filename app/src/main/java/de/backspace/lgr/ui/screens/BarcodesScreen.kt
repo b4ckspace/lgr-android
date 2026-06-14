@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -45,7 +46,8 @@ private fun Person.displayName(): String =
 fun BarcodesScreen(
     viewModel: AppViewModel,
     onOpenDetail: (List<Barcode>, Int) -> Unit = { _, _ -> },
-    onScanSearch: () -> Unit = {}
+    onScanSearch: () -> Unit = {},
+    onNewBarcode: () -> Unit = {}
 ) {
     var search by remember { mutableStateOf(viewModel.barcodesSearch) }
     val listState = rememberLazyListState(viewModel.barcodesScrollIndex, viewModel.barcodesScrollOffset)
@@ -245,6 +247,15 @@ fun BarcodesScreen(
         }
 
         PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
+
+        if (!viewModel.readonlyMode) {
+            FloatingActionButton(
+                onClick = onNewBarcode,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+            ) {
+                Icon(Icons.Default.NoteAdd, contentDescription = "Add new barcode")
+            }
+        }
     }
 }
 
