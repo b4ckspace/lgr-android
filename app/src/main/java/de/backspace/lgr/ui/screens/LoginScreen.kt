@@ -5,6 +5,8 @@ package de.backspace.lgr.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -55,9 +57,14 @@ fun LoginScreen(viewModel: AppViewModel) {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+    // Scrollable so fields (e.g. the password) stay reachable when the keyboard covers them;
+    // heightIn(min = maxHeight) keeps the form vertically centred when it fits the screen.
+    BoxWithConstraints(modifier = Modifier.fillMaxSize().imePadding()) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .heightIn(min = maxHeight)
+            .fillMaxWidth()
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -158,6 +165,7 @@ fun LoginScreen(viewModel: AppViewModel) {
         ) {
             Text("Read-only without login")
         }
+    }
     }
 
     Text(
