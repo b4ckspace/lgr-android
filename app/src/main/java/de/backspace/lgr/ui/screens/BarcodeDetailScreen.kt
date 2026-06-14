@@ -19,19 +19,19 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.FactCheck
-import androidx.compose.material.icons.filled.NoteAdd
-import androidx.compose.material.icons.outlined.FactCheck
-import androidx.compose.material.icons.outlined.NoteAdd
+import androidx.compose.material.icons.automirrored.filled.FactCheck
+import androidx.compose.material.icons.automirrored.filled.NoteAdd
+import androidx.compose.material.icons.automirrored.outlined.FactCheck
+import androidx.compose.material.icons.automirrored.outlined.NoteAdd
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AddShoppingCart
 
 import androidx.compose.material.icons.filled.RemoveShoppingCart
@@ -231,7 +231,7 @@ fun BarcodeDetailScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
             }
             Text("Barcode", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.weight(1f))
@@ -240,7 +240,7 @@ fun BarcodeDetailScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
                         if (viewModel.barcodeJustCreated) {
                             IconButton(onClick = onNewBarcode) {
-                                Icon(Icons.Default.NoteAdd, contentDescription = "New Barcode")
+                                Icon(Icons.AutoMirrored.Filled.NoteAdd, contentDescription = "New Barcode")
                             }
                         }
                         IconButton(onClick = onEditBarcode) {
@@ -416,7 +416,7 @@ fun BarcodeDetailScreen(
                                     onClick = { viewModel.navigateToBarcodeInList(currentIndex - 1) },
                                     enabled = currentIndex > 0
                                 ) {
-                                    Icon(Icons.Default.KeyboardArrowLeft, "Previous barcode")
+                                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Previous barcode")
                                 }
                                 Text(
                                     "${currentIndex + 1} / ${barcodeList.size}",
@@ -426,7 +426,7 @@ fun BarcodeDetailScreen(
                                     onClick = { viewModel.navigateToBarcodeInList(currentIndex + 1) },
                                     enabled = currentIndex < barcodeList.size - 1
                                 ) {
-                                    Icon(Icons.Default.KeyboardArrowRight, "Next barcode")
+                                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Next barcode")
                                 }
                             }
                         }
@@ -653,7 +653,7 @@ private fun ContentListSection(
                     // New barcode as child
                     IconButton(onClick = onNewBarcodeAsChild, modifier = Modifier.size(32.dp)) {
                         Icon(
-                            Icons.Outlined.NoteAdd,
+                            Icons.AutoMirrored.Outlined.NoteAdd,
                             contentDescription = "New barcode in this location",
                             modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.colorScheme.primary
@@ -663,7 +663,7 @@ private fun ContentListSection(
                     // Verify
                     IconButton(onClick = onReScan, modifier = Modifier.size(32.dp)) {
                         Icon(
-                            Icons.Outlined.FactCheck,
+                            Icons.AutoMirrored.Outlined.FactCheck,
                             contentDescription = "Re-scan content",
                             modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.colorScheme.primary

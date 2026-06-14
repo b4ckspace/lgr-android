@@ -14,11 +14,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -160,7 +160,7 @@ fun ItemDetailScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
             }
             Text("Item", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.weight(1f))
@@ -203,10 +203,10 @@ fun ItemDetailScreen(
                         onDragCancel = { dragTotal = 0f }
                     ) { _, dragAmount -> dragTotal += dragAmount }
                 }
-        ) {
+        ) content@ {
             if (deleteState.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                return@Box
+                return@content
             }
 
             Column(modifier = Modifier.fillMaxSize()) {
@@ -272,7 +272,7 @@ fun ItemDetailScreen(
                             onClick = { viewModel.navigateToItemInList(currentIndex - 1) },
                             enabled = currentIndex > 0
                         ) {
-                            Icon(Icons.Default.KeyboardArrowLeft, "Previous item")
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Previous item")
                         }
                         Text(
                             "${currentIndex + 1} / ${itemList.size}",
@@ -282,7 +282,7 @@ fun ItemDetailScreen(
                             onClick = { viewModel.navigateToItemInList(currentIndex + 1) },
                             enabled = currentIndex < itemList.size - 1
                         ) {
-                            Icon(Icons.Default.KeyboardArrowRight, "Next item")
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Next item")
                         }
                     }
                 }

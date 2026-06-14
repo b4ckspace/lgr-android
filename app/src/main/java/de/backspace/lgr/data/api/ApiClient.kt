@@ -28,11 +28,11 @@ class SessionCookieJar : CookieJar {
         val map: Map<String, List<String>> =
             runCatching { gson.fromJson<Map<String, List<String>>>(json, type) }.getOrNull() ?: return
         val now = System.currentTimeMillis()
-        map.forEach { (host, setCookies) ->
-            val httpUrl = "http://$host/".toHttpUrlOrNull() ?: return@forEach
+        map.forEach hosts@ { (host, setCookies) ->
+            val httpUrl = "http://$host/".toHttpUrlOrNull() ?: return@hosts
             val bucket = store.getOrPut(host) { mutableListOf() }
-            setCookies.forEach { sc ->
-                val cookie = Cookie.parse(httpUrl, sc) ?: return@forEach
+            setCookies.forEach cookies@ { sc ->
+                val cookie = Cookie.parse(httpUrl, sc) ?: return@cookies
                 if (cookie.expiresAt > now) {
                     bucket.removeAll { it.name == cookie.name }
                     bucket.add(cookie)

@@ -18,11 +18,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -153,7 +153,7 @@ fun EditItemScreen(
                 title = { Text("Edit Item") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 windowInsets = WindowInsets(0)
@@ -257,7 +257,7 @@ fun EditItemScreen(
                             if (currentImageUrl != null) {
                                 if (deleteImage) {
                                     IconButton(onClick = { viewModel.applyEditItemDeleteImage(false) }) {
-                                        Icon(Icons.Default.Undo, contentDescription = "Keep photo")
+                                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Keep photo")
                                     }
                                 } else {
                                     IconButton(onClick = { viewModel.applyEditItemDeleteImage(true) }) {

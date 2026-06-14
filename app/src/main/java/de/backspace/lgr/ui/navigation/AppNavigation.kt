@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,7 +32,7 @@ private sealed class Screen(val route: String, val title: String, val icon: Imag
     object Items : Screen("items", "Items", Icons.Default.Inventory)
     object Barcodes : Screen("barcodes", "Barcodes", Icons.Default.QrCode)
     object Persons : Screen("persons", "Persons", Icons.Default.People)
-    object Loans : Screen("loans", "Loans", Icons.Default.List)
+    object Loans : Screen("loans", "Loans", Icons.AutoMirrored.Filled.List)
     object MyLoans : Screen("my_loans", "My Loans", Icons.Default.AccountCircle)
 }
 

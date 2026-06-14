@@ -11,8 +11,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -175,7 +175,7 @@ fun LoanDetailScreen(
                         onClick = { viewModel.navigateToLoanInList(currentIndex - 1) },
                         enabled = currentIndex > 0
                     ) {
-                        Icon(Icons.Default.KeyboardArrowLeft, "Previous loan")
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Previous loan")
                     }
                     Text(
                         "${currentIndex + 1} / ${loanList.size}",
@@ -185,7 +185,7 @@ fun LoanDetailScreen(
                         onClick = { viewModel.navigateToLoanInList(currentIndex + 1) },
                         enabled = currentIndex < loanList.size - 1
                     ) {
-                        Icon(Icons.Default.KeyboardArrowRight, "Next loan")
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Next loan")
                     }
                 }
             }

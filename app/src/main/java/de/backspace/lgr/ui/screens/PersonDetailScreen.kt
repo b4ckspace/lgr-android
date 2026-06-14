@@ -8,11 +8,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -100,7 +100,7 @@ fun PersonDetailScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
             }
             Text("Person", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.weight(1f))
@@ -143,10 +143,10 @@ fun PersonDetailScreen(
                         onDragCancel = { dragTotal = 0f }
                     ) { _, dragAmount -> dragTotal += dragAmount }
                 }
-        ) {
+        ) content@ {
             if (deleteState.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                return@Box
+                return@content
             }
 
             Column(modifier = Modifier.fillMaxSize()) {
@@ -186,7 +186,7 @@ fun PersonDetailScreen(
                             onClick = { viewModel.navigateToPersonInList(currentIndex - 1) },
                             enabled = currentIndex > 0
                         ) {
-                            Icon(Icons.Default.KeyboardArrowLeft, "Previous person")
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "Previous person")
                         }
                         Text(
                             "${currentIndex + 1} / ${personList.size}",
@@ -196,7 +196,7 @@ fun PersonDetailScreen(
                             onClick = { viewModel.navigateToPersonInList(currentIndex + 1) },
                             enabled = currentIndex < personList.size - 1
                         ) {
-                            Icon(Icons.Default.KeyboardArrowRight, "Next person")
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "Next person")
                         }
                     }
                 }

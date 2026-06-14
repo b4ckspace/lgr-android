@@ -9,10 +9,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.FactCheck
+import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.filled.Inventory
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.NoteAdd
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.NoteAdd
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -46,12 +46,12 @@ fun HomeScreen(
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item { HomeTile(icon = Icons.Default.QrCodeScanner, label = "Details", onClick = onScanBarcode) }
-        item { HomeTile(icon = Icons.Default.FactCheck, label = "Verify", onClick = onVerify) }
-        item { HomeTile(icon = Icons.Default.NoteAdd, label = "New", onClick = onNewBarcode, enabled = showNew) }
+        item { HomeTile(icon = Icons.AutoMirrored.Filled.FactCheck, label = "Verify", onClick = onVerify) }
+        item { HomeTile(icon = Icons.AutoMirrored.Filled.NoteAdd, label = "New", onClick = onNewBarcode, enabled = showNew) }
         item { HomeTile(icon = Icons.Default.Inventory, label = "Items", onClick = onItems) }
         item { HomeTile(icon = Icons.Default.QrCode, label = "Barcodes", onClick = onBarcodes) }
         item { HomeTile(icon = Icons.Default.People, label = "Persons", onClick = onPersons, enabled = isAuthenticated) }
-        item { HomeTile(icon = Icons.Default.List, label = "Loans", onClick = onLoans, enabled = isAuthenticated) }
+        item { HomeTile(icon = Icons.AutoMirrored.Filled.List, label = "Loans", onClick = onLoans, enabled = isAuthenticated) }
         item { HomeTile(icon = Icons.Default.AccountCircle, label = "My Loans", onClick = onMyLoans, enabled = isAuthenticated) }
     }
     } // Box

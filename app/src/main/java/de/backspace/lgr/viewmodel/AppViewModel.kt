@@ -1175,6 +1175,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         editItemDescription = item.description
     }
 
+    @OptIn(coil.annotation.ExperimentalCoilApi::class)
     fun saveItemEdit() = viewModelScope.launch {
         val item = currentItem ?: return@launch
         val pendingImageBytes = editItemPendingImageBytes
