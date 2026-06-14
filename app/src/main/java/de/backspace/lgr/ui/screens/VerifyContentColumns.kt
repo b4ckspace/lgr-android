@@ -74,7 +74,7 @@ fun VerifyContentColumns(
         if (rows.isEmpty()) {
             Text("—", style = MaterialTheme.typography.bodyMedium)
         } else {
-            rows.forEach { row ->
+            rows.forEachIndexed { index, row ->
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                     Box(
                         modifier = Modifier.weight(1f).padding(end = 4.dp).then(
@@ -123,7 +123,8 @@ fun VerifyContentColumns(
                         }
                     }
                 }
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                // Divider between rows only — no trailing line at the end of the section.
+                if (index < rows.lastIndex) HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             }
         }
     }
