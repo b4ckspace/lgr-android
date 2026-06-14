@@ -120,7 +120,7 @@ The Barcodes, Items and Persons tabs share one search header so they look and be
 
 Searchable, paginated list of all barcodes.
 
-The search area uses the shared search header (see *Search header* below). The barcode search field also has a **scan-to-search** icon (camera) that clears any active filters, then scans an existing barcode and fills it into the field (beeps on found, burps on unknown). The field supports `!user:` and `!item:` syntax (backend-defined).
+The search area uses the shared search header (see *Search header* below). The barcode search field also has a **scan-to-search** icon (camera) that clears any active filters, then scans an existing barcode and fills it into the field (beeps on found, burps on unknown). The field supports `!user:` and `!item:` syntax (backend-defined): e.g. `!user:john` finds all barcodes currently on loan to the person with nickname *john*, and `!item:eurobox` finds all barcodes whose item is named *eurobox* (both match the name exactly, case-insensitive).
 
 - **Filters** (behind the *Filters* toggle):
   - **No location** — show only barcodes without a parent location.
