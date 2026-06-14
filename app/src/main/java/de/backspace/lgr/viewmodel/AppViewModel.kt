@@ -266,6 +266,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var newBarcodeItemDescription by mutableStateOf("")
     var newBarcodeDescription by mutableStateOf("")
     var newBarcodeParentCode by mutableStateOf("")
+    // The barcode-detail screen the New Barcode form was opened from, if any. When set, a created
+    // barcode is treated as an in-place link navigation from it (pushed onto barcodeHistory) so
+    // back/delete return to that detail with a fresh reload instead of stacking a second route.
+    var newBarcodeSourceDetail by mutableStateOf<String?>(null)
+        private set
     var newBarcodeOwnerQuery by mutableStateOf("")
     var newBarcodeOwnerUrl by mutableStateOf<String?>(null)
     var newBarcodeSelectedPerson by mutableStateOf<Person?>(null)
@@ -423,6 +428,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         newBarcodeParentCode = parentCode
     }
 
+    // The barcode detail the New Barcode form was opened from (null for Home/FAB).
+    fun setNewBarcodeSource(code: String?) {
+        newBarcodeSourceDetail = code
+    }
+
     fun clearNewBarcodeState() {
         barcodeJustCreated = false
         newBarcodeState = UiState()
@@ -433,6 +443,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         newBarcodeItemDescription = ""
         newBarcodeDescription = ""
         newBarcodeParentCode = ""
+        newBarcodeSourceDetail = null
         newBarcodeSelectedPerson = null
         newBarcodePendingImageBytes = null
         clearPendingNewParent()
@@ -726,7 +737,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             val refreshed = if (imageUploaded) runCatching { repo.getBarcode(code) }.getOrNull() ?: barcode else barcode
             scannedBarcode = UiState(data = refreshed)
             barcodeJustCreated = true
-            barcodeHistory = emptyList()
+            // When created from a barcode detail, treat it as an in-place link navigation from
+            // that detail so back/delete reload it; otherwise start a fresh history.
+            barcodeHistory = newBarcodeSourceDetail?.let { (barcodeHistory + it).takeLast(20) } ?: emptyList()
             barcodeForwardHistory = emptyList()
             barcodeListContext = null
             childLoanInfos = emptyMap()

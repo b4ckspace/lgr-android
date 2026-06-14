@@ -283,6 +283,7 @@ fun AppNavigation(viewModel: AppViewModel) {
                     onNewBarcode = {
                         val locationCode = viewModel.scannedBarcode.data?.apiParentNames?.lastOrNull()?.code ?: ""
                         viewModel.prepareNewBarcodeAsChild(locationCode)
+                        viewModel.setNewBarcodeSource(viewModel.scannedBarcode.data?.code)
                         navController.navigate("new_barcode")
                     },
                     onEditBarcode = {
@@ -294,6 +295,7 @@ fun AppNavigation(viewModel: AppViewModel) {
                     onNewBarcodeAsChild = {
                         val code = viewModel.scannedBarcode.data?.code ?: return@BarcodeDetailScreen
                         viewModel.prepareNewBarcodeAsChild(code)
+                        viewModel.setNewBarcodeSource(code)
                         navController.navigate("new_barcode")
                     },
                     onItemClick = {
@@ -444,8 +446,14 @@ fun AppNavigation(viewModel: AppViewModel) {
                     onScanCode = { navController.navigate("new_barcode_scan_code") },
                     onScanParent = { navController.navigate("new_barcode_scan_parent") },
                     onCreated = {
-                        navController.navigate("barcode_detail") {
-                            popUpTo("new_barcode") { inclusive = true }
+                        if (viewModel.newBarcodeSourceDetail != null) {
+                            // Created from a detail: return to that existing detail entry (now
+                            // showing the new barcode, with the source pushed onto history).
+                            navController.popBackStack()
+                        } else {
+                            navController.navigate("barcode_detail") {
+                                popUpTo("new_barcode") { inclusive = true }
+                            }
                         }
                     }
                 )
