@@ -129,7 +129,7 @@ The search area uses the shared search header (see *Search header* below). The b
 - **Infinite scroll** — next pages load automatically as you scroll.
 - **Pull to refresh** — pull down on the list to force a reload (respects the active search and filter).
 - **Cached on tab switch** — switching away and back reuses the loaded result set and restores the scroll position; a new network request is only made when the search or filter changes.
-- **Barcode selection** — check the checkbox on any barcode card to add it to a loan selection. A banner shows the current count; the cart FAB appears when items are selected.
+- **Barcode selection** — check the checkbox on any barcode card to add it to a loan selection. While the selection is non-empty, a shopping-cart icon with a count badge appears in the top bar; tap it to open the Loan Cart.
 
 #### Barcode detail
 
