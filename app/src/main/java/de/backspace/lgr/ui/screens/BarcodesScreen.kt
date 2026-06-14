@@ -91,7 +91,6 @@ fun BarcodesScreen(
                 query = search,
                 onQueryChange = { search = it; viewModel.updateBarcodesSearch(it) },
                 placeholder = "Search barcodes",
-                supportingText = "Supports !user: and !item: syntax",
                 searchTrailing = {
                     IconButton(onClick = { viewModel.clearBarcodeFilters(); onScanSearch() }) {
                         Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan barcode", tint = MaterialTheme.colorScheme.primary)
