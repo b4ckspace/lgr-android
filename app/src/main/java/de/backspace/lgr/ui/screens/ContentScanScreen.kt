@@ -17,7 +17,7 @@ fun ContentScanScreen(
                        else viewModel.scannedChildCodes.size + viewModel.newScannedBarcodes.size
 
     ContentScannerScaffold(
-        label = if (addOnly) "Add content"
+        label = if (addOnly) "Scan additional content"
                 else if (viewModel.contentScanAdditive) "Scan additional content"
                 else "Scan all content",
         onBack = onCancel ?: onDone,
