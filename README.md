@@ -96,7 +96,7 @@ Quick-action tiles and tab shortcuts:
 |---|---|
 | **Details** | Scan a barcode and jump directly to its detail view |
 | **Verify** | Start a content-verification scan session |
-| **New** | Open the New Barcode form (authenticated users only) |
+| **New** | Open the New Barcode form (requires login) |
 | **Items** | Jump to the Items tab |
 | **Barcodes** | Jump to the Barcodes tab |
 | **Persons** | Jump to the Persons tab (requires login) |
