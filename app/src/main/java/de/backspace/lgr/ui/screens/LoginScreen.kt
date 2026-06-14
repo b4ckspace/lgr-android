@@ -170,7 +170,9 @@ fun LoginScreen(viewModel: AppViewModel) {
 
     Text(
         text = buildAnnotatedString {
-            append("Version: ${BuildConfig.VERSION_NAME}")
+            // Release builds are prefixed with "Version: "; debug builds (versionName ends in
+            // -debug) just show the bare version so they read clearly as a debug build.
+            append(if (BuildConfig.DEBUG) BuildConfig.VERSION_NAME else "Version: ${BuildConfig.VERSION_NAME}")
             withStyle(SpanStyle(color = MID_GREY)) {
                 append(" (${BuildConfig.BUILD_DATE})")
             }

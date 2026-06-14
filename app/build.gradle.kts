@@ -49,6 +49,10 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("release")
         }
+        debug {
+            // Mark debug builds so the version shown on the login screen is distinguishable.
+            versionNameSuffix = "-debug"
+        }
     }
 
     compileOptions {
