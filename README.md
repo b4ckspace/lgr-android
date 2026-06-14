@@ -83,7 +83,7 @@ Authentication uses Django session cookies. CSRF tokens are extracted from the c
 - Enter the server base URL (e.g. `http://192.168.1.10:8000`) and credentials.
 - **Read-only without login** opens the app in read-only mode — scanning and listing work, creating/editing/deleting does not.
 - The server URL is remembered across sessions.
-- **Backend supports item images** — toggle switch below the server URL. Enable this when the backend has image support ([PR #2](https://github.com/b4ckspace/lgr/pull/2)). The setting is persisted across restarts. When enabled, camera buttons appear in the New Barcode, Edit Barcode, and Edit Item screens.
+- **Backend supports item images** — toggle switch below the server URL. Enable this when the backend has image support ([PR #2](https://github.com/b4ckspace/lgr/pull/2)). The setting is persisted across restarts. When enabled, camera buttons appear in the New Barcode and Edit Item screens.
 - Release builds show the app version and build date in the lower-right corner of the login screen.
 
 ---
