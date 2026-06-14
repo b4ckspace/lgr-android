@@ -7,8 +7,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import de.backspace.lgr.ui.navigation.AppNavigation
@@ -25,11 +28,18 @@ class MainActivity : ComponentActivity() {
         setContent {
             LgrTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    if (viewModel.auth.data?.authenticated == true || viewModel.readonlyMode) {
-                        AppNavigation(viewModel)
-                    } else {
-                        // LoginScreen stays mounted during loading so remember{} state is preserved
-                        LoginScreen(viewModel)
+                    when {
+                        viewModel.auth.data?.authenticated == true || viewModel.readonlyMode ->
+                            AppNavigation(viewModel)
+                        // Validating a restored session at startup: show a loader instead of the
+                        // login screen so it doesn't flash before auto-login completes.
+                        viewModel.initialAuthInProgress ->
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
+                            }
+                        else ->
+                            // LoginScreen stays mounted during loading so remember{} state is preserved
+                            LoginScreen(viewModel)
                     }
                 }
             }

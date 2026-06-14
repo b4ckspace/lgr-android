@@ -72,7 +72,7 @@ app/
     └── theme/        Material 3 theme
 ```
 
-Authentication uses Django session cookies. CSRF tokens are extracted from the cookie jar and injected automatically into mutating requests.
+Authentication uses Django session cookies. CSRF tokens are extracted from the cookie jar and injected automatically into mutating requests. The session cookie is persisted, so a valid login survives an app restart (until it expires or you log out).
 
 ---
 
@@ -393,14 +393,6 @@ When launched via *Read-only without login*, the app operates in read-only mode:
 A compact icon-only bottom bar is always visible (except on camera/scanner screens). The top bar title reflects the active tab name (Home, Items, Barcodes, Persons, Loans, My Loans). On sub-pages (detail, edit, scan) the tab icon corresponding to the parent tab stays subtly highlighted.
 
 Creating new entries is done from each tab's **floating action button** (Add new barcode on the Barcodes tab, Add new person on the Persons tab), hidden in read-only mode. The top bar shows the loan-cart badge when the loan selection is non-empty.
-
----
-
-## Known Limitations
-
-- No offline support — all data is fetched live from the backend.
-- Session is not persisted across app restarts; you must log in again after closing the app.
-- The server URL must be reachable directly (no OAuth / proxy support).
 
 ---
 

@@ -51,6 +51,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
 
     var auth by mutableStateOf(UiState<AuthStatus>())
+    // True only at startup while a restored session is being validated, so the UI can show a
+    // loading screen instead of briefly flashing the login screen.
+    var initialAuthInProgress by mutableStateOf(false)
+        private set
     var items by mutableStateOf(UiState<List<Item>>())
     var itemsNextPage by mutableStateOf<String?>(null)
     var itemsCount by mutableStateOf<Int?>(null)
@@ -388,7 +392,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun cachedBarcodeName(code: String): String? = barcodeNameCache[code]
 
     init {
+        // Restore a persisted session before checking auth, so a valid login survives a restart.
+        ApiClient.attachCookieStore(prefs)
         if (serverUrl.isNotEmpty()) {
+            // While validating a restored session, show a loading screen instead of the login
+            // screen so it doesn't flash before auto-login completes.
+            initialAuthInProgress = ApiClient.hasSession()
             ApiClient.configure(serverUrl)
             checkAuth()
         }
@@ -897,6 +906,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         runCatching { repo.getAuthStatus() }
             .onSuccess { auth = UiState(data = it) }
             .onFailure { auth = UiState(error = it.message) }
+        initialAuthInProgress = false
     }
 
     fun login(username: String, password: String) = viewModelScope.launch {
