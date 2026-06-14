@@ -636,7 +636,7 @@ private fun ContentListSection(
                     ) {
                         Icon(
                             if (showTextSearch) Icons.Default.Close else Icons.Outlined.Search,
-                            contentDescription = if (showTextSearch) "Close search" else "Search to add",
+                            contentDescription = if (showTextSearch) "Close search" else "Search additional content",
                             modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
@@ -678,7 +678,7 @@ private fun ContentListSection(
                 OutlinedTextField(
                     value = textSearchQuery,
                     onValueChange = { textSearchQuery = it },
-                    label = { Text("Search to add") },
+                    label = { Text("Search additional content") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     colors = lgrTextFieldColors(),
