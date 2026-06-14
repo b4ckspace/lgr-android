@@ -357,7 +357,7 @@ Shows all fields for a loan:
 
 ### Loan Cart
 
-When one or more barcodes have been added to the loan selection (via the shopping cart icon in Barcode Detail), a **🛒 N** badge appears in the top bar on all non-camera screens. Tapping it opens the Loan Cart screen.
+When one or more barcodes have been added to the loan selection (via the shopping cart icon in Barcode Detail or via the checkbox in the Barcodes tab), a **🛒 N** badge appears in the top bar on all non-camera screens. Tapping it opens the Loan Cart screen.
 
 **Creating a loan:**
 1. Add barcodes to the cart using the cart icon in Barcode Detail.
