@@ -3,12 +3,12 @@
 
 package de.backspace.lgr.ui.screens
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
@@ -19,7 +19,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -27,11 +29,9 @@ import androidx.compose.ui.unit.dp
 import de.backspace.lgr.viewmodel.AppViewModel
 
 private val GREY_LOAN = Color(0xFF9E9E9E)
-
 private val LOAN_STATUS_TAKEN_COLOR = Color(0xFFD32F2F)
 private val LOAN_STATUS_RETURNED_COLOR = Color(0xFF388E3C)
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoanDetailScreen(
     viewModel: AppViewModel,
@@ -48,7 +48,7 @@ fun LoanDetailScreen(
     val swipeThresholdPx = with(LocalDensity.current) { 60.dp.toPx() }
     var dragTotal by remember(currentIndex) { mutableStateOf(0f) }
 
-    val listState = rememberLazyListState()
+    val scrollState = rememberScrollState()
     var showReturnConfirm by remember { mutableStateOf(false) }
 
     if (showReturnConfirm) {
@@ -86,122 +86,81 @@ fun LoanDetailScreen(
                 ) { _, dragAmount -> dragTotal += dragAmount }
             }
     ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Loan #${loan.id ?: "—"}") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            HorizontalDivider()
-            Box(modifier = Modifier.weight(1f).fillMaxWidth().verticalScrollbar(listState)) {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                item { Spacer(Modifier.height(4.dp)) }
-
-                item {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Status:", style = MaterialTheme.typography.bodyMedium)
-                        val statusColor = if (isTaken) LOAN_STATUS_TAKEN_COLOR else LOAN_STATUS_RETURNED_COLOR
-                        Badge(containerColor = statusColor) {
-                            Text(loan.status.uppercase(), style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
+                Text("Loan #${loan.id ?: "—"}", style = MaterialTheme.typography.titleLarge)
+            }
+            HorizontalDivider()
 
-                loan.personName?.takeIf { it.isNotBlank() }?.let { name ->
-                    item {
-                        Text("Person: $name", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp))
-                    }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScrollbar(scrollState)
+                    .verticalScroll(scrollState)
+                    .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                DetailRow(
+                    "Status",
+                    loan.status.uppercase(),
+                    valueColor = if (isTaken) LOAN_STATUS_TAKEN_COLOR else LOAN_STATUS_RETURNED_COLOR
+                )
+
+                loan.personName?.takeIf { it.isNotBlank() }?.let { DetailRow("Person", it) }
+                loan.description?.takeIf { it.isNotBlank() }?.let { DetailRow("Description", it) }
+                loan.takenDate?.let { DetailRow("Taken", it.take(10)) }
+                loan.returnDate?.let {
+                    val dateStr = it.take(10)
+                    val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+                    val isOverdue = isTaken && dateStr < today
+                    DetailRow("Return by", dateStr, valueColor = if (isOverdue) LOAN_STATUS_TAKEN_COLOR else Color.Unspecified)
                 }
+                loan.returnedDate?.let { DetailRow("Returned", it.take(10)) }
 
-                loan.description?.takeIf { it.isNotBlank() }?.let { desc ->
-                    item {
-                        Text("Description:", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
-                        Text(desc, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-
-                item {
-                    Column(modifier = Modifier.padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        loan.takenDate?.let { Text("Taken: ${it.take(10)}", style = MaterialTheme.typography.bodyMedium) }
-                        loan.returnDate?.let {
-                            val dateStr = it.take(10)
-                            val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
-                            val isOverdue = isTaken && dateStr < today
-                            Text(
-                                "Return by: $dateStr",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = if (isOverdue) LOAN_STATUS_TAKEN_COLOR else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        loan.returnedDate?.let {
-                            Text("Returned: ${it.take(10)}", style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
-                }
-
-                item {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                    Text("Barcodes (${loan.barcodes.size})", style = MaterialTheme.typography.titleSmall)
-                }
-
-                items(loan.barcodes) { code ->
-                    val itemName by produceState(viewModel.cachedBarcodeName(code), code) {
-                        value = viewModel.resolveBarcodeName(code)
-                    }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = buildAnnotatedString {
-                            if (!itemName.isNullOrBlank()) {
-                                append(itemName!!)
-                                append(" ")
-                            }
-                            withStyle(SpanStyle(color = GREY_LOAN)) { append("($code)") }
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onBarcodeClick(code) }
-                            .padding(vertical = 4.dp)
+                        "Barcodes (${loan.barcodes.size})",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    if (loan.barcodes.isEmpty()) {
+                        Text("—", style = MaterialTheme.typography.bodyMedium)
+                    } else {
+                        loan.barcodes.forEach { code ->
+                            val itemName by produceState(viewModel.cachedBarcodeName(code), code) {
+                                value = viewModel.resolveBarcodeName(code)
+                            }
+                            LoanBarcodeRow(itemName, code, onClick = { onBarcodeClick(code) })
+                        }
+                    }
                 }
 
                 if (returnState.error != null) {
-                    item {
-                        Text(returnState.error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
-                    }
+                    Text(returnState.error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
 
                 if (isMyLoan && isTaken) {
-                    item {
-                        Spacer(Modifier.height(8.dp))
-                        Button(
-                            onClick = { showReturnConfirm = true },
-                            enabled = !returnState.isLoading,
-                            colors = ButtonDefaults.buttonColors(containerColor = LOAN_STATUS_RETURNED_COLOR),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            if (returnState.isLoading) {
-                                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
-                            } else {
-                                Text("Return loan")
-                            }
+                    Button(
+                        onClick = { showReturnConfirm = true },
+                        enabled = !returnState.isLoading,
+                        colors = ButtonDefaults.buttonColors(containerColor = LOAN_STATUS_RETURNED_COLOR),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (returnState.isLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                        } else {
+                            Text("Return loan")
                         }
                     }
                 }
-
-                item { Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars)) }
             }
-            } // Box
 
             if (loanList != null) {
                 HorizontalDivider()
@@ -232,5 +191,29 @@ fun LoanDetailScreen(
             }
         }
     }
-    } // Box
+}
+
+// A loan's barcode shown as "item name (code)" (code in grey), tappable to open it and
+// long-pressable to copy the code — matching the Barcode Detail contents style.
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun LoanBarcodeRow(itemName: String?, code: String, onClick: () -> Unit) {
+    val clipboard = LocalClipboardManager.current
+    Text(
+        text = buildAnnotatedString {
+            if (!itemName.isNullOrBlank()) {
+                append(itemName)
+                append(" ")
+            }
+            withStyle(SpanStyle(color = GREY_LOAN)) { append("($code)") }
+        },
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = { clipboard.setText(AnnotatedString(code)) }
+            )
+            .padding(vertical = 2.dp)
+    )
 }

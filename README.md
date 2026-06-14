@@ -148,7 +148,7 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 - When opened from the list, arrow buttons and swipe left/right navigate through the result set.
 - Tapping a location breadcrumb or a content item navigates into that barcode, maintaining back-navigation history (Android back button / swipe right goes back through the chain).
 - **Pull to refresh** — pull down to reload the current barcode's data from the backend.
-- **Long-press to copy** — long-press any field row to copy its value to the clipboard. This works on all the detail pages (Barcode, Item and Person).
+- **Long-press to copy** — long-press any field row to copy its value to the clipboard. This works on all the detail pages (Barcode, Item, Person and Loan).
 
 **Actions (authenticated):**
 - **New** — create another barcode immediately (only shown right after a barcode was just created, to support rapid sequential entry)
@@ -345,9 +345,11 @@ Paginated list of the current user's loans (requires login). Same UI as Loans.
 
 ### Loan Detail
 
+Uses the same look-and-feel as the Barcode Detail page: a compact header, labelled field rows (long-press a field to copy its value), and a fixed prev/next navigation row at the bottom.
+
 Shows all fields for a loan:
-- Status badge, person, description, taken/return/returned dates
-- Full list of barcodes — each is a tappable link to its Barcode Detail screen. Resolved item names are cached, so revisiting a loan or swiping between loans shows them instantly without re-fetching.
+- Status (coloured red for TAKEN, green for RETURNED), person, description, taken/return/returned dates — each as a labelled row. *Return by* turns red when overdue.
+- Full list of barcodes (labelled *Barcodes (N)*) formatted as *item name (code)* with the code in grey, like the Barcode Detail contents — each is a tappable link to its Barcode Detail screen (long-press to copy the code). Resolved item names are cached, so revisiting a loan or swiping between loans shows them instantly without re-fetching.
 - **Arrow buttons** (and swipe left/right) to navigate to the previous/next loan in the list, pinned to the bottom of the screen.
 - **Return loan** button — visible when status is TAKEN and the loan belongs to the current user (regardless of whether it was opened from Loans or My Loans). Opens a confirmation dialog; on confirm, marks the loan as returned and refreshes both loan lists.
 - The footer keeps the tab the loan was opened from highlighted — **My Loans** when opened from My Loans, otherwise **Loans**.
