@@ -105,16 +105,27 @@ Quick-action tiles and tab shortcuts:
 
 ---
 
+### Search header
+
+The Barcodes, Items and Persons tabs share one search header so they look and behave the same:
+
+- A rounded **search field** (leading magnifier, trailing clear ✕; the Barcodes one also has a scan icon).
+- A meta row with a **Filters** toggle on the left (shows the active-filter count, e.g. *Filters · 2*, and a chevron) and the **result count** on the right. Tabs with no filters (Persons) omit the toggle.
+- When filters are active, they appear as **removable chips** under the field — visible even while the filter panel is collapsed.
+- The **collapsible filter panel** holds that tab's specific filters; it's hidden behind the Filters toggle so every tab has the same compact layout.
+
+---
+
 ### Barcodes tab
 
 Searchable, paginated list of all barcodes.
 
-- **Text search** — searches code, item name, description. Supports `!user:` and `!item:` syntax (backend-defined).
-- **Scan to search** — tap the camera icon in the search field; scans an existing barcode and fills it into the search field automatically. Beeps on found, burps on unknown.
-- **Result count** and **filter toggle** — a row below the search field shows the result count (right) and an expand/collapse icon (left) to show/hide additional filters. The state is remembered across app restarts.
-- **Additional filters** (collapsible, hidden by default):
-  - **No location** — filter chip to show only barcodes without a parent location.
-  - **Owner** — type-ahead person search (min. 2 characters). Tap a person's name to filter by that person only; tap the checkbox to add/remove from a multi-owner selection. Selected owners appear as removable chips. Filters by the barcode's *Owner* field (not loan person).
+The search area uses the shared search header (see *Search header* below). The barcode search field also has a **scan-to-search** icon (camera) that clears any active filters, then scans an existing barcode and fills it into the field (beeps on found, burps on unknown). The field supports `!user:` and `!item:` syntax (backend-defined).
+
+- **Filters** (behind the *Filters* toggle):
+  - **No location** — show only barcodes without a parent location.
+  - **Owner** — type-ahead person search (min. 2 characters). Tap a person's name to filter by that person only; tap the checkbox to add/remove from a multi-owner selection. Active owners (and the no-location filter) appear as removable chips under the search field. Filters by the barcode's *Owner* field (not loan person).
+- **Add new barcode** — a **＋ floating action button** (bottom-right) opens the New Barcode form. Hidden in read-only mode.
 - **Infinite scroll** — next pages load automatically as you scroll.
 - **Pull to refresh** — pull down on the list to force a reload (respects the active search and filter).
 - **Cached on tab switch** — switching away and back reuses the loaded result set and restores the scroll position; a new network request is only made when the search or filter changes.
@@ -185,8 +196,8 @@ The code is the barcode's identifier and cannot be edited in place, so changing 
 
 Searchable, paginated list of item types (the catalogue, not individual barcoded instances).
 
-- Text search by name.
-- **No barcodes filter** — shows only item types that have no barcodes registered yet.
+- Text search by name (shared search header — see *Search header* above).
+- **No barcodes filter** — behind the *Filters* toggle; shows only item types that have no barcodes registered yet.
 - Displays name, description, and tag count per item.
 - Infinite scroll.
 - **Pull to refresh** — pull down on the list to force a reload (respects the active search and filter).
@@ -219,10 +230,9 @@ Reachable by tapping an item in the Items tab, or by tapping the item name in a 
 
 Searchable, paginated list of persons (requires login).
 
-- Text search by name/nickname.
+- Text search by name/nickname (shared search header — see *Search header* above; no filters, so no Filters toggle).
 - Displays full name (primary), nickname (if different), and email per person.
-- Result count shown on the right of the row above the list.
-- **New person** (person-add icon, left of the count row) — opens the New Person screen. Hidden in read-only mode.
+- **Add new person** — a person-add **floating action button** (bottom-right) opens the New Person screen. Hidden in read-only mode.
 - Infinite scroll.
 - **Pull to refresh** — pull down to force a reload.
 - **Cached on tab switch** — the result set, active search string and scroll position are preserved when switching away and back.
@@ -250,7 +260,7 @@ Reachable by tapping a person in the Persons tab.
 
 ### New Person
 
-Reachable via the person-add icon in the Persons tab. Same form as Edit Person: Nickname (required), First name, Last name, Email, with **Cancel** and **Save** at the bottom. On success, the new person's **Person Detail** page opens.
+Reachable via the person-add floating action button in the Persons tab. Same form as Edit Person: Nickname (required), First name, Last name, Email, with **Cancel** and **Save** at the bottom. On success, the new person's **Person Detail** page opens.
 
 ---
 
@@ -382,7 +392,7 @@ When launched via *Read-only without login*, the app operates in read-only mode:
 
 A compact icon-only bottom bar is always visible (except on camera/scanner screens). The top bar title reflects the active tab name (Home, Items, Barcodes, Persons, Loans, My Loans). On sub-pages (detail, edit, scan) the tab icon corresponding to the parent tab stays subtly highlighted.
 
-The top bar shows a global **New barcode** (note-add) action on all non-camera screens (hidden in read-only mode), so a new barcode can be created from anywhere — not just the Barcodes tab. The loan-cart badge appears next to it when the loan selection is non-empty.
+Creating new entries is done from each tab's **floating action button** (Add new barcode on the Barcodes tab, Add new person on the Persons tab), hidden in read-only mode. The top bar shows the loan-cart badge when the loan selection is non-empty.
 
 ---
 
