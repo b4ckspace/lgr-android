@@ -393,6 +393,8 @@ When launched via *Read-only without login*, the app operates in read-only mode:
 
 A compact icon-only bottom bar is always visible (except on camera/scanner screens). The top bar title reflects the active tab name (Home, Items, Barcodes, Persons, Loans, My Loans). On sub-pages (detail, edit, scan) the tab icon corresponding to the parent tab stays subtly highlighted.
 
+Switching to a different tab and back restores where you were on that tab (the open detail/sub-screen and scroll position). Tapping the tab you are **already** on resets it — it returns to that tab's list and closes any open detail/sub-screen.
+
 Creating new entries is done from each tab's **floating action button** (Add new barcode on the Barcodes tab, Add new person on the Persons tab), hidden in read-only mode. The top bar shows the loan-cart badge when the loan selection is non-empty.
 
 ---
