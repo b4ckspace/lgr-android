@@ -340,16 +340,12 @@ fun BarcodeDetailScreen(
                             DetailRow("Item", barcode.itemName, valueColor = MaterialTheme.colorScheme.onSurface, onClick = onItemClick)
                             DetailRow("Barcode", barcode.code)
                             if (barcode.itemImage != null)
-                                AsyncImage(
+                                ItemImagePreview(
                                     model = barcode.itemImage,
-                                    contentDescription = "Item image",
                                     imageLoader = viewModel.imageLoader,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(200.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .clickable { showFullscreenImage = true },
-                                    contentScale = ContentScale.Crop
+                                    contentDescription = "Item image",
+                                    maxHeight = 320.dp,
+                                    onClick = { showFullscreenImage = true }
                                 )
 
                             LocationSection(

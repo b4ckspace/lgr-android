@@ -127,7 +127,7 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 **Displayed fields** (top to bottom — Item, Barcode, Location):
 - Item name and description
 - Barcode code
-- **Item image** — shown below the barcode when the backend supports images and an image has been set. Tap to view the image fullscreen; tap the fullscreen image to dismiss it.
+- **Item image** — shown below the barcode when the backend supports images and an image has been set. The full image is always shown (never cropped): landscape images fill the width, portrait images are capped in height and centered. Tap to view the image fullscreen; tap the fullscreen image to dismiss it.
 - Location (breadcrumb of parent chain, tappable to navigate)
 - Per-barcode description (labelled *Barcode description*)
 - Owner (resolved to display name)
@@ -202,7 +202,7 @@ Reachable by tapping an item in the Items tab, or by tapping the item name in a 
 
 **Displayed fields:**
 - Item name (labelled *Item*)
-- **Item image** — shown below the name when the backend supports images and an image has been set. Tap to view fullscreen (pinch-to-zoom, double-tap to toggle 2×, tap to close when not zoomed).
+- **Item image** — shown below the name when the backend supports images and an image has been set. The full image is always shown (never cropped). Tap to view fullscreen (pinch-to-zoom, double-tap to toggle 2×, tap to close when not zoomed).
 - Item description (labelled *Item description*, shown only if set)
 - **Barcodes** section — all barcodes that use this item type, each tappable to open its Barcode Detail
 

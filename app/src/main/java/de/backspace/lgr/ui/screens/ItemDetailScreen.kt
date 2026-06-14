@@ -225,16 +225,12 @@ fun ItemDetailScreen(
 
                     if (viewModel.supportsImages && item.image != null)
                         item {
-                            AsyncImage(
+                            ItemImagePreview(
                                 model = item.image,
-                                contentDescription = "Item image",
                                 imageLoader = viewModel.imageLoader,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(200.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable { showFullscreenImage = true },
-                                contentScale = ContentScale.Crop
+                                contentDescription = "Item image",
+                                maxHeight = 320.dp,
+                                onClick = { showFullscreenImage = true }
                             )
                         }
 

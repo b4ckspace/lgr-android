@@ -209,16 +209,12 @@ fun EditItemScreen(
                     val deleteImage = viewModel.editItemDeleteImage
                     val pendingBytes = viewModel.editItemPendingImageBytes
                     if (currentImageUrl != null && pendingBytes == null && !deleteImage) {
-                        AsyncImage(
+                        ItemImagePreview(
                             model = currentImageUrl,
-                            contentDescription = "Current item image",
                             imageLoader = viewModel.imageLoader,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(160.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { showFullscreenImage = true },
-                            contentScale = ContentScale.Crop
+                            contentDescription = "Current item image",
+                            maxHeight = 240.dp,
+                            onClick = { showFullscreenImage = true }
                         )
                     }
                     Row(
@@ -235,7 +231,7 @@ fun EditItemScreen(
                                     contentDescription = "Pending photo",
                                     modifier = Modifier.size(64.dp).clip(RoundedCornerShape(4.dp))
                                         .clickable { showFullscreenImage = true },
-                                    contentScale = ContentScale.Crop
+                                    contentScale = ContentScale.Fit
                                 )
                             }
                             Text(

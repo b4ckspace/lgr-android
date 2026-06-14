@@ -616,16 +616,12 @@ fun NewBarcodeScreen(
                 val selectedItemImage = viewModel.newBarcodeSelectedItem?.image
                 val pendingBytes = viewModel.newBarcodePendingImageBytes
                 if (itemSelected && selectedItemImage != null) {
-                    AsyncImage(
+                    ItemImagePreview(
                         model = selectedItemImage,
-                        contentDescription = "Item image",
                         imageLoader = viewModel.imageLoader,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(160.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { showFullscreenImage = true },
-                        contentScale = ContentScale.Crop
+                        contentDescription = "Item image",
+                        maxHeight = 240.dp,
+                        onClick = { showFullscreenImage = true }
                     )
                 }
                 Row(
@@ -641,7 +637,7 @@ fun NewBarcodeScreen(
                                 bitmap = bitmap,
                                 contentDescription = "Pending photo",
                                 modifier = Modifier.size(64.dp).clip(RoundedCornerShape(4.dp)),
-                                contentScale = ContentScale.Crop
+                                contentScale = ContentScale.Fit
                             )
                         }
                         Text(
