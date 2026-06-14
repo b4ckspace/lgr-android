@@ -544,7 +544,14 @@ fun AppNavigation(viewModel: AppViewModel) {
                 VerifyBarcodeScreen(
                     viewModel = viewModel,
                     onBack = { viewModel.clearVerifyState(); navController.popBackStack() },
-                    onRescan = { navController.popBackStack() },
+                    onRescan = {
+                        // Normally the camera (verify_scan) sits just beneath this screen, so pop
+                        // back to it. After a tab switch restored verify_detail directly, it isn't
+                        // on the stack anymore — navigate to a fresh one instead.
+                        if (!navController.popBackStack("verify_scan", inclusive = false)) {
+                            navController.navigate("verify_scan")
+                        }
+                    },
                     onCancel = navigateToBarcodeDetail,
                     onSaved = navigateToBarcodeDetail,
                     onVerifyNext = {
