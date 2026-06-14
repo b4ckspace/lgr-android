@@ -148,6 +148,7 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 - When opened from the list, arrow buttons and swipe left/right navigate through the result set.
 - Tapping a location breadcrumb or a content item navigates into that barcode, maintaining back-navigation history (Android back button / swipe right goes back through the chain).
 - **Pull to refresh** — pull down to reload the current barcode's data from the backend.
+- **Long-press to copy** — long-press any field row to copy its value to the clipboard. This works on all the detail pages (Barcode, Item and Person).
 
 **Actions (authenticated):**
 - **New** — create another barcode immediately (only shown right after a barcode was just created, to support rapid sequential entry)
@@ -246,7 +247,7 @@ Searchable, paginated list of persons (requires login).
 
 Reachable by tapping a person in the Persons tab.
 
-**Displayed fields:** Nickname, First name, Last name, Email (each shown only when set; nickname is always shown). Long-press a field to copy its value.
+**Displayed fields:** Nickname, First name, Last name, Email (each shown only when set; nickname is always shown). Long-press a field to copy its value (see *Barcode detail* for this shared behaviour).
 
 - **Pull to refresh** — pull down to reload the person from the backend.
 - **Arrow buttons and swipe left/right** navigate through the result set (same as Items and Barcodes).
