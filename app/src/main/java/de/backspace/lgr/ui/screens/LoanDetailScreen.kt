@@ -187,7 +187,7 @@ fun LoanDetailScreen(
                         Button(
                             onClick = { showReturnConfirm = true },
                             enabled = !returnState.isLoading,
-                            colors = ButtonDefaults.buttonColors(containerColor = LOAN_STATUS_TAKEN_COLOR),
+                            colors = ButtonDefaults.buttonColors(containerColor = LOAN_STATUS_RETURNED_COLOR),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             if (returnState.isLoading) {
