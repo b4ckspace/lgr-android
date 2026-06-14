@@ -207,7 +207,8 @@ fun LoanCard(loan: Loan, viewModel: AppViewModel, onClick: (() -> Unit)? = null)
         onClick = onClick ?: {},
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
