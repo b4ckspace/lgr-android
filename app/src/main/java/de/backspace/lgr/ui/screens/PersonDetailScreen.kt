@@ -3,8 +3,6 @@
 
 package de.backspace.lgr.ui.screens
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,15 +22,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import de.backspace.lgr.viewmodel.AppViewModel
 
 private val PERSON_RED = Color(0xFFE53935)
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PersonDetailScreen(
     viewModel: AppViewModel,
@@ -161,13 +157,20 @@ fun PersonDetailScreen(
                     contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    item { PersonDetailRow("Nickname", person.nickname) }
-                    if (person.firstname.isNotBlank())
-                        item { PersonDetailRow("First name", person.firstname) }
-                    if (person.lastname.isNotBlank())
-                        item { PersonDetailRow("Last name", person.lastname) }
-                    if (person.email.isNotBlank())
-                        item { PersonDetailRow("Email", person.email) }
+                    item {
+                        val fields = buildList {
+                            add("Nickname" to person.nickname)
+                            if (person.firstname.isNotBlank()) add("First name" to person.firstname)
+                            if (person.lastname.isNotBlank()) add("Last name" to person.lastname)
+                            if (person.email.isNotBlank()) add("Email" to person.email)
+                        }
+                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            fields.forEachIndexed { index, (label, value) ->
+                                // No divider after the last field, so the page doesn't end with a line.
+                                DetailRow(label, value, divider = index < fields.lastIndex)
+                            }
+                        }
+                    }
                 }
 
                 if (personList != null) {
@@ -204,17 +207,3 @@ fun PersonDetailScreen(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun PersonDetailRow(label: String, value: String) {
-    val clipboardManager = LocalClipboardManager.current
-    Column(modifier = Modifier.combinedClickable(
-        onClick = {},
-        onLongClick = { clipboardManager.setText(AnnotatedString(value)) }
-    )) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(2.dp))
-        Text(value, style = MaterialTheme.typography.bodyLarge)
-        HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
-    }
-}

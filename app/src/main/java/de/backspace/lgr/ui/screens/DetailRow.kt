@@ -19,16 +19,18 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 
-// A labelled value row with a trailing divider, shared by the Barcode Detail and Verify
-// screens. Tapping fires onClick (the value turns primary-coloured to signal it's tappable);
-// long-pressing copies the value to the clipboard.
+// A labelled value row, shared by all the detail screens. Tapping fires onClick (the value turns
+// primary-coloured to signal it's tappable); long-pressing copies the value to the clipboard.
+// A trailing divider separates it from the next row; pass divider = false for the last row when
+// nothing follows, so the page doesn't end with a dangling line.
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DetailRow(
     label: String,
     value: String,
     valueColor: Color = Color.Unspecified,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    divider: Boolean = true
 ) {
     val clipboardManager = LocalClipboardManager.current
     Column(modifier = Modifier.combinedClickable(
@@ -42,6 +44,6 @@ fun DetailRow(
             style = MaterialTheme.typography.bodyLarge,
             color = if (onClick != null && valueColor == Color.Unspecified) MaterialTheme.colorScheme.primary else valueColor
         )
-        HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+        if (divider) HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
     }
 }

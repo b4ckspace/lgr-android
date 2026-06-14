@@ -3,10 +3,8 @@
 
 package de.backspace.lgr.ui.screens
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
@@ -34,9 +32,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -221,7 +217,7 @@ fun ItemDetailScreen(
                     contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    item { ItemDetailRow("Item", item.name) }
+                    item { DetailRow("Item", item.name) }
 
                     if (viewModel.supportsImages && item.image != null)
                         item {
@@ -235,7 +231,7 @@ fun ItemDetailScreen(
                         }
 
                     if (item.description.isNotBlank()) {
-                        item { ItemDetailRow("Item description", item.description) }
+                        item { DetailRow("Item description", item.description) }
                     }
 
                     item {
@@ -259,7 +255,6 @@ fun ItemDetailScreen(
                                     ItemBarcodeRow(barcode = barcode, onClick = { onBarcodeClick(barcode) })
                                 }
                             }
-                            HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
                         }
                     }
                 }
@@ -318,17 +313,3 @@ private fun ItemBarcodeRow(barcode: Barcode, onClick: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun ItemDetailRow(label: String, value: String) {
-    val clipboardManager = LocalClipboardManager.current
-    Column(modifier = Modifier.combinedClickable(
-        onClick = {},
-        onLongClick = { clipboardManager.setText(AnnotatedString(value)) }
-    )) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(2.dp))
-        Text(value, style = MaterialTheme.typography.bodyLarge)
-        HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
-    }
-}
