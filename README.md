@@ -326,7 +326,7 @@ Fields are ordered Item, Barcode, Location:
 
 Paginated list of all loans (requires login). Tap any loan card to open the **Loan Detail** screen.
 
-**Loan card shows:** Loan ID, status badge (TAKEN / RETURNED), description, barcode codes preview, taken date, due date, returned date.
+**Loan card shows:** Loan ID, status badge (TAKEN / RETURNED), description, a preview of the first few barcodes (item name with the code in grey, matching the Barcode Detail contents formatting; "+N more" if there are more), taken date, due date, returned date.
 
 - **Result count** — a row below the status filter shows the number of loans matching the current filter.
 - **Pull to refresh** — pull down on the list to force a reload.

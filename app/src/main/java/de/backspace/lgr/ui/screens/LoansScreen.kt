@@ -14,7 +14,11 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import de.backspace.lgr.data.model.Loan
 import de.backspace.lgr.viewmodel.AppViewModel
@@ -72,7 +76,7 @@ fun LoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Unit
                 state.error != null && state.data == null -> ErrorBox(state.error)
                 state.data != null -> LazyColumn(modifier = Modifier.fillMaxSize().verticalScrollbar(listState), state = listState) {
                     itemsIndexed(state.data, key = { _, loan -> loan.id ?: loan.hashCode() }) { index, loan ->
-                        LoanCard(loan, onClick = { onOpenDetail(state.data, index) })
+                        LoanCard(loan, viewModel = viewModel, onClick = { onOpenDetail(state.data, index) })
                     }
                     if (viewModel.loansNextPage != null) {
                         item { LoadingFooter() }
@@ -142,7 +146,7 @@ fun MyLoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Un
                     } else {
                         LazyColumn(modifier = Modifier.fillMaxSize().verticalScrollbar(listState), state = listState) {
                             itemsIndexed(state.data, key = { _, loan -> loan.id ?: loan.hashCode() }) { index, loan ->
-                                LoanCard(loan, onClick = { onOpenDetail(state.data, index) })
+                                LoanCard(loan, viewModel = viewModel, onClick = { onOpenDetail(state.data, index) })
                             }
                             if (viewModel.myLoansNextPage != null) {
                                 item { LoadingFooter() }
@@ -192,8 +196,10 @@ private fun LoanStatusFilterRow(selected: String, onSelect: (String) -> Unit) {
     }
 }
 
+private val LOAN_GREY = Color(0xFF9E9E9E)
+
 @Composable
-fun LoanCard(loan: Loan, onClick: (() -> Unit)? = null) {
+fun LoanCard(loan: Loan, viewModel: AppViewModel, onClick: (() -> Unit)? = null) {
     val isTaken = loan.status.equals("taken", ignoreCase = true)
     val statusColor = if (isTaken) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
 
@@ -223,10 +229,29 @@ fun LoanCard(loan: Loan, onClick: (() -> Unit)? = null) {
             }
 
             Spacer(Modifier.height(6.dp))
-            Text(
-                "${loan.barcodes.size} barcode(s): ${loan.barcodes.take(3).joinToString(", ")}${if (loan.barcodes.size > 3) "…" else ""}",
-                style = MaterialTheme.typography.bodyMedium
-            )
+            val shownBarcodes = loan.barcodes.take(3)
+            shownBarcodes.forEach { code ->
+                val itemName by produceState(viewModel.cachedBarcodeName(code), code) {
+                    value = viewModel.resolveBarcodeName(code)
+                }
+                Text(
+                    text = buildAnnotatedString {
+                        if (!itemName.isNullOrBlank()) {
+                            append(itemName!!)
+                            append(" ")
+                        }
+                        withStyle(SpanStyle(color = LOAN_GREY)) { append("($code)") }
+                    },
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            if (loan.barcodes.size > shownBarcodes.size) {
+                Text(
+                    "+${loan.barcodes.size - shownBarcodes.size} more",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
             if (loan.takenDate != null) {
                 Spacer(Modifier.height(4.dp))
