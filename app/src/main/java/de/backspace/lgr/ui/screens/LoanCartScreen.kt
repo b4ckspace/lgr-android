@@ -98,7 +98,8 @@ fun LoanCartScreen(
                     onValueChange = { description = it },
                     label = { Text("Description (optional)") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    minLines = 3,
+                    maxLines = 6
                 )
             }
 
