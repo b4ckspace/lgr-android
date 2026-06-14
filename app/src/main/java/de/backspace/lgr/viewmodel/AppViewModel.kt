@@ -1641,6 +1641,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         loadBarcodes(barcodesSearch)
     }
 
+    // Drop every barcode filter (no-location + owners) in a single reload.
+    fun clearBarcodeFilters() {
+        barcodesNoParentFilter = false
+        selectedOwners = emptyList()
+        ownerSearchQuery = ""
+        ownerSuggestions = emptyList()
+        loadBarcodes(barcodesSearch)
+    }
+
     fun updateFiltersExpanded(expanded: Boolean) {
         filtersExpanded = expanded
         viewModelScope.launch {

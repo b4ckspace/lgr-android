@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -26,10 +25,11 @@ import androidx.compose.ui.unit.dp
 import de.backspace.lgr.data.model.Item
 import de.backspace.lgr.viewmodel.AppViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ItemsScreen(viewModel: AppViewModel, onOpenDetail: ((List<Item>, Int) -> Unit)? = null) {
     var search by remember { mutableStateOf(viewModel.itemsSearch) }
+    var filtersExpanded by rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState(viewModel.itemsScrollIndex, viewModel.itemsScrollOffset)
     DisposableEffect(Unit) {
         onDispose {
@@ -72,49 +72,39 @@ fun ItemsScreen(viewModel: AppViewModel, onOpenDetail: ((List<Item>, Int) -> Uni
     // behind the keyboard and cannot be scrolled.
     Box(modifier = Modifier.fillMaxSize().imePadding().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
     Column(modifier = Modifier.fillMaxSize()) {
-        OutlinedTextField(
-            value = search,
-            onValueChange = { search = it; viewModel.loadItems(it) },
-            label = { Text("Search items") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            trailingIcon = {
-                if (search.isNotBlank()) {
-                    IconButton(onClick = { search = ""; viewModel.loadItems("") }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear search")
-                    }
+        SearchHeader(
+            query = search,
+            onQueryChange = { search = it; viewModel.loadItems(it) },
+            placeholder = "Search items",
+            resultCount = viewModel.itemsCount,
+            hasFilters = true,
+            filtersExpanded = filtersExpanded,
+            onToggleFilters = { filtersExpanded = !filtersExpanded },
+            activeFilterCount = if (viewModel.itemsNoBarcodeFilter) 1 else 0,
+            activeFilterChips = {
+                if (viewModel.itemsNoBarcodeFilter) {
+                    InputChip(
+                        selected = true,
+                        onClick = { viewModel.toggleItemsNoBarcodeFilter() },
+                        label = { Text("No barcodes") },
+                        trailingIcon = {
+                            Icon(Icons.Default.Clear, contentDescription = "Remove no-barcodes filter",
+                                modifier = Modifier.size(InputChipDefaults.IconSize))
+                        }
+                    )
                 }
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            singleLine = true,
-            colors = lgrTextFieldColors()
-        )
-
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            FilterChip(
-                selected = viewModel.itemsNoBarcodeFilter,
-                onClick = { viewModel.toggleItemsNoBarcodeFilter() },
-                label = { Text("No barcodes") },
-                leadingIcon = if (viewModel.itemsNoBarcodeFilter) {
-                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
-                } else null
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            viewModel.itemsCount?.let { count ->
-                Text(
-                    text = "$count ${if (count == 1) "result" else "results"}",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(end = 8.dp)
+            filterPanel = {
+                FilterChip(
+                    selected = viewModel.itemsNoBarcodeFilter,
+                    onClick = { viewModel.toggleItemsNoBarcodeFilter() },
+                    label = { Text("No barcodes") },
+                    leadingIcon = if (viewModel.itemsNoBarcodeFilter) {
+                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
+                    } else null
                 )
             }
-        }
-
-        HorizontalDivider()
+        )
 
         val state = viewModel.items
         when {

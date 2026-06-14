@@ -7,7 +7,6 @@ import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Handler
 import android.os.Looper
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,11 +15,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -91,56 +87,46 @@ fun BarcodesScreen(
     // behind the keyboard and cannot be scrolled.
     Box(modifier = Modifier.fillMaxSize().imePadding().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            OutlinedTextField(
-                value = search,
-                onValueChange = { search = it; viewModel.updateBarcodesSearch(it) },
-                label = { Text("Search barcodes") },
-                placeholder = { Text("supports !user: !item: syntax") },
-                leadingIcon = { Icon(Icons.Default.Search, null) },
-                trailingIcon = {
-                    Row {
-                        if (search.isNotBlank()) {
-                            IconButton(onClick = { search = ""; viewModel.updateBarcodesSearch("") }) {
-                                Icon(Icons.Default.Clear, contentDescription = "Clear search")
-                            }
-                        }
-                        IconButton(onClick = onScanSearch) {
-                            Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan barcode", tint = MaterialTheme.colorScheme.primary)
-                        }
+            SearchHeader(
+                query = search,
+                onQueryChange = { search = it; viewModel.updateBarcodesSearch(it) },
+                placeholder = "Search barcodes",
+                supportingText = "Supports !user: and !item: syntax",
+                searchTrailing = {
+                    IconButton(onClick = { viewModel.clearBarcodeFilters(); onScanSearch() }) {
+                        Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan barcode", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                singleLine = true,
-                colors = lgrTextFieldColors()
-            )
-
-            // Always-visible row: expand toggle on left, result count on right
-            Row(
-                modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { viewModel.updateFiltersExpanded(!viewModel.filtersExpanded) }) {
-                    Icon(
-                        if (viewModel.filtersExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (viewModel.filtersExpanded) "Collapse filters" else "Expand filters"
-                    )
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                viewModel.barcodesCount?.let { count ->
-                    Text(
-                        text = "$count ${if (count == 1) "result" else "results"}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
-                }
-            }
-
-            // Collapsible additional filters
-            AnimatedVisibility(visible = viewModel.filtersExpanded) {
-                Column(modifier = Modifier.padding(horizontal = 8.dp)) {
+                resultCount = viewModel.barcodesCount,
+                hasFilters = true,
+                filtersExpanded = viewModel.filtersExpanded,
+                onToggleFilters = { viewModel.updateFiltersExpanded(!viewModel.filtersExpanded) },
+                activeFilterCount = (if (viewModel.barcodesNoParentFilter) 1 else 0) + viewModel.selectedOwners.size,
+                activeFilterChips = {
+                    if (viewModel.barcodesNoParentFilter) {
+                        InputChip(
+                            selected = true,
+                            onClick = { viewModel.toggleBarcodesNoParentFilter() },
+                            label = { Text("No location") },
+                            trailingIcon = {
+                                Icon(Icons.Default.Clear, contentDescription = "Remove no-location filter",
+                                    modifier = Modifier.size(InputChipDefaults.IconSize))
+                            }
+                        )
+                    }
+                    viewModel.selectedOwners.forEach { person ->
+                        InputChip(
+                            selected = true,
+                            onClick = { viewModel.removeOwnerPerson(person) },
+                            label = { Text(person.displayName()) },
+                            trailingIcon = {
+                                Icon(Icons.Default.Clear, contentDescription = "Remove ${person.displayName()}",
+                                    modifier = Modifier.size(InputChipDefaults.IconSize))
+                            }
+                        )
+                    }
+                },
+                filterPanel = {
                     FilterChip(
                         selected = viewModel.barcodesNoParentFilter,
                         onClick = { viewModel.toggleBarcodesNoParentFilter() },
@@ -149,7 +135,7 @@ fun BarcodesScreen(
                             { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
                         } else null
                     )
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = viewModel.ownerSearchQuery,
                         onValueChange = { viewModel.updateOwnerSearchQuery(it) },
@@ -194,34 +180,8 @@ fun BarcodesScreen(
                             }
                         }
                     }
-                    if (viewModel.selectedOwners.isNotEmpty()) {
-                        Spacer(Modifier.height(4.dp))
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            viewModel.selectedOwners.forEach { person ->
-                                InputChip(
-                                    selected = true,
-                                    onClick = {},
-                                    label = { Text(person.displayName()) },
-                                    trailingIcon = {
-                                        Icon(
-                                            Icons.Default.Clear,
-                                            contentDescription = "Remove ${person.displayName()}",
-                                            modifier = Modifier.size(InputChipDefaults.IconSize)
-                                                .clickable { viewModel.removeOwnerPerson(person) }
-                                        )
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(4.dp))
                 }
-            }
-
-            HorizontalDivider()
+            )
 
             val state = viewModel.barcodes
             Box(modifier = Modifier.weight(1f)) {

@@ -9,9 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -24,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import de.backspace.lgr.data.model.Person
 import de.backspace.lgr.viewmodel.AppViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun PersonsScreen(
     viewModel: AppViewModel,
@@ -71,45 +69,12 @@ fun PersonsScreen(
     // behind the keyboard and cannot be scrolled.
     Box(modifier = Modifier.fillMaxSize().imePadding().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            OutlinedTextField(
-                value = search,
-                onValueChange = { search = it; viewModel.loadPersons(it) },
-                label = { Text("Search persons") },
-                leadingIcon = { Icon(Icons.Default.Search, null) },
-                trailingIcon = {
-                    if (search.isNotBlank()) {
-                        IconButton(onClick = { search = ""; viewModel.loadPersons("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear search")
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                singleLine = true,
-                colors = lgrTextFieldColors()
+            SearchHeader(
+                query = search,
+                onQueryChange = { search = it; viewModel.loadPersons(it) },
+                placeholder = "Search persons",
+                resultCount = viewModel.personsCount
             )
-
-            Row(
-                modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (onNew != null && !viewModel.readonlyMode) {
-                    IconButton(onClick = onNew) {
-                        Icon(Icons.Default.PersonAdd, contentDescription = "New person", tint = MaterialTheme.colorScheme.primary)
-                    }
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                viewModel.personsCount?.let { count ->
-                    Text(
-                        text = "$count ${if (count == 1) "result" else "results"}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            HorizontalDivider()
 
             val state = viewModel.persons
             when {
