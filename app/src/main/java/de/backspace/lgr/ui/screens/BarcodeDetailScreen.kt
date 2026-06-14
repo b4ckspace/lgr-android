@@ -98,7 +98,14 @@ fun BarcodeDetailScreen(
     LaunchedEffect(deleteState.data) {
         if (deleteState.data != null) {
             viewModel.resetDeleteBarcodeState()
-            onBack()
+            // If we got here by following a barcode link, return to the previous barcode in
+            // place rather than popping the whole detail route back to the camera.
+            val prev = viewModel.popBarcodeHistory()
+            if (prev != null) {
+                viewModel.loadBarcode(prev, restoreContentSession = true)
+            } else {
+                onBack()
+            }
         }
     }
 
