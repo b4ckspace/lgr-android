@@ -74,9 +74,6 @@ fun AppNavigation(viewModel: AppViewModel) {
     LaunchedEffect(currentRoute) {
         val route = currentRoute ?: return@LaunchedEffect
         if (cameraRoutes.any { route.startsWith(it) }) return@LaunchedEffect
-        // verify_detail is a transient flow tied to verify state that gets cleared on exit;
-        // never remember it as the Barcodes tab's restorable sub-screen.
-        if (route == "verify_detail") return@LaunchedEffect
         val tab = activeTabFor(route, viewModel.currentLoanOriginMyLoans) ?: return@LaunchedEffect
         if (route == tab.route) tabLastRoutes.remove(tab) else tabLastRoutes[tab] = route
     }
@@ -137,6 +134,12 @@ fun AppNavigation(viewModel: AppViewModel) {
                                 if (targetRoute == "loan_detail") {
                                     val ok = viewModel.restoreLoanTab(fromMyLoans = screen == Screen.MyLoans)
                                     if (!ok) targetRoute = screen.route
+                                }
+                                // Only restore the verify result while its scan state is still
+                                // alive; once cleared (backed out), fall back to the tab list so
+                                // it doesn't reopen an empty "No location scanned." screen.
+                                if (targetRoute == "verify_detail" && viewModel.verifyLocation == null) {
+                                    targetRoute = screen.route
                                 }
                                 if (targetRoute != screen.route) {
                                     // Restore a sub-screen: put the tab root in the back stack

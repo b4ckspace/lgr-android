@@ -290,7 +290,7 @@ The result screen shows a two-column table:
 - A verify icon in the *Content* header re-opens the scanner in **Scan additional content** mode: scanned barcodes are *added* to the already-scanned list. It can be used repeatedly, each time appending to the list. The scanned list is only reset when you leave the result screen (back arrow, **Cancel**, or **Save**).
 - **Pull to refresh** — pull down on the result screen to reload the location's current data from the backend; the list of already-scanned items in the current session is preserved.
 - The list auto-scrolls so the *Content* header is the first visible item when the screen opens.
-- The result screen highlights the **Barcodes** tab.
+- The result screen highlights the **Barcodes** tab; while the verify is still in progress (not yet saved or discarded), switching to another tab and back to **Barcodes** returns to the verify result. Once the verify is left/cleared, the Barcodes tab shows the normal list instead.
 
 **If there are mismatches:**
 - **Cancel** — discards changes and navigates to the location barcode's detail page.
