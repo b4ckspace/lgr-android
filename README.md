@@ -153,7 +153,7 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 **Actions (authenticated):**
 - **New** — create another barcode immediately (only shown right after a barcode was just created, to support rapid sequential entry)
 - **Edit** — open the Edit Barcode screen (see below)
-- **Cart** — add the current barcode to the loan selection and return to the list
+- **Cart** — tap the cart icon to add the current barcode to the loan selection, or tap again to remove it; a count badge shows the selection size. The icon is disabled while the barcode is itself on loan. **Long-press** it for an *express loan* — this replaces the selection with just this barcode and opens the Loan Cart directly.
 - **Delete** — confirmation dialog, then permanently deletes the barcode and returns to the list
 
 **Editing a barcode:**
@@ -355,7 +355,7 @@ Shows all fields for a loan:
 When one or more barcodes have been added to the loan selection (via the shopping cart icon in Barcode Detail or via the checkbox in the Barcodes tab), a **🛒 N** badge appears in the top bar on all non-camera screens. Tapping it opens the Loan Cart screen.
 
 **Creating a loan:**
-1. Add barcodes to the cart using the cart icon in Barcode Detail.
+1. Add barcodes to the cart using the cart icon in Barcode Detail (long-press it for a single-item express loan that opens this screen directly).
 2. Tap the cart badge in the top bar.
 3. Review the barcode list (each entry is a tappable link to its Barcode Detail). Remove items with ×.
 4. Optionally enter a **Description** for the loan (multi-line).
