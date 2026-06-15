@@ -84,7 +84,7 @@ Authentication uses Django session cookies. CSRF tokens are extracted from the c
 - **Read-only without login** opens the app in read-only mode — scanning and listing work, creating/editing/deleting does not.
 - The server URL is remembered across sessions.
 - **Backend supports item images** — toggle switch below the server URL. Enable this when the backend has image support ([PR #2](https://github.com/b4ckspace/lgr/pull/2)). The setting is persisted across restarts. When enabled, camera buttons appear in the New Barcode and Edit Item screens.
-- Release builds show the app version and build date in the lower-right corner of the login screen.
+- The login screen shows the app version and build date in its lower-right corner.
 
 ---
 
@@ -120,7 +120,7 @@ The Barcodes, Items and Persons tabs share one search header so they look and be
 
 Searchable, paginated list of all barcodes.
 
-The search area uses the shared search header (see *Search header* below). The barcode search field also has a **scan-to-search** icon (camera) that clears any active filters, then scans an existing barcode and fills it into the field (beeps on found, burps on unknown). The field supports `!user:` and `!item:` syntax (backend-defined): e.g. `!user:john` finds all barcodes currently on loan to the person with nickname *john*, and `!item:eurobox` finds all barcodes whose item is named *eurobox* (both match the name exactly, case-insensitive).
+The search area uses the shared search header (see *Search header* above). The barcode search field also has a **scan-to-search** icon (camera) that clears any active filters, then scans an existing barcode and fills it into the field (beeps on found, burps on unknown). The field supports `!user:` and `!item:` syntax (backend-defined): e.g. `!user:john` finds all barcodes currently on loan to the person with nickname *john*, and `!item:eurobox` finds all barcodes whose item is named *eurobox* (both match the name exactly, case-insensitive).
 
 - **Filters** (behind the *Filters* toggle):
   - **No location** — show only barcodes without a parent location.
@@ -271,10 +271,7 @@ Used to audit whether the physical contents of a container match the database.
 
 1. **Home → Verify** opens the location scanner.
 2. Scan the container/location barcode. The scanner switches to content mode.
-3. Scan each item found inside the container:
-   - New item (not yet in DB for this location): short beep, scanner border flashes green.
-   - Already scanned (duplicate): triple beep.
-   - Unknown barcode: burp.
+3. Scan each item found inside the container. Recognised scans flash the scanner border green; see *Barcode Scan Sound Conventions* for the audio feedback.
 4. Tap **Done** to open the verification result screen, or **Cancel** (or the back arrow) to abort and return to the Home screen.
 
 The result screen shows a two-column table:
