@@ -154,7 +154,7 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 - **New** — create another barcode immediately (only shown right after a barcode was just created, to support rapid sequential entry)
 - **Edit** — open the Edit Barcode screen (see below)
 - **Cart** — tap the cart icon to add the current barcode to the loan selection, or tap again to remove it; a count badge shows the selection size. The icon is disabled while the barcode is itself on loan. **Long-press** it for an *express loan* — this replaces the selection with just this barcode and opens the Loan Cart directly.
-- **Delete** — confirmation dialog, then permanently deletes the barcode and returns to the list
+- **Delete** — confirmation dialog, then permanently deletes the barcode and returns to the previous screen — the previous barcode in the chain if you reached it by following a link, otherwise the list
 
 **Editing a barcode:**
 Tap the Edit icon (pencil) in the top bar to open the edit screen. The loan status is not editable.
@@ -215,7 +215,7 @@ Reachable by tapping an item in the Items tab, or by tapping the item name in a 
 **Displayed fields:**
 - Item name (labelled *Item*)
 - **Item image** — shown below the name when the backend supports images and an image has been set. The full image is always shown (never cropped). Tap to view fullscreen (pinch-to-zoom, double-tap to toggle 2×, tap to close when not zoomed).
-- Item description (labelled *Item description*, shown only if set)
+- Item description (shown only if set)
 - **Barcodes** section — all barcodes that use this item type, each tappable to open its Barcode Detail
 
 **Pull to refresh** — pull down to reload the item's linked barcodes.
@@ -239,7 +239,6 @@ Searchable, paginated list of persons (requires login).
 - **Cached on tab switch** — the result set, active search string and scroll position are preserved when switching away and back.
 - Tap any person to open its **Person Detail** page.
 - **Arrow buttons and swipe left/right** navigate through the result set (same as Items and Barcodes).
-- The tab is disabled when not logged in.
 
 ---
 
@@ -253,7 +252,7 @@ Reachable by tapping a person in the Persons tab.
 - **Arrow buttons and swipe left/right** navigate through the result set (same as Items and Barcodes).
 - The footer keeps the **Persons** tab highlighted, and tapping the Persons icon from another tab returns to this Person Detail page (same as the other tabs' detail pages).
 
-**Actions (authenticated, hidden in read-only mode):**
+**Actions:**
 - **Edit** (pencil icon) — opens the Edit Person screen. Editable fields: Nickname (required), First name, Last name, Email. **Cancel** and **Save** buttons are at the bottom of the screen.
 - **Delete** (trashcan icon) — opens a confirmation dialog and permanently deletes the person.
 
@@ -284,7 +283,7 @@ The result screen shows a two-column table:
 - Items only in *Current* (missing physically) are shown in red.
 - Items only in *Scanned* (unexpected extras) are shown in green.
 - Tapping any barcode entry in either column navigates to its Barcode Detail. The Android back button returns to the verify result.
-- Above the table the screen shows the location's details using the same rows, order and colours as the Barcode Detail page — **Item**, **Barcode**, **Location**, optional **Barcode description**, **Item description**, **Owner** and **Loan**, all in the normal text colour. The **Item** row is still tappable (navigates to Item Detail) but no longer highlighted. The breadcrumb ancestors remain tappable to their Barcode Detail.
+- Above the table the screen shows the location's own details as labelled rows — **Item**, **Barcode**, **Location** (breadcrumb), and, when set, **Barcode description**, **Item description**, **Owner** and **Loan** — all in the normal text colour. Unlike on the Barcode Detail page, the **Item** row is drawn in the normal text colour rather than the primary "link" colour, though it is still tappable (navigates to Item Detail); the breadcrumb ancestors also remain tappable to their Barcode Detail.
 - A verify icon in the *Content* header re-opens the scanner in **Scan additional content** mode: scanned barcodes are *added* to the already-scanned list. It can be used repeatedly, each time appending to the list. The scanned list is only reset when you leave the result screen (back arrow, **Cancel**, or **Save**).
 - **Pull to refresh** — pull down on the result screen to reload the location's current data from the backend; the list of already-scanned items in the current session is preserved.
 - The list auto-scrolls so the *Content* header is the first visible item when the screen opens.
@@ -307,10 +306,10 @@ Form to register a new barcode in the system.
 | Field | Notes |
 |---|---|
 | **Item** * | Type-ahead search against the item catalogue (min. 2 characters, 300 ms debounce). Selecting a suggestion fills in the item description. If the name does not exist yet, a new item is created on save. |
-| **Barcode** * | The barcode string. Enter manually, scan (camera icon), or tap **+1** to auto-generate the next available numeric code. While the +1 search is running a spinner is shown and the field is read-only; it becomes editable again once a free code is found. Only accepts codes not already in the system (burp if already known). |
+| **Barcode** * | The barcode string. Enter manually, scan (camera icon — an already-existing code is rejected with a rising tone), or tap **+1** to auto-generate the next available numeric code. While the +1 search is running a spinner is shown and the field is read-only; it becomes editable again once a free code is found. |
 | **Location** | Optional parent barcode. Type-ahead barcode search (min. 2 characters, 300 ms debounce) — suggestions show item name and code. Or tap the scan icon to scan a barcode. |
 | **Description** | Free-text description for this specific barcode instance. |
-| **Item description** | Pre-filled from the selected item (read-only). Editable when no item is selected. |
+| **Item description** | Pre-filled from the selected item (read-only). Editable when no item is selected (and a new item is created on save). |
 | **Owner** | Optional. Type-ahead person search or tap the person icon to assign yourself. |
 | **Photo** | (When backend supports images) Tap the camera icon to take a photo for the item. A thumbnail preview is shown; tap the × to remove it before saving. Disabled when an existing item is selected from suggestions (use Edit Item to change that item's photo). |
 
@@ -340,9 +339,7 @@ Paginated list of the current user's loans (requires login). Same UI as Loans.
 
 ### Loan Detail
 
-Uses the same look-and-feel as the Barcode Detail page: a compact header, labelled field rows (long-press a field to copy its value), and a fixed prev/next navigation row at the bottom.
-
-Shows all fields for a loan:
+Shows a loan's full details as labelled field rows (long-press a row to copy its value), with previous/next navigation pinned to the bottom of the screen:
 - Status (coloured red for TAKEN, green for RETURNED), person, description, taken/return/returned dates — each as a labelled row. *Return by* turns red when overdue.
 - Full list of barcodes (labelled *Barcodes (N)*) formatted as *item name (code)* with the code in grey, like the Barcode Detail contents — each is a tappable link to its Barcode Detail screen (long-press to copy the code). Resolved item names are cached, so revisiting a loan or swiping between loans shows them instantly without re-fetching.
 - **Arrow buttons** (and swipe left/right) to navigate to the previous/next loan in the list, pinned to the bottom of the screen.
@@ -358,7 +355,7 @@ When one or more barcodes have been added to the loan selection (via the shoppin
 1. Add barcodes to the cart using the cart icon in Barcode Detail (long-press it for a single-item express loan that opens this screen directly).
 2. Tap the cart badge in the top bar.
 3. Review the barcode list (each entry is a tappable link to its Barcode Detail). Remove items with ×.
-4. Optionally enter a **Description** for the loan (multi-line).
+4. Optionally enter a **Description** for the loan.
 5. Optionally set a **Return date** via the calendar picker or by typing `YYYY-MM-DD`.
 6. **Preview** — shows which barcodes are available (green) and which are blocked (red, already on loan). Each entry is a tappable link to its Barcode Detail.
 7. **Confirm** — creates the loan with the available barcodes. On success, the cart is cleared and you are navigated to the My Loans tab.
