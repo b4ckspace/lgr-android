@@ -701,7 +701,12 @@ private fun ContentListSection(
                                 val isAlreadyContent =
                                     existingChildren.any { it.code == suggestion.code } ||
                                     viewModel.newScannedBarcodes.any { it.code == suggestion.code }
-                                val isDisabled = isSelf || isAlreadyContent
+                                // An ancestor (the location or any barcode up the breadcrumb chain)
+                                // must not become a child of its own descendant — that would create
+                                // a parent/child cycle.
+                                val isAncestor =
+                                    (barcode.apiParentNames ?: emptyList()).any { it.code == suggestion.code }
+                                val isDisabled = isSelf || isAlreadyContent || isAncestor
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()

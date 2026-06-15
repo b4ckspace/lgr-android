@@ -1489,6 +1489,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val currentBarcode = scannedBarcode.data ?: return
         if (newScannedBarcodes.any { it.code == barcode.code }) return
         if (currentBarcode.apiChildNames?.any { it.code == barcode.code } == true) return
+        // Never let an ancestor (location / breadcrumb chain) be added as content; that would make a
+        // barcode a child of its own descendant (a parent/child cycle).
+        if (barcode.code == currentBarcode.code) return
+        if (currentBarcode.apiParentNames?.any { it.code == barcode.code } == true) return
         if (!contentScanActive && !addContentScanActive) {
             newScannedBarcodes = emptyList()
             saveContentState = UiState()
