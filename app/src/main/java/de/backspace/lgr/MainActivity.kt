@@ -16,8 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import de.backspace.lgr.ui.navigation.AppNavigation
 import de.backspace.lgr.ui.screens.LoginScreen
+import de.backspace.lgr.ui.screens.ScanTones
 import de.backspace.lgr.ui.theme.LgrTheme
 import de.backspace.lgr.viewmodel.AppViewModel
+import kotlin.concurrent.thread
 
 class MainActivity : ComponentActivity() {
     private val viewModel: AppViewModel by viewModels()
@@ -25,6 +27,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        // Warm the shared tone generator up front (off the main thread) so the first scan's
+        // acknowledge beep plays immediately and at full length instead of clipped.
+        thread { ScanTones.warmUp() }
         setContent {
             LgrTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {

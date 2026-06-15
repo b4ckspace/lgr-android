@@ -3,10 +3,6 @@
 
 package de.backspace.lgr.ui.screens
 
-import android.media.AudioManager
-import android.media.ToneGenerator
-import android.os.Handler
-import android.os.Looper
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -269,7 +265,6 @@ fun ScanBarcodeSearchScreen(
     onBack: () -> Unit
 ) {
     val detected = remember { AtomicBoolean(false) }
-    val handler = remember { Handler(Looper.getMainLooper()) }
     val scope = rememberCoroutineScope()
 
     BarcodeScannerScaffold(
@@ -277,21 +272,14 @@ fun ScanBarcodeSearchScreen(
         label = "Scan to search",
         onBarcodeDetected = { code ->
             if (detected.compareAndSet(false, true)) {
+                // Acknowledge instantly, before the lookup; correct with a burp if unknown.
+                ScanTones.ack()
                 scope.launch {
                     val isNew = viewModel.isBarcodeNew(code)
                     if (!isNew) {
-                        try {
-                            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-                            tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
-                            handler.postDelayed({ tg.release() }, 300)
-                        } catch (_: Exception) {}
                         onScanned(code)
                     } else {
-                        try {
-                            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-                            tg.startTone(ToneGenerator.TONE_PROP_NACK, 300)
-                            handler.postDelayed({ tg.release() }, 1000)
-                        } catch (_: Exception) {}
+                        ScanTones.notFound()
                         delay(1000)
                         detected.set(false)
                     }

@@ -4,9 +4,6 @@
 package de.backspace.lgr.ui.screens
 
 import android.Manifest
-import android.media.AudioManager
-import android.media.ToneGenerator
-import android.os.Handler
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -31,20 +28,6 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
-
-fun playRisingTone(handler: Handler) {
-    try {
-        val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-        tg.startTone(ToneGenerator.TONE_DTMF_1, 80)
-        handler.postDelayed({
-            tg.startTone(ToneGenerator.TONE_DTMF_A, 80)
-            handler.postDelayed({
-                tg.startTone(ToneGenerator.TONE_DTMF_D, 80)
-                handler.postDelayed({ tg.release() }, 100)
-            }, 100)
-        }, 100)
-    } catch (_: Exception) {}
-}
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable

@@ -4,11 +4,7 @@
 package de.backspace.lgr.ui.screens
 
 import android.graphics.BitmapFactory
-import android.media.AudioManager
-import android.media.ToneGenerator
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -720,7 +716,6 @@ fun ScanNewBarcodeScreen(
     onBack: () -> Unit
 ) {
     val cooldown = remember { AtomicBoolean(false) }
-    val handler = remember { Handler(Looper.getMainLooper()) }
     val scope = rememberCoroutineScope()
 
     BarcodeScannerScaffold(
@@ -728,17 +723,15 @@ fun ScanNewBarcodeScreen(
         label = "Scan new barcode",
         onBarcodeDetected = { code ->
             if (cooldown.compareAndSet(false, true)) {
+                // Acknowledge instantly, before the lookup; reject with a rising tone if the code
+                // already exists.
+                ScanTones.ack()
                 scope.launch {
                     val isNew = viewModel.isBarcodeNew(code)
                     if (isNew) {
-                        try {
-                            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-                            tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
-                            handler.postDelayed({ tg.release() }, 300)
-                        } catch (_: Exception) {}
                         onScanned(code)
                     } else {
-                        playRisingTone(handler)
+                        ScanTones.rising()
                         delay(1000)
                         cooldown.set(false)
                     }

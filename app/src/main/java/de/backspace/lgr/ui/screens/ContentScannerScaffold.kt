@@ -3,8 +3,6 @@
 
 package de.backspace.lgr.ui.screens
 
-import android.media.AudioManager
-import android.media.ToneGenerator
 import android.os.Handler
 import android.os.Looper
 import androidx.compose.foundation.BorderStroke
@@ -20,40 +18,6 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
 private val SCAN_FLASH_GREEN = Color(0xFF4CAF50)
-
-// Standard audio feedback for a scan result (shared by every content-collecting scanner).
-private fun playScanFeedback(handler: Handler, result: ScanResult) {
-    try {
-        val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-        when (result) {
-            ScanResult.FOUND_NEW -> {
-                tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
-                handler.postDelayed({ tg.release() }, 300)
-            }
-            ScanResult.FOUND_EXISTING -> {
-                tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
-                handler.postDelayed({
-                    tg.startTone(ToneGenerator.TONE_DTMF_A, 80)
-                    handler.postDelayed({ tg.release() }, 200)
-                }, 200)
-            }
-            ScanResult.DUPLICATE -> {
-                tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
-                handler.postDelayed({
-                    tg.startTone(ToneGenerator.TONE_DTMF_A, 80)
-                    handler.postDelayed({
-                        tg.startTone(ToneGenerator.TONE_DTMF_A, 80)
-                        handler.postDelayed({ tg.release() }, 200)
-                    }, 150)
-                }, 200)
-            }
-            ScanResult.NOT_FOUND -> {
-                tg.startTone(ToneGenerator.TONE_PROP_NACK, 300)
-                handler.postDelayed({ tg.release() }, 1000)
-            }
-        }
-    } catch (_: Exception) {}
-}
 
 // A camera scanner specialised for collecting the contents of a container: it owns the scan
 // cooldown, audio feedback, the green border flash on a recognised scan, and the "N scanned"
@@ -85,12 +49,15 @@ fun ContentScannerScaffold(
             if (cooldown.compareAndSet(false, true)) {
                 if (selfCode != null && code == selfCode) {
                     // Scanning the container itself is meaningless; reject with a rising tone.
-                    playRisingTone(handler)
+                    ScanTones.rising()
                     handler.postDelayed({ cooldown.set(false) }, 1000)
                 } else {
+                    // Beep immediately, before the (network-backed) lookup, so the acknowledge is
+                    // instant; the result-specific tones follow once onScan returns.
+                    ScanTones.ack()
                     scope.launch {
                         val result = onScan(code)
-                        playScanFeedback(handler, result)
+                        ScanTones.resultFollowUp(result)
                         if (result == ScanResult.FOUND_NEW || result == ScanResult.FOUND_EXISTING) {
                             scanFlash = true
                             handler.postDelayed({ scanFlash = false }, 500)

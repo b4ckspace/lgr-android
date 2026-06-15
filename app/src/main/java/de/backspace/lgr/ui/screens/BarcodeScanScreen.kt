@@ -3,10 +3,6 @@
 
 package de.backspace.lgr.ui.screens
 
-import android.media.AudioManager
-import android.media.ToneGenerator
-import android.os.Handler
-import android.os.Looper
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.runtime.*
@@ -20,7 +16,6 @@ fun BarcodeScanScreen(viewModel: AppViewModel, onBarcodeDetected: () -> Unit, on
     val lifecycleOwner = LocalLifecycleOwner.current
     val detected = remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val handler = remember { Handler(Looper.getMainLooper()) }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -36,21 +31,14 @@ fun BarcodeScanScreen(viewModel: AppViewModel, onBarcodeDetected: () -> Unit, on
         onBarcodeDetected = { code ->
             if (!detected.value) {
                 detected.value = true
+                // Acknowledge instantly, before the lookup; correct with a burp if unknown.
+                ScanTones.ack()
                 scope.launch {
                     val found = viewModel.tryLoadBarcode(code)
                     if (found) {
-                        try {
-                            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-                            tg.startTone(ToneGenerator.TONE_PROP_BEEP, 100)
-                            handler.postDelayed({ tg.release() }, 300)
-                        } catch (_: Exception) {}
                         onBarcodeDetected()
                     } else {
-                        try {
-                            val tg = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
-                            tg.startTone(ToneGenerator.TONE_PROP_NACK, 300)
-                            handler.postDelayed({ tg.release() }, 1000)
-                        } catch (_: Exception) {}
+                        ScanTones.notFound()
                         delay(1000)
                         detected.value = false
                     }

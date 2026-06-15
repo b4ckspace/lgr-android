@@ -372,12 +372,17 @@ When one or more barcodes have been added to the loan selection (via the shoppin
 
 ## Barcode Scan Sound Conventions
 
+Every decoded barcode plays a short **acknowledge beep** immediately. In the content/verify scanners, that beep is then followed by extra beeps that encode the result:
+
 | Sound | Meaning |
 |---|---|
-| Short beep | Success / item found |
-| Burp (NACK) | Not found / already known / error |
-| Double beep | Already scanned in this session |
-| Rising tone | Invalid action (e.g. scanning the location barcode as content) |
+| Acknowledge beep | A barcode was decoded (plays immediately on every scan) |
+| Acknowledge beep, then **1** beep | Content/verify: item is already expected in this container (matches the database) |
+| Acknowledge beep, then **2** beeps | Content/verify: duplicate — already scanned in this session |
+| Burp (NACK) | Unknown barcode / not found (plays after the acknowledge beep) |
+| Rising tone | Invalid action (e.g. scanning the container's own barcode as its content) |
+
+A plain acknowledge beep with **no** follow-up means the scan succeeded with nothing more to flag (a known barcode in the simple scanners, or a new/unexpected item in a content/verify scan).
 
 ---
 
