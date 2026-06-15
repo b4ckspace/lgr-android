@@ -135,7 +135,7 @@ The search area uses the shared search header (see *Search header* below). The b
 
 Tap any barcode in the list (or scan from Home → Details) to open the detail view.
 
-**Displayed fields** (top to bottom — Item, Barcode, Location):
+**Displayed fields:**
 - Item name and description
 - Barcode code
 - **Item image** — shown below the barcode when the backend supports images and an image has been set. The full image is always shown (never cropped): landscape images fill the width, portrait images are capped in height and centered. Tap to view the image fullscreen; tap the fullscreen image to dismiss it.
@@ -146,7 +146,7 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 
 **Navigation:**
 - When opened from the list, arrow buttons and swipe left/right navigate through the result set.
-- Tapping a location breadcrumb or a content item navigates into that barcode, maintaining back-navigation history (Android back button / swipe right goes back through the chain).
+- Tapping a location breadcrumb or a content item navigates into that barcode, maintaining a navigation history: the Android back button (or swipe right) steps **back** through the chain, and after stepping back, **swipe left** steps **forward** again.
 - **Pull to refresh** — pull down to reload the current barcode's data from the backend.
 - **Long-press to copy** — long-press any field row to copy its value to the clipboard. This works on all the detail pages (Barcode, Item, Person and Loan).
 
@@ -157,12 +157,12 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 - **Delete** — confirmation dialog, then permanently deletes the barcode and returns to the list
 
 **Editing a barcode:**
-Tap the Edit icon (pencil) in the top bar to open the edit screen. The loan status is not editable. Fields are ordered Item, Barcode, Location:
+Tap the Edit icon (pencil) in the top bar to open the edit screen. The loan status is not editable.
 - **Item** — type-ahead search; selecting a suggestion fills in the item description. If the typed name does not exist yet, a new item is created on save.
 - **Barcode** — the existing code, read-only here (change it via *Changing the barcode code* below).
 - **Location** — type-ahead barcode search (min. 2 characters, 300 ms debounce). Suggestions show the item name and barcode code; selecting one sets the parent barcode. Pre-filled with the current parent (if any).
-- **Barcode description** — per-barcode description. Multi-line; when the text exceeds the field height, only the text scrolls inside the fixed outline and a thin scrollbar appears on the right; the field keeps the line you are typing on in view (same for the New Barcode and Edit Item description fields).
-- **Item description** — editable when no item is selected from suggestions; read-only once an item is chosen.
+- **Barcode description** — per-barcode description.
+- **Item description** — editable when no item is selected from suggestions (and a new item is created on save); read-only once an item is chosen.
 - **Owner** — type-ahead person search; tap the person icon to set to the current user.
 
 > Item photo editing is not available here — use Edit Item to change a photo.
@@ -199,7 +199,7 @@ Searchable, paginated list of item types (the catalogue, not individual barcoded
 
 - Text search by name (shared search header — see *Search header* above).
 - **No barcodes filter** — behind the *Filters* toggle; shows only item types that have no barcodes registered yet.
-- Displays name, description, and tag count per item.
+- Displays the item name, plus its description and the number of tags (labels) when present.
 - Infinite scroll.
 - **Pull to refresh** — pull down on the list to force a reload (respects the active search and filter).
 - **Cached on tab switch** — the result set, active search string and scroll position are preserved when switching away and back.
@@ -233,7 +233,7 @@ Searchable, paginated list of persons (requires login).
 
 - Text search by name/nickname (shared search header — see *Search header* above; no filters, so no Filters toggle).
 - Displays full name (primary), nickname (if different), and email per person.
-- **Add new person** — a person-add **floating action button** (bottom-right) opens the New Person screen. Hidden in read-only mode.
+- **Add new person** — a person-add **floating action button** (bottom-right) opens the New Person screen.
 - Infinite scroll.
 - **Pull to refresh** — pull down to force a reload.
 - **Cached on tab switch** — the result set, active search string and scroll position are preserved when switching away and back.
@@ -306,8 +306,6 @@ The result screen shows a two-column table:
 ### New Barcode
 
 Form to register a new barcode in the system.
-
-Fields are ordered Item, Barcode, Location:
 
 | Field | Notes |
 |---|---|
@@ -403,6 +401,8 @@ A compact icon-only bottom bar is always visible (except on camera/scanner scree
 Switching to a different tab and back restores where you were on that tab (the open detail/sub-screen and scroll position). Tapping the tab you are **already** on resets it — it returns to that tab's list and closes any open detail/sub-screen.
 
 Creating new entries is done from each tab's **floating action button** (Add new barcode on the Barcodes tab, Add new person on the Persons tab), hidden in read-only mode. The top bar shows the loan-cart badge when the loan selection is non-empty.
+
+The top bar also holds a **Logout** button when logged in (or a **Login** button in read-only mode — see *Read-only Mode*). **Logout** ends the session, clears the loan selection, and returns to the login screen.
 
 ---
 
