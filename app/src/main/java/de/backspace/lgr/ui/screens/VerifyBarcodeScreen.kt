@@ -3,7 +3,11 @@
 
 package de.backspace.lgr.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -16,13 +20,22 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import coil.compose.AsyncImage
 import de.backspace.lgr.viewmodel.AppViewModel
+import kotlin.math.roundToInt
 
 private val VERIFY_GREY = Color(0xFF9E9E9E)
 private val VERIFY_GREEN = Color(0xFF4CAF50)
@@ -77,8 +90,8 @@ fun VerifyBarcodeScreen(
         value = if (o != null) viewModel.resolveOwnerName(o) else null
     }
 
-    // item indices: 0=item, 1=barcode, 2=location, then optional descriptions/owner/loan, then content
-    val contentItemIndex = 3 + listOf(
+    // item indices: 0=item, 1=barcode, [image], location, then optional descriptions/owner/loan, then content
+    val contentItemIndex = (if (location.itemImage != null) 4 else 3) + listOf(
         location.description.isNotBlank(),
         location.itemDescription.isNotBlank(),
         location.owner != null,
@@ -94,6 +107,47 @@ fun VerifyBarcodeScreen(
         if (pullRefreshState.isRefreshing) {
             viewModel.refreshVerifyLocation().join()
             pullRefreshState.endRefresh()
+        }
+    }
+
+    var showFullscreenImage by remember { mutableStateOf(false) }
+    if (showFullscreenImage && location.itemImage != null) {
+        Dialog(
+            onDismissRequest = { showFullscreenImage = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            var scale by remember { mutableStateOf(1f) }
+            var offset by remember { mutableStateOf(Offset.Zero) }
+            val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
+                scale = (scale * zoomChange).coerceIn(1f, 8f)
+                offset = if (scale > 1f) offset + panChange / scale else Offset.Zero
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+                    .transformable(state = transformableState)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = { if (scale <= 1.05f) showFullscreenImage = false },
+                            onDoubleTap = {
+                                if (scale > 1f) { scale = 1f; offset = Offset.Zero } else scale = 2f
+                            }
+                        )
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = location.itemImage,
+                    contentDescription = "Full size item image",
+                    imageLoader = viewModel.imageLoader,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .scale(scale)
+                        .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) },
+                    contentScale = ContentScale.Fit
+                )
+            }
         }
     }
 
@@ -117,6 +171,17 @@ fun VerifyBarcodeScreen(
             ) {
                 item { DetailRow("Item", location.itemName, valueColor = MaterialTheme.colorScheme.onSurface, onClick = onItemClick) }
                 item { DetailRow("Barcode", location.code) }
+                if (location.itemImage != null) {
+                    item {
+                        ItemImagePreview(
+                            model = location.itemImage,
+                            imageLoader = viewModel.imageLoader,
+                            contentDescription = "Item image",
+                            maxHeight = 320.dp,
+                            onClick = { showFullscreenImage = true }
+                        )
+                    }
+                }
 
                 // Location section
                 item {
