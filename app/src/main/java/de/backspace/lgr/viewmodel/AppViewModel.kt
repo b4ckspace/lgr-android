@@ -55,6 +55,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     // loading screen instead of briefly flashing the login screen.
     var initialAuthInProgress by mutableStateOf(false)
         private set
+
+    // A single, app-wide fullscreen toggle shared by every screen that offers it (the list tabs and
+    // the Barcode Detail page). When on, that screen hides its header/search bar plus the app top bar
+    // and bottom navigation so the content fills the whole screen. Turned on via the fullscreen (⛶)
+    // action and off via the exit FAB or the back button. Because it is shared and persists, enabling
+    // it on a list keeps it active when drilling into a barcode (and back again); it only takes
+    // visible effect on screens that support it, so other sub-pages still show their normal chrome.
+    var fullscreen by mutableStateOf(false)
+
     var items by mutableStateOf(UiState<List<Item>>())
     var itemsNextPage by mutableStateOf<String?>(null)
     var itemsCount by mutableStateOf<Int?>(null)

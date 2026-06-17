@@ -3,6 +3,7 @@
 
 package de.backspace.lgr.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -64,12 +65,16 @@ fun LoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Unit
 
     Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            LoanStatusFilterRow(
-                selected = viewModel.loansStatusFilter,
-                onSelect = { viewModel.loadLoans(it) }
-            )
-            LoanCountRow(viewModel.loansCount)
-            HorizontalDivider()
+            AnimatedVisibility(visible = !viewModel.fullscreen) {
+                Column {
+                    LoanStatusFilterRow(
+                        selected = viewModel.loansStatusFilter,
+                        onSelect = { viewModel.loadLoans(it) }
+                    )
+                    LoanCountRow(viewModel.loansCount)
+                    HorizontalDivider()
+                }
+            }
             val state = viewModel.loans
             when {
                 state.isLoading && state.data == null -> LoadingBox()
@@ -128,12 +133,16 @@ fun MyLoansScreen(viewModel: AppViewModel, onOpenDetail: (List<Loan>, Int) -> Un
 
     Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            LoanStatusFilterRow(
-                selected = viewModel.myLoansStatusFilter,
-                onSelect = { viewModel.loadMyLoans(it) }
-            )
-            LoanCountRow(viewModel.myLoansCount)
-            HorizontalDivider()
+            AnimatedVisibility(visible = !viewModel.fullscreen) {
+                Column {
+                    LoanStatusFilterRow(
+                        selected = viewModel.myLoansStatusFilter,
+                        onSelect = { viewModel.loadMyLoans(it) }
+                    )
+                    LoanCountRow(viewModel.myLoansCount)
+                    HorizontalDivider()
+                }
+            }
             val state = viewModel.myLoans
             when {
                 state.isLoading && state.data == null -> LoadingBox()

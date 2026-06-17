@@ -113,6 +113,7 @@ The Barcodes, Items and Persons tabs share one search header so they look and be
 - A meta row with a **Filters** toggle on the left (shows the active-filter count, e.g. *Filters · 2*, and a chevron) and the **result count** on the right. Tabs with no filters (Persons) omit the toggle.
 - When filters are active, they appear as **removable chips** under the field — visible even while the filter panel is collapsed.
 - The **collapsible filter panel** holds that tab's specific filters; it's hidden behind the Filters toggle so every tab has the same compact layout.
+- **Fullscreen mode** — tap the fullscreen icon (⛶) in the top bar to hide the search header along with the app top bar and bottom navigation, so the list spans the whole screen. The Android status and navigation bars (clock, network, battery, nav buttons) are hidden too, so nothing overlaps the content; swipe from an edge to reveal them briefly. Leave fullscreen with the floating exit button (bottom-right) or the back button. Fullscreen is a single app-wide setting shared with the Barcode Detail page: once on, it stays on as you drill into a barcode and back, until you turn it off. Available on every list tab, including Loans and My Loans (which hide their status-filter header the same way).
 
 ---
 
@@ -148,6 +149,7 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 - When opened from the list, arrow buttons and swipe left/right navigate through the result set.
 - Tapping a location breadcrumb or a content item navigates into that barcode, maintaining a navigation history: the Android back button (or swipe right) steps **back** through the chain, and after stepping back, **swipe left** steps **forward** again.
 - **Pull to refresh** — pull down to reload the current barcode's data from the backend.
+- **Fullscreen** — uses the same single, app-wide fullscreen toggle as the list tabs (turn it on with the ⛶ icon in the header). The header and the bottom navigation are hidden so the details span the whole screen; leave it with the floating exit button (bottom-right) or the back button. Because the setting is shared, opening a barcode while a list is already in fullscreen shows the detail in fullscreen too.
 - **Long-press to copy** — long-press any field row to copy its value to the clipboard. This works on all the detail pages (Barcode, Item, Person and Loan).
 
 **Actions (authenticated):**
@@ -220,6 +222,8 @@ Reachable by tapping an item in the Items tab, or by tapping the item name in a 
 
 **Pull to refresh** — pull down to reload the item's linked barcodes.
 
+**Fullscreen** — tap the ⛶ icon in the header to hide it and the bottom navigation so the details span the whole screen; it uses the same single, app-wide fullscreen toggle as the list tabs (see *Fullscreen mode* under *Search header*).
+
 **Actions (authenticated):**
 - **Edit** (pencil icon) — opens the Edit Item screen. Editable fields: Item (name), Item description, and (when backend supports images) Photo. The current item image is shown; tap the camera icon to take a new photo, or tap the trashcan to delete the current photo (tap undo to cancel). **Cancel** and **Save** buttons are at the bottom of the screen. The item list is refreshed after saving.
 - **Delete** (trashcan icon) — opens a confirmation dialog and permanently deletes the item.
@@ -249,6 +253,7 @@ Reachable by tapping a person in the Persons tab.
 **Displayed fields:** Nickname, First name, Last name, Email (each shown only when set; nickname is always shown). Long-press a field to copy its value (see *Barcode detail* for this shared behaviour).
 
 - **Pull to refresh** — pull down to reload the person from the backend.
+- **Fullscreen** — tap the ⛶ icon in the header to hide it and the bottom navigation; uses the same app-wide fullscreen toggle as the list tabs (see *Fullscreen mode* under *Search header*).
 - **Arrow buttons and swipe left/right** navigate through the result set (same as Items and Barcodes).
 - The footer keeps the **Persons** tab highlighted, and tapping the Persons icon from another tab returns to this Person Detail page (same as the other tabs' detail pages).
 
@@ -343,6 +348,7 @@ Shows a loan's full details as labelled field rows (long-press a row to copy its
 - Status (coloured red for TAKEN, green for RETURNED), person, description, taken/return/returned dates — each as a labelled row. *Return by* turns red when overdue.
 - Full list of barcodes (labelled *Barcodes (N)*) formatted as *item name (code)* with the code in grey, like the Barcode Detail contents — each is a tappable link to its Barcode Detail screen (long-press to copy the code). Resolved item names are cached, so revisiting a loan or swiping between loans shows them instantly without re-fetching.
 - **Arrow buttons** (and swipe left/right) to navigate to the previous/next loan in the list, pinned to the bottom of the screen.
+- **Fullscreen** — tap the ⛶ icon in the header to hide it and the bottom navigation; uses the same app-wide fullscreen toggle as the list tabs (see *Fullscreen mode* under *Search header*).
 - **Return loan** button — visible when status is TAKEN and the loan belongs to the current user (regardless of whether it was opened from Loans or My Loans). Opens a confirmation dialog; on confirm, marks the loan as returned and refreshes both loan lists.
 - The footer keeps the tab the loan was opened from highlighted — **My Loans** when opened from My Loans, otherwise **Loans**.
 - A loan detail can be open on the Loans tab and the My Loans tab at the same time; tapping the footer icons switches directly between the two open loan details (and to a tab's list when it has no loan open).

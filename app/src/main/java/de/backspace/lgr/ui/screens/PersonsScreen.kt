@@ -3,6 +3,7 @@
 
 package de.backspace.lgr.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -69,12 +70,14 @@ fun PersonsScreen(
     // behind the keyboard and cannot be scrolled.
     Box(modifier = Modifier.fillMaxSize().imePadding().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
         Column(modifier = Modifier.fillMaxSize()) {
+            AnimatedVisibility(visible = !viewModel.fullscreen) {
             SearchHeader(
                 query = search,
                 onQueryChange = { search = it; viewModel.loadPersons(it) },
                 placeholder = "Search persons",
                 resultCount = viewModel.personsCount
             )
+            }
 
             val state = viewModel.persons
             when {
@@ -93,7 +96,7 @@ fun PersonsScreen(
 
         PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
 
-        if (onNew != null && !viewModel.readonlyMode) {
+        if (onNew != null && !viewModel.readonlyMode && !viewModel.fullscreen) {
             FloatingActionButton(
                 onClick = onNew,
                 modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)

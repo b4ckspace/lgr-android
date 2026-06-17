@@ -3,6 +3,7 @@
 
 package de.backspace.lgr.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -83,6 +84,7 @@ fun BarcodesScreen(
     // behind the keyboard and cannot be scrolled.
     Box(modifier = Modifier.fillMaxSize().imePadding().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
         Column(modifier = Modifier.fillMaxSize()) {
+            AnimatedVisibility(visible = !viewModel.fullscreen) {
             SearchHeader(
                 query = search,
                 onQueryChange = { search = it; viewModel.updateBarcodesSearch(it) },
@@ -177,6 +179,7 @@ fun BarcodesScreen(
                     }
                 }
             )
+            }
 
             val state = viewModel.barcodes
             Box(modifier = Modifier.weight(1f)) {
@@ -203,7 +206,7 @@ fun BarcodesScreen(
 
         PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
 
-        if (!viewModel.readonlyMode) {
+        if (!viewModel.readonlyMode && !viewModel.fullscreen) {
             FloatingActionButton(
                 onClick = onNewBarcode,
                 modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)

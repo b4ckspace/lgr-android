@@ -3,6 +3,7 @@
 
 package de.backspace.lgr.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
@@ -95,6 +97,7 @@ fun PersonDetailScreen(
 
     Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
     Column(modifier = Modifier.fillMaxSize()) {
+        AnimatedVisibility(visible = !viewModel.fullscreen) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -104,6 +107,9 @@ fun PersonDetailScreen(
             }
             Text("Person", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.weight(1f))
+            IconButton(onClick = { viewModel.fullscreen = true }) {
+                Icon(Icons.Default.Fullscreen, contentDescription = "Fullscreen")
+            }
             if (!viewModel.readonlyMode) {
                 Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
                     IconButton(onClick = onEditPerson) {
@@ -124,6 +130,7 @@ fun PersonDetailScreen(
                     }
                 }
             }
+        }
         }
 
         Box(

@@ -3,6 +3,7 @@
 
 package de.backspace.lgr.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -11,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
@@ -87,16 +89,24 @@ fun LoanDetailScreen(
             }
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            AnimatedVisibility(visible = !viewModel.fullscreen) {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                    Text("Loan #${loan.id ?: "—"}", style = MaterialTheme.typography.titleLarge)
+                    Spacer(Modifier.weight(1f))
+                    IconButton(onClick = { viewModel.fullscreen = true }) {
+                        Icon(Icons.Default.Fullscreen, contentDescription = "Fullscreen")
+                    }
                 }
-                Text("Loan #${loan.id ?: "—"}", style = MaterialTheme.typography.titleLarge)
+                HorizontalDivider()
             }
-            HorizontalDivider()
+            }
 
             Column(
                 modifier = Modifier

@@ -4,6 +4,7 @@
 package de.backspace.lgr.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AddShoppingCart
@@ -114,7 +116,9 @@ fun BarcodeDetailScreen(
         value = if (ownerUrl != null) viewModel.resolveOwnerName(ownerUrl) else null
     }
 
-    BackHandler(enabled = viewModel.barcodeHistory.isNotEmpty()) {
+    // While fullscreen, let the back button exit fullscreen first (handled in AppNavigation), so
+    // in-place history navigation only claims back once the chrome is visible again.
+    BackHandler(enabled = viewModel.barcodeHistory.isNotEmpty() && !viewModel.fullscreen) {
         val prevCode = viewModel.popBarcodeHistory() ?: return@BackHandler
         viewModel.loadBarcode(prevCode, restoreContentSession = true)
     }
@@ -226,6 +230,7 @@ fun BarcodeDetailScreen(
 
     Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
     Column(modifier = Modifier.fillMaxSize()) {
+        AnimatedVisibility(visible = !viewModel.fullscreen) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -235,6 +240,9 @@ fun BarcodeDetailScreen(
             }
             Text("Barcode", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.weight(1f))
+            IconButton(onClick = { viewModel.fullscreen = true }) {
+                Icon(Icons.Default.Fullscreen, contentDescription = "Fullscreen")
+            }
             if (!viewModel.readonlyMode) {
                 state.data?.let { barcode ->
                     Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
@@ -288,6 +296,7 @@ fun BarcodeDetailScreen(
                     }
                 }
             }
+        }
         }
 
         Box(

@@ -3,12 +3,22 @@
 
 package de.backspace.lgr.ui.navigation
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
@@ -18,8 +28,12 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -38,6 +52,21 @@ private sealed class Screen(val route: String, val title: String, val icon: Imag
 
 // Routes where the shared top bar is hidden (screens have their own TopAppBar or are camera-only)
 private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search", "item_detail", "edit_barcode", "edit_item", "edit_barcode_scan_parent", "edit_barcode_scan_code", "loan_cart", "loan_detail", "person_detail", "edit_person", "new_person")
+
+// The scrollable list tabs whose chrome (top bar + bottom nav) auto-hides while scrolling down.
+private val listRootRoutes = setOf("items", "barcodes", "persons", "loans", "my_loans")
+
+// Detail pages that offer the same fullscreen toggle (each has its own header with a ⛶ action).
+private val detailFullscreenRoutes = setOf("barcode_detail", "item_detail", "person_detail", "loan_detail")
+
+private fun Context.findActivity(): Activity? {
+    var ctx: Context? = this
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx
+        ctx = ctx.baseContext
+    }
+    return null
+}
 
 // Camera/scanner screens where even the bottom bar is hidden (need full screen for viewfinder)
 private val cameraRoutes = setOf("scan", "content_scan", "scan_parent", "add_content_scan", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "barcodes_scan_search", "edit_barcode_scan_parent", "edit_barcode_scan_code")
@@ -69,6 +98,34 @@ fun AppNavigation(viewModel: AppViewModel) {
     val showBottomBar = cameraRoutes.none { currentRoute?.startsWith(it) == true }
     val activeTab = activeTabFor(currentRoute, viewModel.currentLoanOriginMyLoans)
 
+    // On the scrollable list tabs the user can toggle a fullscreen mode (⛶ in the top bar) that
+    // hides the top bar and bottom nav (and the screen's own search/filter header) so the list fills
+    // the screen. Active only on a list root while chrome is toggled off; everywhere else chrome stays.
+    // Screens that offer fullscreen: the list tabs and the Barcode Detail page. The single shared
+    // [AppViewModel.fullscreen] flag only takes visible effect while one of these is shown.
+    val isListRoot = currentRoute in listRootRoutes
+    val supportsFullscreen = isListRoot || currentRoute in detailFullscreenRoutes
+    val immersive = supportsFullscreen && viewModel.fullscreen
+
+    // In fullscreen, the back button exits fullscreen first instead of leaving the screen.
+    BackHandler(enabled = immersive) { viewModel.fullscreen = false }
+
+    // Hide the Android status and navigation bars while immersive so the system clock/battery/nav
+    // icons don't overlap the content; an edge swipe brings them back transiently. Restore them
+    // whenever immersive ends (toggled off, or moved to a screen that doesn't support fullscreen).
+    val view = LocalView.current
+    LaunchedEffect(immersive) {
+        val window = view.context.findActivity()?.window ?: return@LaunchedEffect
+        val controller = WindowInsetsControllerCompat(window, view)
+        if (immersive) {
+            controller.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            controller.show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
     // Track the last non-root, non-camera route visited per tab so that
     // switching away from a deeper screen and back restores it.
     val tabLastRoutes = remember { HashMap<Screen, String>() }
@@ -91,9 +148,19 @@ fun AppNavigation(viewModel: AppViewModel) {
     Scaffold(
         topBar = {
             if (showChrome) {
+                AnimatedVisibility(
+                    visible = !immersive,
+                    enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+                    exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut()
+                ) {
                 TopAppBar(
                     title = { Text(activeTab?.title ?: "LGR") },
                     actions = {
+                        if (isListRoot) {
+                            IconButton(onClick = { viewModel.fullscreen = true }) {
+                                Icon(Icons.Default.Fullscreen, contentDescription = "Fullscreen")
+                            }
+                        }
                         if (viewModel.selectedBarcodes.isNotEmpty()) {
                             BadgedBox(
                                 badge = { Badge { Text(viewModel.selectedBarcodes.size.toString()) } }
@@ -110,10 +177,16 @@ fun AppNavigation(viewModel: AppViewModel) {
                         }
                     }
                 )
+                }
             }
         },
         bottomBar = {
             if (showBottomBar) {
+                AnimatedVisibility(
+                    visible = !immersive,
+                    enter = expandVertically(expandFrom = Alignment.Bottom) + fadeIn(),
+                    exit = shrinkVertically(shrinkTowards = Alignment.Bottom) + fadeOut()
+                ) {
                 Column {
                 NavigationBar(
                     modifier = Modifier.height(48.dp),
@@ -162,8 +235,24 @@ fun AppNavigation(viewModel: AppViewModel) {
                 }
                 Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
                 } // Column
+                }
             }
-        }
+        },
+        floatingActionButton = {
+            // In fullscreen the top bar is hidden, so offer an explicit way back out. Keep it above
+            // the system navigation bar since the content insets are dropped while immersive.
+            if (immersive) {
+                SmallFloatingActionButton(
+                    onClick = { viewModel.fullscreen = false },
+                    modifier = Modifier.navigationBarsPadding()
+                ) {
+                    Icon(Icons.Default.FullscreenExit, contentDescription = "Exit fullscreen")
+                }
+            }
+        },
+        // While immersive, let the list span the entire screen (behind the status/navigation bars)
+        // instead of leaving the system-bar insets as padding.
+        contentWindowInsets = if (immersive) WindowInsets(0, 0, 0, 0) else ScaffoldDefaults.contentWindowInsets
     ) { padding ->
         NavHost(
             navController = navController,
