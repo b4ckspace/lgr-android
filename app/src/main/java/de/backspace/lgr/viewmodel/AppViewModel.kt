@@ -172,6 +172,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var childLoanInfos by mutableStateOf<Map<String, LoanInfo>>(emptyMap())
         private set
+    // Codes whose default content-save fate (keep matched / drop missing / add new) the user has
+    // flipped in the Barcode Detail verify adjust mode. See isContentChildKept().
+    var contentFateOverrides by mutableStateOf<Set<String>>(emptySet())
+        private set
     var barcodesSearch by mutableStateOf("")
         private set
     var barcodesNoParentFilter by mutableStateOf(false)
@@ -763,6 +767,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             childLoanInfos = emptyMap()
             contentScanActive = false
             addContentScanActive = false
+            contentFateOverrides = emptySet()
             saveContentState = UiState()
             pendingNewParent = null
             saveParentState = UiState()
@@ -875,6 +880,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 if (isExistingChild) ScanResult.FOUND_EXISTING else ScanResult.FOUND_NEW
             }
         }
+    }
+
+    // Shared keep/drop/add rule for the content-verify save. Default fate by column —
+    // matched (in DB + scanned) kept, missing (in DB, not scanned) dropped, new (scanned, not in
+    // DB) added — flipped when the user overrode it in adjust mode. On-loan children stay attached.
+    private fun resolveKept(locked: Boolean, inDb: Boolean, scanned: Boolean, overridden: Boolean): Boolean {
+        if (locked) return true
+        val defaultIn = if (inDb) scanned else true
+        return defaultIn != overridden
     }
 
     fun saveVerifyChanges() = viewModelScope.launch {
@@ -1355,6 +1369,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         contentScanActive = false
         addContentScanActive = false
         contentScanAdditive = false
+        contentFateOverrides = emptySet()
         saveContentState = UiState()
         if (restoreContentSession) contentSessions[code]?.let { s ->
             scannedChildCodes = s.scannedChildCodes
@@ -1517,6 +1532,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         newScannedBarcodes = emptyList()
         contentScanActive = false
         addContentScanActive = false
+        contentFateOverrides = emptySet()
         saveContentState = UiState()
     }
 
@@ -1555,6 +1571,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         newScannedBarcodes = emptyList()
         contentScanActive = false
         addContentScanActive = false
+        contentFateOverrides = emptySet()
         saveContentState = UiState()
         return runCatching { repo.getBarcode(code) }
             .onSuccess { barcode ->
@@ -1565,17 +1582,40 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             .isSuccess
     }
 
+    // On-loan children are physically out, so the content verify keeps them attached and locked.
+    fun isContentChildLocked(code: String): Boolean = childLoanInfos[code]?.loan == true
+
+    // Whether a Barcode Detail content row will be inside the parent after save. See resolveKept().
+    fun isContentChildKept(code: String): Boolean {
+        val parent = scannedBarcode.data ?: return true
+        return resolveKept(
+            locked = isContentChildLocked(code),
+            inDb = (parent.apiChildNames ?: emptyList()).any { it.code == code },
+            scanned = code in scannedChildCodes,
+            overridden = code in contentFateOverrides
+        )
+    }
+
+    fun toggleContentFate(code: String) {
+        if (isContentChildLocked(code)) return
+        contentFateOverrides =
+            if (code in contentFateOverrides) contentFateOverrides - code else contentFateOverrides + code
+    }
+
     fun saveContentChanges(parentBarcode: Barcode) = viewModelScope.launch {
         saveContentState = UiState(isLoading = true)
         val children = parentBarcode.apiChildNames ?: emptyList()
         val parentUrl = ApiClient.getBarcodeUrl(parentBarcode.code)
         val errors = mutableListOf<String>()
 
-        for (b in newScannedBarcodes) {
+        val toAttach = newScannedBarcodes.filter { isContentChildKept(it.code) }
+        val toDetach = children.filter { !isContentChildKept(it.code) }
+
+        for (b in toAttach) {
             runCatching { repo.patchBarcodeParent(ApiClient.getBarcodeUrl(b.code), parentUrl) }
                 .onFailure { errors.add(it.localizedMessage ?: b.code) }
         }
-        for (child in children.filter { it.code !in scannedChildCodes && childLoanInfos[it.code]?.loan != true }) {
+        for (child in toDetach) {
             runCatching { repo.patchBarcodeParent(ApiClient.getBarcodeUrl(child.code), null) }
                 .onFailure { errors.add(it.localizedMessage ?: child.code) }
         }
@@ -1584,6 +1624,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             scannedChildCodes = emptySet()
             newScannedBarcodes = emptyList()
             contentScanActive = false
+            contentFateOverrides = emptySet()
             saveContentState = UiState(data = Unit)
             val refreshed = runCatching { repo.getBarcode(parentBarcode.code) }.getOrNull() ?: parentBarcode
             scannedBarcode = UiState(data = refreshed)

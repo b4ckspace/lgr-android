@@ -19,6 +19,8 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.automirrored.filled.NoteAdd
@@ -404,7 +406,8 @@ fun BarcodeDetailScreen(
 
                         val existingChildren = barcode.apiChildNames ?: emptyList()
                         val contentHasChanges = viewModel.newScannedBarcodes.isNotEmpty() ||
-                            existingChildren.any { it.code !in viewModel.scannedChildCodes }
+                            existingChildren.any { it.code !in viewModel.scannedChildCodes } ||
+                            viewModel.contentFateOverrides.isNotEmpty()
                         val showSave = (viewModel.contentScanActive && contentHasChanges) ||
                             (viewModel.addContentScanActive && viewModel.newScannedBarcodes.isNotEmpty())
                         if (!viewModel.readonlyMode && showSave) {
@@ -592,6 +595,10 @@ private fun ContentListSection(
     val existingChildren = barcode.apiChildNames ?: emptyList()
     val totalCount = existingChildren.size + viewModel.newScannedBarcodes.size
 
+    // Adjust mode (verify only): per-row checkboxes to override each item's keep/remove fate.
+    var adjustMode by remember { mutableStateOf(false) }
+    LaunchedEffect(scanActive) { if (!scanActive) adjustMode = false }
+
     var showTextSearch by remember { mutableStateOf(false) }
     var textSearchQuery by remember { mutableStateOf("") }
     var textSearchSuggestions by remember { mutableStateOf<List<de.backspace.lgr.data.model.Barcode>>(emptyList()) }
@@ -631,7 +638,22 @@ private fun ContentListSection(
             )
             if (!viewModel.readonlyMode) {
                 Row {
-                    // Search to add
+                    // Adjust contents (verify only): toggle per-row keep/remove checkboxes.
+                    if (scanActive) {
+                        ModeIconButton(
+                            active = adjustMode,
+                            onClick = { adjustMode = !adjustMode },
+                            idleIcon = Icons.Outlined.Checklist,
+                            activeIcon = Icons.Filled.Checklist,
+                            contentDescription = if (adjustMode) "Done adjusting" else "Adjust contents"
+                        )
+                    }
+                    // The add actions are disabled while verifying, so a verify only ever removes
+                    // or confirms existing content (use the verify icon to scan more).
+                    val addEnabled = !scanActive
+                    val addTint = if (addEnabled) MaterialTheme.colorScheme.primary
+                                  else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                    // Search to add (plain action — no active pill/fill)
                     IconButton(
                         onClick = {
                             showTextSearch = !showTextSearch
@@ -641,43 +663,43 @@ private fun ContentListSection(
                                 showSuggestions = false
                             }
                         },
+                        enabled = addEnabled,
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
                             if (showTextSearch) Icons.Default.Close else Icons.Outlined.Search,
                             contentDescription = if (showTextSearch) "Close search" else "Search additional content",
                             modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = addTint
                         )
                     }
-                    // Scan to add
-                    IconButton(onClick = onAddContent, modifier = Modifier.size(32.dp)) {
+                    // Scan to add (plain action — no active pill/fill)
+                    IconButton(onClick = onAddContent, enabled = addEnabled, modifier = Modifier.size(32.dp)) {
                         Icon(
                             Icons.Outlined.QrCodeScanner,
                             contentDescription = "Scan to add",
                             modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = addTint
                         )
                     }
-                    // New barcode as child
-                    IconButton(onClick = onNewBarcodeAsChild, modifier = Modifier.size(32.dp)) {
+                    // New barcode as child (one-shot action, no persistent mode)
+                    IconButton(onClick = onNewBarcodeAsChild, enabled = addEnabled, modifier = Modifier.size(32.dp)) {
                         Icon(
                             Icons.AutoMirrored.Outlined.NoteAdd,
                             contentDescription = "New barcode in this location",
                             modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = addTint
                         )
                     }
                     Spacer(Modifier.width(8.dp))
                     // Verify
-                    IconButton(onClick = onReScan, modifier = Modifier.size(32.dp)) {
-                        Icon(
-                            Icons.AutoMirrored.Outlined.FactCheck,
-                            contentDescription = "Re-scan content",
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    ModeIconButton(
+                        active = scanActive,
+                        onClick = onReScan,
+                        idleIcon = Icons.AutoMirrored.Outlined.FactCheck,
+                        activeIcon = Icons.AutoMirrored.Filled.FactCheck,
+                        contentDescription = "Re-scan content"
+                    )
                 }
             }
         }
@@ -752,7 +774,11 @@ private fun ContentListSection(
                 dbChildren = existingChildren,
                 scannedCodes = viewModel.scannedChildCodes,
                 extraScanned = viewModel.newScannedBarcodes,
-                onBarcodeClick = onBarcodeClick
+                onBarcodeClick = onBarcodeClick,
+                adjustMode = adjustMode,
+                isKept = viewModel::isContentChildKept,
+                isLocked = viewModel::isContentChildLocked,
+                onToggle = viewModel::toggleContentFate
             )
         } else {
             existingChildren.forEach { child ->
