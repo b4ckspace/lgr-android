@@ -272,36 +272,36 @@ Reachable via the person-add floating action button in the Persons tab. Same for
 
 ### Verify workflow
 
-Used to audit whether the physical contents of a container match the database.
+Used to audit whether the physical contents of a container match the database. The verify happens
+**on the container's Barcode Detail page** in verify mode — there is no separate verify screen.
 
 1. **Home → Verify** opens the location scanner.
-2. Scan the container/location barcode. The scanner switches to content mode.
-3. Scan each item found inside the container. Recognised scans flash the scanner border green; see *Barcode Scan Sound Conventions* for the audio feedback.
-4. Tap **Done** to open the verification result screen, or **Cancel** (or the back arrow) to abort and return to the Home screen.
+2. Scan the container/location barcode. The scanner switches to content mode and the app loads that
+   barcode's detail in the background.
+3. Scan each item found inside the container. Recognised scans flash the scanner border green; see
+   *Barcode Scan Sound Conventions* for the audio feedback.
+4. Tap **Done** to land on the container's **Barcode Detail** page with verify mode on, or **Cancel**
+   (or the back arrow) to abort and return to the Home screen.
 
-The result screen shows a two-column table:
+On the Barcode Detail page the *Content* section shows the two-column **Current | Scanned** table
+(see *Content list* under *Barcode Detail* for the full description of the columns, the verify/adjust
+icons, and the keep/remove adjust mode). Tapping a barcode entry navigates to its detail; the back
+button returns.
 
-| Current (in DB) | Scanned |
-|---|---|
-| Items the DB thinks are here | Items physically found |
+The bottom buttons depend on whether the scanned content matches the database:
 
-- Items in both columns (matched) are shown normally.
-- Items only in *Current* (missing physically) are shown in red.
-- Items only in *Scanned* (unexpected extras) are shown in green.
-- Tapping any barcode entry in either column navigates to its Barcode Detail. The Android back button returns to the verify result.
-- Above the table the screen shows the location's own details as labelled rows — **Item**, **Barcode**, the **item image** (when set; tap to view fullscreen), **Location** (breadcrumb), and, when set, **Barcode description**, **Item description**, **Owner** and **Loan** — all in the normal text colour. Unlike on the Barcode Detail page, the **Item** row is drawn in the normal text colour rather than the primary "link" colour, though it is still tappable (navigates to Item Detail); the breadcrumb ancestors also remain tappable to their Barcode Detail.
-- A verify icon in the *Content* header re-opens the scanner in **Scan additional content** mode: scanned barcodes are *added* to the already-scanned list. It can be used repeatedly, each time appending to the list. The scanned list is only reset when you leave the result screen (back arrow, **Cancel**, or **Save**).
-- **Pull to refresh** — pull down on the result screen to reload the location's current data from the backend; the list of already-scanned items in the current session is preserved.
-- The list auto-scrolls so the *Content* header is the first visible item when the screen opens.
-- The result screen highlights the **Barcodes** tab; while the verify is still in progress (not yet saved or discarded), switching to another tab and back to **Barcodes** returns to the verify result. Once the verify is left/cleared, the Barcodes tab shows the normal list instead.
-
-**If there are mismatches:**
-- **Cancel** — discards changes and navigates to the location barcode's detail page.
-- **Save** — writes the scanned reality to the backend (updates parent references), then navigates to the location barcode's detail page. Children that are currently out on loan are kept attached even if they were not physically scanned (same guard as the in-place content verify).
+**If there are mismatches** (or any adjust-mode overrides):
+- **Cancel** — discards the scan and leaves verify mode.
+- **Save** — writes the scanned reality to the backend (updates parent references), honouring any
+  per-row overrides set in adjust mode. Children that are currently out on loan are kept attached even
+  if they were not physically scanned.
 
 **If everything matches:**
-- **Verify next** — resets the scan state and returns to the location scanner to verify another container.
-- **OK** — navigates to the location barcode's detail page.
+- **Verify next** — leaves this container and reopens the location scanner to verify the next one.
+- **OK** — leaves verify mode and stays on the container's detail page.
+
+These buttons appear for **any** active verify once the content matches — whether the verify was
+started from **Home → Verify** or from the Barcode Detail verify icon.
 
 ---
 

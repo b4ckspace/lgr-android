@@ -51,7 +51,7 @@ private sealed class Screen(val route: String, val title: String, val icon: Imag
 }
 
 // Routes where the shared top bar is hidden (screens have their own TopAppBar or are camera-only)
-private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "verify_detail", "barcodes_scan_search", "item_detail", "edit_barcode", "edit_item", "edit_barcode_scan_parent", "edit_barcode_scan_code", "loan_cart", "loan_detail", "person_detail", "edit_person", "new_person")
+private val fullScreenRoutes = setOf("scan", "barcode_detail", "content_scan", "scan_parent", "add_content_scan", "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code", "verify_scan", "barcodes_scan_search", "item_detail", "edit_barcode", "edit_item", "edit_barcode_scan_parent", "edit_barcode_scan_code", "loan_cart", "loan_detail", "person_detail", "edit_person", "new_person")
 
 // The scrollable list tabs whose chrome (top bar + bottom nav) auto-hides while scrolling down.
 private val listRootRoutes = setOf("items", "barcodes", "persons", "loans", "my_loans")
@@ -79,7 +79,7 @@ private fun activeTabFor(route: String?, loanIsMyLoan: Boolean = false): Screen?
     "barcodes", "barcode_detail", "edit_barcode", "edit_barcode_scan_parent", "edit_barcode_scan_code",
     "content_scan", "scan_parent", "add_content_scan",
     "new_barcode", "new_barcode_scan_parent", "new_barcode_scan_code",
-    "barcodes_scan_search", "verify_detail" -> Screen.Barcodes
+    "barcodes_scan_search" -> Screen.Barcodes
     "persons", "person_detail", "edit_person", "new_person" -> Screen.Persons
     "loan_detail" -> if (loanIsMyLoan) Screen.MyLoans else Screen.Loans
     "loans" -> Screen.Loans
@@ -208,12 +208,6 @@ fun AppNavigation(viewModel: AppViewModel) {
                                 if (targetRoute == "loan_detail") {
                                     val ok = viewModel.restoreLoanTab(fromMyLoans = screen == Screen.MyLoans)
                                     if (!ok) targetRoute = screen.route
-                                }
-                                // Only restore the verify result while its scan state is still
-                                // alive; once cleared (backed out), fall back to the tab list so
-                                // it doesn't reopen an empty "No location scanned." screen.
-                                if (targetRoute == "verify_detail" && viewModel.verifyLocation == null) {
-                                    targetRoute = screen.route
                                 }
                                 if (targetRoute != screen.route) {
                                     // Restore a sub-screen: put the tab root in the back stack
@@ -385,6 +379,16 @@ fun AppNavigation(viewModel: AppViewModel) {
                         navController.navigate("edit_barcode")
                     },
                     onGoToCart = { navController.navigate("loan_cart") },
+                    // Verify-sweep actions (only shown when this verify came from Home → Verify).
+                    onVerifyNext = {
+                        viewModel.cancelContentScan()
+                        viewModel.clearVerifyState()
+                        navController.navigate("verify_scan") { popUpTo("home") { inclusive = false } }
+                    },
+                    onVerifyOk = {
+                        viewModel.cancelContentScan()
+                        viewModel.clearVerifyState()
+                    },
                     onNewBarcodeAsChild = {
                         val code = viewModel.scannedBarcode.data?.code ?: return@BarcodeDetailScreen
                         viewModel.prepareNewBarcodeAsChild(code)
@@ -585,8 +589,18 @@ fun AppNavigation(viewModel: AppViewModel) {
             composable("verify_scan") {
                 VerifyScanScreen(
                     viewModel = viewModel,
-                    onDone = { navController.navigate("verify_detail") },
-                    onBack = { viewModel.clearVerifyState(); navController.popBackStack() }
+                    // The location scan already loaded the barcode and turned on verify mode, so
+                    // land on its Barcode Detail page. Drop the camera so Back returns to Home.
+                    onDone = {
+                        navController.navigate("barcode_detail") {
+                            popUpTo("verify_scan") { inclusive = true }
+                        }
+                    },
+                    onBack = {
+                        viewModel.clearVerifyState()
+                        viewModel.cancelContentScan()
+                        navController.popBackStack()
+                    }
                 )
             }
             composable("loan_cart") {
@@ -614,57 +628,6 @@ fun AppNavigation(viewModel: AppViewModel) {
                         viewModel.clearBarcodeListContext()
                         viewModel.loadBarcode(code)
                         navController.navigate("barcode_detail")
-                    }
-                )
-            }
-            composable("verify_detail") {
-                val navigateToBarcodeDetail: () -> Unit = {
-                    val code = viewModel.verifyLocation?.code
-                    viewModel.clearVerifyState()
-                    if (code != null) {
-                        viewModel.clearBarcodeListContext()
-                        viewModel.loadBarcode(code)
-                        navController.navigate("barcode_detail") {
-                            popUpTo("home") { inclusive = false }
-                        }
-                    } else {
-                        navController.popBackStack("home", inclusive = false)
-                    }
-                }
-                VerifyBarcodeScreen(
-                    viewModel = viewModel,
-                    onBack = { viewModel.clearVerifyState(); navController.popBackStack() },
-                    onRescan = {
-                        // Normally the camera (verify_scan) sits just beneath this screen, so pop
-                        // back to it. After a tab switch restored verify_detail directly, it isn't
-                        // on the stack anymore — navigate to a fresh one instead.
-                        if (!navController.popBackStack("verify_scan", inclusive = false)) {
-                            navController.navigate("verify_scan")
-                        }
-                    },
-                    onCancel = navigateToBarcodeDetail,
-                    onSaved = navigateToBarcodeDetail,
-                    onVerifyNext = {
-                        viewModel.clearVerifyState()
-                        navController.popBackStack()
-                    },
-                    onOk = navigateToBarcodeDetail,
-                    onBarcodeClick = { code ->
-                        viewModel.clearBarcodeListContext()
-                        viewModel.loadBarcode(code)
-                        navController.navigate("barcode_detail")
-                    },
-                    onItemClick = {
-                        val location = viewModel.verifyLocation ?: return@VerifyBarcodeScreen
-                        val item = de.backspace.lgr.data.model.Item(
-                            url = location.item,
-                            name = location.itemName,
-                            description = location.itemDescription,
-                            tags = emptyList(),
-                            image = location.itemImage
-                        )
-                        viewModel.openItemDetail(item)
-                        navController.navigate("item_detail")
                     }
                 )
             }

@@ -88,6 +88,8 @@ fun BarcodeDetailScreen(
     onNewBarcodeAsChild: () -> Unit = {},
     onEditBarcode: () -> Unit = {},
     onGoToCart: () -> Unit = {},
+    onVerifyNext: () -> Unit = {},
+    onVerifyOk: () -> Unit = {},
     onItemClick: (() -> Unit)? = null
 ) {
     val state = viewModel.scannedBarcode
@@ -410,9 +412,15 @@ fun BarcodeDetailScreen(
                             viewModel.contentFateOverrides.isNotEmpty()
                         val showSave = (viewModel.contentScanActive && contentHasChanges) ||
                             (viewModel.addContentScanActive && viewModel.newScannedBarcodes.isNotEmpty())
+                        // Whenever a verify is active and the scanned content matches the DB
+                        // (nothing to save), offer "Verify next" / "OK" instead of Save/Cancel.
+                        val showVerifyDone = viewModel.contentScanActive && !showSave
                         if (!viewModel.readonlyMode && showSave) {
                             HorizontalDivider()
                             ContentButtonsSection(viewModel = viewModel, barcode = barcode)
+                        } else if (!viewModel.readonlyMode && showVerifyDone) {
+                            HorizontalDivider()
+                            VerifyDoneButtons(onVerifyNext = onVerifyNext, onOk = onVerifyOk)
                         }
 
                         if (barcodeList != null) {
@@ -850,6 +858,21 @@ private fun ContentButtonsSection(viewModel: AppViewModel, barcode: Barcode) {
                 style = MaterialTheme.typography.bodySmall
             )
         }
+    }
+}
+
+// Shown during a Home → Verify sweep when the scanned content matches the database: continue to
+// the next container or finish the sweep. Mirrors the buttons the old standalone Verify page had.
+@Composable
+private fun VerifyDoneButtons(onVerifyNext: () -> Unit, onOk: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+    ) {
+        OutlinedButton(onClick = onVerifyNext) { Text("Verify next") }
+        Button(onClick = onOk) { Text("OK") }
     }
 }
 

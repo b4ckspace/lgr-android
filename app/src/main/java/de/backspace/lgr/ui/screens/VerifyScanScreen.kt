@@ -19,16 +19,12 @@ fun VerifyScanScreen(
     val phase = viewModel.verifyPhase
 
     ContentScannerScaffold(
-        label = when {
-            phase == VerifyPhase.LOCATION -> "Scan location"
-            viewModel.verifyAdditive -> "Scan additional content"
-            else -> "Scan all content"
-        },
+        label = if (phase == VerifyPhase.LOCATION) "Scan location" else "Scan all content",
         onBack = onBack,
         // Only reject scanning the container itself once we are past the location phase.
-        selfCode = if (phase == VerifyPhase.CONTENT) viewModel.verifyLocation?.code else null,
+        selfCode = if (phase == VerifyPhase.CONTENT) viewModel.scannedBarcode.data?.code else null,
         onScan = { code -> viewModel.onVerifyBarcodeScanned(code) },
-        scannedCount = viewModel.verifyContents.size,
+        scannedCount = viewModel.scannedChildCodes.size + viewModel.newScannedBarcodes.size,
         onDone = onDone,
         onCancel = onBack,
         showBottomBar = phase == VerifyPhase.CONTENT,
