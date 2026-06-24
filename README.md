@@ -84,7 +84,7 @@ Authentication uses Django session cookies. CSRF tokens are extracted from the c
 - **Read-only without login** opens the app in read-only mode — scanning and listing work, creating/editing/deleting does not.
 - The server URL is remembered across sessions.
 - **Backend supports item images** — toggle switch below the server URL. Enable this when the backend has image support ([PR #2](https://github.com/b4ckspace/lgr/pull/2)). The setting is persisted across restarts. When enabled, camera buttons appear in the New Barcode and Edit Item screens.
-- The login screen shows the app version and build date in its lower-right corner.
+- The login screen shows the app version and build date in its lower-right corner. Release builds show `Version: <n>` and the build date; debug builds read `Debug` and add the build time (e.g. `Debug (2026-06-24 22:05)`).
 
 ---
 

@@ -25,8 +25,12 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
-        val buildDate = SimpleDateFormat("yyyy-MM-dd").format(Date())
+        val now = Date()
+        val buildDate = SimpleDateFormat("yyyy-MM-dd").format(now)
+        val buildTime = SimpleDateFormat("HH:mm").format(now)
         buildConfigField("String", "BUILD_DATE", "\"$buildDate\"")
+        // Debug builds also show the build time (HH:mm) on the login screen.
+        buildConfigField("String", "BUILD_TIME", "\"$buildTime\"")
     }
 
     val keystoreProps = Properties().also { props ->
