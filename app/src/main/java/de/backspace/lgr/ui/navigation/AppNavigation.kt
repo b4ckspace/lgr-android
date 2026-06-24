@@ -238,7 +238,9 @@ fun AppNavigation(viewModel: AppViewModel) {
             if (immersive) {
                 SmallFloatingActionButton(
                     onClick = { viewModel.fullscreen = false },
-                    modifier = Modifier.navigationBarsPadding()
+                    // Lift it above the detail pages' bottom prev/next arrow row so the two
+                    // don't overlap when paging through a list item.
+                    modifier = Modifier.navigationBarsPadding().padding(bottom = 56.dp)
                 ) {
                     Icon(Icons.Default.FullscreenExit, contentDescription = "Exit fullscreen")
                 }
