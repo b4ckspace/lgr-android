@@ -4,6 +4,7 @@
 package de.backspace.lgr.ui.screens
 
 import android.Manifest
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.FlashOff
+import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -42,8 +45,22 @@ fun BarcodeScannerScaffold(
     val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
     val currentOnBarcodeDetected = rememberUpdatedState(onBarcodeDetected)
 
+    // The bound camera (set once the provider resolves) lets us drive the torch/flashlight.
+    var camera by remember { mutableStateOf<Camera?>(null) }
+    var torchOn by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         if (!permissionState.status.isGranted) permissionState.launchPermissionRequest()
+    }
+
+    // Keep the hardware torch in sync with the toggle (and re-apply it if the camera re-binds).
+    LaunchedEffect(camera, torchOn) {
+        camera?.cameraControl?.enableTorch(torchOn)
+    }
+
+    // Leaving the scanner (navigating back) turns the flashlight off again.
+    DisposableEffect(Unit) {
+        onDispose { camera?.cameraControl?.enableTorch(false) }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -82,7 +99,7 @@ fun BarcodeScannerScaffold(
                         }
                         try {
                             provider.unbindAll()
-                            provider.bindToLifecycle(
+                            camera = provider.bindToLifecycle(
                                 lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, analyzer
                             )
                         } catch (_: Exception) {}
@@ -127,6 +144,20 @@ fun BarcodeScannerScaffold(
             modifier = Modifier.align(Alignment.TopStart).padding(8.dp).statusBarsPadding()
         ) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+        }
+
+        // Flashlight toggle — only on devices whose camera actually has a flash unit.
+        if (camera?.cameraInfo?.hasFlashUnit() == true) {
+            IconButton(
+                onClick = { torchOn = !torchOn },
+                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).statusBarsPadding()
+            ) {
+                Icon(
+                    if (torchOn) Icons.Default.FlashOn else Icons.Default.FlashOff,
+                    contentDescription = if (torchOn) "Turn off flashlight" else "Turn on flashlight",
+                    tint = Color.White
+                )
+            }
         }
     }
 }

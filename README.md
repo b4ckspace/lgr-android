@@ -369,6 +369,10 @@ When one or more barcodes have been added to the loan selection (via the shoppin
 
 ---
 
+## Camera / scan screens
+
+Every camera screen (Details, Verify, content scan, scan-to-search, location/parent scan, and the New Barcode code/parent scanners) shares the same scanner view: a back arrow top-left and, on devices whose camera has a flash unit, a **flashlight toggle** top-right. The flashlight is off each time a scanner opens and is switched off automatically when you leave the screen.
+
 ## Barcode Scan Sound Conventions
 
 Every decoded barcode plays a short **acknowledge beep** immediately. In the content/verify scanners, that beep is then followed by extra beeps that encode the result:
