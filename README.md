@@ -160,11 +160,11 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 
 **Editing a barcode:**
 Tap the Edit icon (pencil) in the top bar to open the edit screen. The loan status is not editable.
-- **Item** — type-ahead search; selecting a suggestion fills in the item description. If the typed name does not exist yet, a new item is created on save.
+- **Item** — type-ahead search; selecting a suggestion fills in the item description. Typing the exact name of an existing item selects it automatically, without tapping the suggestion. If the typed name does not exist yet, a new item is created on save.
 - **Barcode** — the existing code, read-only here (change it via *Changing the barcode code* below).
 - **Location** — type-ahead barcode search (min. 2 characters, 300 ms debounce). Suggestions show the item name and barcode code; selecting one sets the parent barcode. Pre-filled with the current parent (if any).
 - **Barcode description** — per-barcode description.
-- **Item description** — editable when no item is selected from suggestions (and a new item is created on save); read-only once an item is chosen.
+- **Item description** — editable when no item is selected (and a new item is created on save); read-only once an item is chosen, whether by tapping a suggestion or by typing an existing item's exact name.
 - **Owner** — type-ahead person search; tap the person icon to set to the current user.
 
 > Item photo editing is not available here — use Edit Item to change a photo.
@@ -311,11 +311,11 @@ Form to register a new barcode in the system.
 
 | Field | Notes |
 |---|---|
-| **Item** * | Type-ahead search against the item catalogue (min. 2 characters, 300 ms debounce). Selecting a suggestion fills in the item description. If the name does not exist yet, a new item is created on save. |
+| **Item** * | Type-ahead search against the item catalogue (min. 2 characters, 300 ms debounce). Selecting a suggestion fills in the item description; typing an existing item's exact name selects it automatically (no tap needed). If the name does not exist yet, a new item is created on save. |
 | **Barcode** * | The barcode string. Enter manually, scan (camera icon — an already-existing code is rejected with a rising tone), or tap **+1** to auto-generate the next available numeric code. While the +1 search is running a spinner is shown and the field is read-only; it becomes editable again once a free code is found. |
 | **Location** | Optional parent barcode. Type-ahead barcode search (min. 2 characters, 300 ms debounce) — suggestions show item name and code. Or tap the scan icon to scan a barcode. |
 | **Description** | Free-text description for this specific barcode instance. |
-| **Item description** | Pre-filled from the selected item (read-only). Editable when no item is selected (and a new item is created on save). |
+| **Item description** | Pre-filled from the selected item (read-only) — including when an existing item is selected by typing its exact name. Editable when no item is selected (and a new item is created on save). |
 | **Owner** | Optional. Type-ahead person search or tap the person icon to assign yourself. |
 | **Photo** | (When backend supports images) Tap the camera icon to take a photo for the item. A thumbnail preview is shown; tap the × to remove it before saving. Disabled when an existing item is selected from suggestions (use Edit Item to change that item's photo). |
 

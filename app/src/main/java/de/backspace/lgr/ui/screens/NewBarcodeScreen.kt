@@ -164,6 +164,14 @@ fun NewBarcodeScreen(
         val results = viewModel.searchItemsWithCounts(query).sortedBy { (item, _) -> item.name.lowercase() }
         itemSuggestions = results
         showSuggestions = results.isNotEmpty()
+        // If what was typed is itself the exact name of an item, treat it as chosen (same as
+        // tapping that suggestion): select it and show its description read-only, without
+        // requiring a tap. The typed text and the suggestion list are left as-is.
+        val exact = results.map { it.first }.filter { it.name.equals(query, ignoreCase = true) }
+        if (exact.size == 1) {
+            viewModel.newBarcodeSelectedItem = exact.first()
+            viewModel.newBarcodeItemDescription = exact.first().description
+        }
     }
 
     LaunchedEffect(viewModel.newBarcodeOwnerQuery) {
@@ -317,6 +325,15 @@ fun NewBarcodeScreen(
                                 }
                                 viewModel.newBarcodeNameQuery = tfv.text
                                 viewModel.newBarcodeSelectedItem = null
+                                // If the typed text already matches a loaded suggestion exactly,
+                                // select it immediately (no debounce) so the item description locks
+                                // right away without a brief editable flicker.
+                                val exact = itemSuggestions.map { it.first }
+                                    .filter { it.name.equals(tfv.text, ignoreCase = true) }
+                                if (exact.size == 1) {
+                                    viewModel.newBarcodeSelectedItem = exact.first()
+                                    viewModel.newBarcodeItemDescription = exact.first().description
+                                }
                             }
                             itemNameTfv = tfv
                         },
