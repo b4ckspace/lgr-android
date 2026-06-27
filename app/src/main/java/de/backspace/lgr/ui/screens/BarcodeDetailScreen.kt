@@ -90,6 +90,7 @@ fun BarcodeDetailScreen(
     onGoToCart: () -> Unit = {},
     onVerifyNext: () -> Unit = {},
     onVerifyOk: () -> Unit = {},
+    onLoanClick: (() -> Unit)? = null,
     onItemClick: (() -> Unit)? = null
 ) {
     val state = viewModel.scannedBarcode
@@ -188,6 +189,33 @@ fun BarcodeDetailScreen(
                     Text("Cancel")
                 }
             }
+        )
+    }
+
+    // Looking up / failing to find the loan behind the "Loan" link.
+    val loanLookup = viewModel.loanLookupState
+    if (loanLookup.isLoading) {
+        Dialog(onDismissRequest = {}) {
+            Surface(shape = RoundedCornerShape(12.dp)) {
+                Row(
+                    modifier = Modifier.padding(24.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                    Text("Opening loan…")
+                }
+            }
+        }
+    }
+    if (loanLookup.error != null) {
+        AlertDialog(
+            onDismissRequest = { viewModel.resetLoanLookupState() },
+            confirmButton = {
+                TextButton(onClick = { viewModel.resetLoanLookupState() }) { Text("OK") }
+            },
+            title = { Text("Loan") },
+            text = { Text(loanLookup.error) }
         )
     }
 
@@ -385,7 +413,10 @@ fun BarcodeDetailScreen(
                                     "On loan${loan.person?.let { " — $it" } ?: ""}"
                                 else "Available"
                                 val color = if (loan.loan) LOAN_BLUE else GREEN
-                                DetailRow("Loan", text, valueColor = color)
+                                // When on loan, link to that loan's detail (login required for the
+                                // loan lookup, so not offered in read-only mode).
+                                val loanClick = if (loan.loan && !viewModel.readonlyMode) onLoanClick else null
+                                DetailRow("Loan", text, valueColor = color, onClick = loanClick)
                             }
                             if (barcode.code in viewModel.selectedBarcodes)
                                 Text(

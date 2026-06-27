@@ -143,7 +143,7 @@ Tap any barcode in the list (or scan from Home → Details) to open the detail v
 - Location (breadcrumb of parent chain, tappable to navigate)
 - Per-barcode description (labelled *Barcode description*)
 - Owner (resolved to display name)
-- Loan status — *Available* (green) or *On loan — Person* (blue)
+- Loan status — *Available* (green) or *On loan — Person* (blue). When on loan, the *Loan* row is tappable (when logged in) and opens that loan's **Loan Detail** page.
 
 **Navigation:**
 - When opened from the list, arrow buttons and swipe left/right navigate through the result set.

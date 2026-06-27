@@ -117,6 +117,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var currentLoanIsMyLoan by mutableStateOf(false)
         private set
+    // Looking up the active loan for a barcode (from the Barcode Detail "Loan" link).
+    var loanLookupState by mutableStateOf(UiState<Unit>())
+        private set
     var loanListContext by mutableStateOf<List<Loan>?>(null)
         private set
     var loanListIndex by mutableStateOf(0)
@@ -1790,6 +1793,34 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+
+    // Open the active (TAKEN) loan that contains this barcode. LoanInfo carries no loan id, so
+    // page through the taken loans and match on the barcode code; onFound navigates to the detail.
+    fun openLoanForBarcode(code: String, onFound: () -> Unit) = viewModelScope.launch {
+        loanLookupState = UiState(isLoading = true)
+        val match = runCatching {
+            var resp = repo.getLoans(status = "taken", limit = 50, offset = 0)
+            var found = resp.results.firstOrNull { code in it.barcodes }
+            while (found == null && resp.next != null) {
+                resp = repo.getLoansPage(resp.next!!)
+                found = resp.results.firstOrNull { code in it.barcodes }
+            }
+            found
+        }.getOrElse {
+            loanLookupState = UiState(error = it.toUserMessage())
+            return@launch
+        }
+        if (match == null) {
+            loanLookupState = UiState(error = "No active loan found for this barcode.")
+        } else {
+            clearLoanListContext()
+            openLoan(match, fromMyLoans = false)
+            loanLookupState = UiState(data = Unit)
+            onFound()
+        }
+    }
+
+    fun resetLoanLookupState() { loanLookupState = UiState() }
 
     fun returnCurrentLoan() = viewModelScope.launch {
         val loan = currentLoan ?: return@launch
