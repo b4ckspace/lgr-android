@@ -121,6 +121,12 @@ fun BarcodeDetailScreen(
         value = if (ownerUrl != null) viewModel.resolveOwnerName(ownerUrl) else null
     }
 
+    // The loan info only carries the borrower's nickname; resolve it to a display name.
+    val loanPersonName by produceState<String?>(null, state.data?.apiLoanInfo?.person) {
+        val nick = state.data?.apiLoanInfo?.takeIf { it.loan }?.person
+        value = nick?.let { viewModel.resolvePersonNameByNickname(it) }
+    }
+
     // While fullscreen, let the back button exit fullscreen first (handled in AppNavigation), so
     // in-place history navigation only claims back once the chrome is visible again.
     BackHandler(enabled = viewModel.barcodeHistory.isNotEmpty() && !viewModel.fullscreen) {
@@ -409,8 +415,9 @@ fun BarcodeDetailScreen(
                             if (barcode.owner != null)
                                 DetailRow("Owner", ownerName ?: "…")
                             barcode.apiLoanInfo?.let { loan ->
+                                val personLabel = loanPersonName ?: loan.person
                                 val text = if (loan.loan)
-                                    "On loan${loan.person?.let { " — $it" } ?: ""}"
+                                    "On loan${personLabel?.let { " — $it" } ?: ""}"
                                 else "Available"
                                 val color = if (loan.loan) LOAN_BLUE else GREEN
                                 // When on loan, link to that loan's detail (login required for the

@@ -394,6 +394,25 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private val personNameByNickCache = mutableMapOf<String, String>()
+
+    // Resolve a person's nickname to a display name (firstname/lastname, falling back to the
+    // nickname). Used where the API only carries the nickname, e.g. a barcode's loan info.
+    suspend fun resolvePersonNameByNickname(nickname: String): String {
+        if (nickname.isBlank()) return nickname
+        personNameByNickCache[nickname]?.let { return it }
+        val resolved = runCatching { repo.getPersons(search = nickname).results }
+            .getOrNull()
+            ?.firstOrNull { it.nickname.equals(nickname, ignoreCase = true) }
+            ?.let { p ->
+                listOf(p.firstname, p.lastname).filter { it.isNotBlank() }.joinToString(" ")
+                    .ifBlank { p.nickname }
+            }
+            ?: nickname
+        personNameByNickCache[nickname] = resolved
+        return resolved
+    }
+
     suspend fun resolveBarcodeName(code: String): String? {
         barcodeNameCache[code]?.let { return it }
         val name = runCatching { repo.getBarcode(code) }.getOrNull()?.itemName?.takeIf { it.isNotBlank() } ?: return null

@@ -123,11 +123,12 @@ fun LoanDetailScreen(
                     valueColor = if (isTaken) LOAN_STATUS_TAKEN_COLOR else LOAN_STATUS_RETURNED_COLOR
                 )
 
-                // Show the borrower. Fall back to resolving the person by id when the loan payload
-                // did not include person_name.
+                // Show the borrower. The loan payload's person_name is only the nickname, so
+                // resolve the person by id for a firstname/lastname display name, falling back to
+                // person_name only when that lookup fails.
                 val personName by produceState(loan.personName, loan.id, loan.person) {
-                    value = loan.personName?.takeIf { it.isNotBlank() }
-                        ?: loan.person?.let { viewModel.resolvePersonName(it) }
+                    value = loan.person?.let { viewModel.resolvePersonName(it) }?.takeIf { it.isNotBlank() }
+                        ?: loan.personName?.takeIf { it.isNotBlank() }
                 }
                 personName?.takeIf { it.isNotBlank() }?.let { DetailRow("Person", it) }
                 loan.description?.takeIf { it.isNotBlank() }?.let { DetailRow("Description", it) }

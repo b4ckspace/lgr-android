@@ -248,8 +248,12 @@ fun LoanCartScreen(
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
+                            // bs.person is a bare nickname; resolve it to a display name.
+                            val personLabel by produceState(bs.person, bs.person) {
+                                value = viewModel.resolvePersonNameByNickname(bs.person)
+                            }
                             Text(
-                                "On loan — ${bs.person}",
+                                "On loan — $personLabel",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.error
                             )
