@@ -381,6 +381,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         return name
     }
 
+    // Resolve a loan's person (by numeric id) to a display name, for when the loan payload did
+    // not already carry person_name.
+    suspend fun resolvePersonName(id: Int): String? {
+        val url = ApiClient.getPersonUrl(id.toString())
+        return runCatching { repo.getPersonByUrl(url) }.getOrNull()?.let { p ->
+            listOf(p.firstname, p.lastname).filter { it.isNotBlank() }.joinToString(" ")
+                .ifBlank { p.nickname }
+        }
+    }
+
     suspend fun resolveBarcodeName(code: String): String? {
         barcodeNameCache[code]?.let { return it }
         val name = runCatching { repo.getBarcode(code) }.getOrNull()?.itemName?.takeIf { it.isNotBlank() } ?: return null

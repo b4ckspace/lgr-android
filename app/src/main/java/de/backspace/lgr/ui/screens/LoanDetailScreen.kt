@@ -123,7 +123,13 @@ fun LoanDetailScreen(
                     valueColor = if (isTaken) LOAN_STATUS_TAKEN_COLOR else LOAN_STATUS_RETURNED_COLOR
                 )
 
-                loan.personName?.takeIf { it.isNotBlank() }?.let { DetailRow("Person", it) }
+                // Show the borrower. Fall back to resolving the person by id when the loan payload
+                // did not include person_name.
+                val personName by produceState(loan.personName, loan.id, loan.person) {
+                    value = loan.personName?.takeIf { it.isNotBlank() }
+                        ?: loan.person?.let { viewModel.resolvePersonName(it) }
+                }
+                personName?.takeIf { it.isNotBlank() }?.let { DetailRow("Person", it) }
                 loan.description?.takeIf { it.isNotBlank() }?.let { DetailRow("Description", it) }
                 loan.takenDate?.let { DetailRow("Taken", it.take(10)) }
                 loan.returnDate?.let {
